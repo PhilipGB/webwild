@@ -60,7 +60,7 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Gentle weather could not be switched off mid-session | PASS | `HardeningTests.GentleWeather_RestoresBaselineWhenSwitchedOff`; runtime `low-threat-applies`, `low-threat-restores` |
 | Pause did not fully freeze player physics | PASS | Runtime `pause-freezes-airborne`, `pause-resumes-physics`; `SpiderPlayer.PhysicsPaused` |
 | Settings persistence errors were silent | PASS | `SettingsService` failing-write test; runtime `settings-save-error-visible`; persistent retry affordance |
-| Repository visibility differed from the private-release claim | PASS | `gh repo view` now reports `PRIVATE`; corrected during v0.1.1 |
+| Repository visibility differed from the private-release claim | PASS | `gh repo view` now reports `PRIVATE`; corrected during v0.1.1 (PR [#9](https://github.com/PhilipGB/webwild/pull/9)) |
 | Persistent garden geometry is constructed in C# rather than authored `.tscn` | ACKNOWLEDGED | Documented in `README.md` and `CHANGELOG.md`; scene-first level refactor planned for v0.2.0, not a v0.1.x functional blocker |
 
 ## Sign-off

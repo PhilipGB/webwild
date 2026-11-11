@@ -15,7 +15,8 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 [#5](https://github.com/PhilipGB/webwild/pull/5),
 [#6](https://github.com/PhilipGB/webwild/pull/6),
 [#7](https://github.com/PhilipGB/webwild/pull/7),
-[#8](https://github.com/PhilipGB/webwild/pull/8).
+[#8](https://github.com/PhilipGB/webwild/pull/8) and
+[#9](https://github.com/PhilipGB/webwild/pull/9) (v0.1.1 hardening).
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|

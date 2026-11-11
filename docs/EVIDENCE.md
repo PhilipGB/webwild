@@ -10,7 +10,7 @@ an inspected screenshot.
 - `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
 - Godot .NET export templates 4.7.2 installed
 - GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
-- Final merged implementation commit: `__RELEASE_COMMIT__`
+- Final merged implementation commit: `b1587b1`
 - Release tag: `v0.1.1` (created after the final green checks; see the final report for the tag SHA)
 
 ## Pull requests
@@ -25,6 +25,7 @@ an inspected screenshot.
 | P6 | https://github.com/PhilipGB/webwild/pull/6 | `50d8eda` |
 | P7 | https://github.com/PhilipGB/webwild/pull/7 | `5c4e83b` |
 | P8 | https://github.com/PhilipGB/webwild/pull/8 | `2ef10d7` |
+| v0.1.1 hardening | https://github.com/PhilipGB/webwild/pull/9 | `b1587b1` |
 
 All eight PRs had green **Build and pure tests** and **Godot .NET import and
 startup** checks before merge.

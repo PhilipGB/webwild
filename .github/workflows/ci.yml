@@ -41,8 +41,8 @@ jobs:
       - name: Build C#
         run: dotnet build
       - name: Import project
-        run: "$GODOT" --headless --path . --editor --quit
+        run: '"$GODOT" --headless --path . --editor --quit'
       - name: Headless startup
-        run: "$GODOT" --headless --path . --quit-after 120
+        run: '"$GODOT" --headless --path . --quit-after 120'
       - name: Runtime acceptance probe
-        run: "$GODOT" --headless --path . -- --runtime-probe
+        run: '"$GODOT" --headless --path . -- --runtime-probe'

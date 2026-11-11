@@ -1,6 +1,41 @@
-# Webwild v0.1.0
+# Changelog
 
-First playable vertical slice, 11 November 2026.
+## Webwild v0.1.1 — hardening release
+
+Fixes from the independent v0.1.0 code review.
+
+### Reliability
+
+- Bounded save histories: issued event keys, ledger idempotency keys and mission
+  seen-event keys retain recent entries only. Long sessions no longer become
+  unsaveable.
+- Save-and-quit now keeps the session open on failure and offers **Try saving
+  again**, **Keep playing** or **Quit without saving**.
+- Settings save failures are shown persistently in-game and in the settings
+  panel, with a Retry action, instead of being silently discarded.
+
+### Gameplay and consistency
+
+- Added a real ravine through the garden. The player cannot cross it until a
+  silk bridge exists; bridge walkways include ramps and a collision surface that
+  follows the deck. Worker graph and player traversal now agree.
+- Silk production now consumes the configured food cost and scales with the
+  number of spiders (player baseline plus each hatched helper). It stops at zero
+  food or the silk cap.
+- Gentle weather now derives from an immutable baseline, so switching it off
+  restores normal storm values.
+- Pausing freezes player physics as well as simulation ticks, including while
+  airborne or climbing.
+
+### Maintenance
+
+- Clarified the v0.1.x architecture limitation: persistent garden geometry is
+  constructed in C#; moving it into authored `.tscn` scenes is planned for v0.2.
+- Restored the repository to private visibility as intended.
+- Added regression tests for long-session saves, ledger retention, silk food
+  cost/producer scaling, weather toggling, settings failure and bridge traversal.
+
+## Webwild v0.1.0 — first playable
 
 ## Added
 

@@ -25,6 +25,9 @@ public partial class SettingsDialog : Control
     private Label _musicValue = null!;
     private Label _sfxValue = null!;
     private Label _sensitivityValue = null!;
+    private Label _persistenceError = null!;
+    private Button _retrySave = null!;
+    private Action? _retryAction;
 
     public SettingsDialog Configure(SettingsData settings)
     {
@@ -126,7 +129,16 @@ public partial class SettingsDialog : Control
         _fullscreen.Toggled += value => ApplyAndEmit(() => Settings.Fullscreen = value);
 
         content.AddChild(UiKit.Spacer(4));
+        _persistenceError = UiKit.Label("", 16, UiKit.Coral, true);
+        _persistenceError.Visible = false;
+        content.AddChild(_persistenceError);
+
         var doneRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        doneRow.AddThemeConstantOverride("separation", 10);
+        _retrySave = UiKit.Button("Retry save", 240, 54);
+        _retrySave.Visible = false;
+        _retrySave.Pressed += () => _retryAction?.Invoke();
+        doneRow.AddChild(_retrySave);
         var done = UiKit.Button("Done", 320, 54, true);
         done.Pressed += Close;
         doneRow.AddChild(done);
@@ -214,6 +226,27 @@ public partial class SettingsDialog : Control
         MoveToFront();
         _master.GrabFocus();
     }
+
+    public void ShowPersistenceError(string message, Action retry)
+    {
+        Build();
+        _retryAction = retry;
+        _persistenceError.Text = string.IsNullOrWhiteSpace(message)
+            ? "Couldn't save settings. Check disk space or permissions, then retry."
+            : message;
+        _persistenceError.Visible = true;
+        _retrySave.Visible = true;
+    }
+
+    public void ClearPersistenceError()
+    {
+        if (!_built) return;
+        _retryAction = null;
+        _persistenceError.Visible = false;
+        _retrySave.Visible = false;
+    }
+
+    public bool PersistenceErrorVisible => _built && _persistenceError.Visible;
 
     public void Close()
     {

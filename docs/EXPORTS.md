@@ -11,14 +11,14 @@
 godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
 ```
 
-- Runtime tested headlessly: **PASS**, 58/58 probe checks.
-- Runtime tested rendered under Xvfb at 1280×720: **PASS**, 58/58 probe checks,
-  all 16 screenshots written.
+- Runtime tested headlessly: **PASS**, 66/66 probe checks.
+- Runtime tested rendered under Xvfb at 1280×720: **PASS**, 66/66 probe checks,
+  all 17 screenshots written.
 - SHA-256:
 
 ```text
 d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
-ebf9b4207f4381741ee51e77fa3c7089bf891ccfa789cabe6c3fa3dddba08af5  Webwild.pck
+3489659a45f34210549830d7907241405db321e97239ab8f3c485f3d929bb149  Webwild.pck
 ```
 
 ## Windows x64
@@ -38,8 +38,8 @@ godot --headless --path . --export-release "Windows" exports/windows/Webwild.exe
 - SHA-256:
 
 ```text
-d5d357b454f33ea935d3f204cbc10aed632bc956e89c2aa3c8b59fdae52bb797  Webwild.exe
-0240de3f231cf2dce9c29e70c0274cca5da0bc52c365bd79e6d9762c07aa141f  Webwild.pck
+6af5fdd28e0e5895c4f971ea312277bc53b9c1ab3dc9cac872a68ec77643def1  Webwild.exe
+d36954d198c39b5b65d03b4c575a83e885dcb204d0b7a034135daa7fef808362  Webwild.pck
 ```
 
 ## Template and host

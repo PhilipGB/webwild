@@ -9,7 +9,7 @@ namespace Webwild.Game;
 /// </summary>
 public static class GameData
 {
-    public const string Version = "0.1.0";
+    public const string Version = "0.1.1";
 
     public static string SavePath => ProjectSettings.GlobalizePath("user://webwild_save.json");
     public static string SettingsPath => ProjectSettings.GlobalizePath("user://webwild_settings.json");
@@ -47,13 +47,10 @@ public static class GameData
 
     public static SettingsService CreateSettingsService() => new(SettingsPath);
 
-    /// <summary>Low-threat mode keeps the same lesson but reduces punishment.</summary>
-    public static void ApplyDifficulty(Tuning tuning, bool lowThreat)
+    /// <summary>Derive low-threat weather from an immutable baseline.</summary>
+    public static void ApplyDifficulty(Tuning tuning, Tuning baseline, bool lowThreat)
     {
-        if (!lowThreat) return;
-        tuning.Weather.ExposedWebDamage = Math.Min(tuning.Weather.ExposedWebDamage, 25);
-        tuning.Weather.ShelteredWebDamage = 0;
-        tuning.Weather.WarningSeconds = Math.Max(tuning.Weather.WarningSeconds, 30);
+        tuning.ApplyWeatherProfile(baseline.Weather, lowThreat);
     }
 
     public static void ApplyUiScale(SettingsData settings)

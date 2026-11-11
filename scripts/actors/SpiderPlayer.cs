@@ -11,6 +11,7 @@ public partial class SpiderPlayer : CharacterBody3D
     [Export] public float ClimbSpeed { get; set; } = 2.5f;
 
     public bool InputEnabled { get; set; } = true;
+    public bool PhysicsPaused { get; set; }
     public bool ClimbAvailable { get; set; }
     public Vector3 ClimbPoint { get; set; }
     public bool IsClimbing { get; private set; }
@@ -79,6 +80,7 @@ public partial class SpiderPlayer : CharacterBody3D
 
     public override void _PhysicsProcess(double delta)
     {
+        if (PhysicsPaused) return;
         var dt = (float)delta;
         if (!InputEnabled)
         {

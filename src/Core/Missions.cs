@@ -19,8 +19,11 @@ public sealed record MissionEventResult(
 
 public sealed class MissionTracker
 {
+    public const int SeenEventRetentionLimit = 512;
+
     private readonly MissionsConfig _config;
     private readonly HashSet<string> _seenEvents = new(StringComparer.Ordinal);
+    private readonly Queue<string> _seenOrder = new();
     private readonly List<string> _completed = new();
     private readonly List<int> _stepProgress = new();
 
@@ -81,8 +84,11 @@ public sealed class MissionTracker
     public MissionEventResult Record(GameplayEvent evt)
     {
         if (AllComplete) return new MissionEventResult(false, false, null, true);
-        if (string.IsNullOrWhiteSpace(evt.Key) || !_seenEvents.Add(evt.Key))
-            return new MissionEventResult(false, false, null, false);
+        if (string.IsNullOrWhiteSpace(evt.Key)) return new MissionEventResult(false, false, null, false);
+        if (_seenEvents.Contains(evt.Key)) return new MissionEventResult(false, false, null, false);
+        _seenEvents.Add(evt.Key);
+        _seenOrder.Enqueue(evt.Key);
+        TrimSeenEvents(SeenEventRetentionLimit);
 
         var mission = ActiveMission;
         var step = ActiveStep;
@@ -134,6 +140,16 @@ public sealed class MissionTracker
 
     public void MarkVictoryAwarded() => VictoryAwarded = true;
 
+    /// <summary>Bound the idempotency history so a long session can always be saved.</summary>
+    public void TrimSeenEvents(int maxEntries)
+    {
+        while (_seenOrder.Count > Math.Max(1, maxEntries))
+        {
+            var oldest = _seenOrder.Dequeue();
+            _seenEvents.Remove(oldest);
+        }
+    }
+
     public void Restore(
         int activeMissionIndex,
         int stepIndex,
@@ -150,7 +166,13 @@ public sealed class MissionTracker
         for (var i = 0; i < _config.Missions.Count; i++)
             _stepProgress.Add(i < progress.Count ? Math.Max(0, progress[i]) : 0);
         _seenEvents.Clear();
-        foreach (var key in seenEvents) _seenEvents.Add(key);
+        _seenOrder.Clear();
+        foreach (var key in seenEvents)
+        {
+            if (string.IsNullOrWhiteSpace(key)) continue;
+            if (_seenEvents.Add(key)) _seenOrder.Enqueue(key);
+        }
+        TrimSeenEvents(SeenEventRetentionLimit);
         VictoryAwarded = victoryAwarded;
         AllComplete = ActiveMissionIndex >= _config.Missions.Count;
         var mission = ActiveMission;

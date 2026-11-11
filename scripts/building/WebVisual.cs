@@ -95,24 +95,67 @@ public partial class WebVisual : Node3D
 
     private void BuildBridgeCollision(Vector3 a, Vector3 b)
     {
-        var dir = (b - a).Normalized();
-        var length = a.DistanceTo(b);
-        var z = dir;
-        var x = Vector3.Up.Cross(z).Normalized();
-        var y = z.Cross(x).Normalized();
-        var basis = new Basis(x, y, z);
+        var aLocal = a - _center;
+        var bLocal = b - _center;
+        var length = aLocal.DistanceTo(bLocal);
+        var sag = Mathf.Clamp(length / 16f, 0.08f, 0.42f);
         _bridgeBody = new StaticBody3D
         {
+            Name = "BridgeWalkway",
             CollisionLayer = 1,
-            CollisionMask = 0,
-            Transform = new Transform3D(basis, new Vector3(0, -0.04f, 0))
+            CollisionMask = 0
         };
-        var shape = new CollisionShape3D
-        {
-            Shape = new BoxShape3D { Size = new Vector3(0.75f, 0.16f, length) }
-        };
-        _bridgeBody.AddChild(shape);
         AddChild(_bridgeBody);
+
+        Vector3 Point(float t)
+        {
+            var point = aLocal.Lerp(bLocal, t);
+            point.Y -= Mathf.Sin(t * Mathf.Pi) * sag;
+            return point;
+        }
+
+        var samples = 7;
+        var previous = Point(0);
+        for (var i = 1; i <= samples; i++)
+        {
+            var next = Point(i / (float)samples);
+            AddWalkwaySegment(previous, next);
+            previous = next;
+        }
+
+        // Walkable approaches connect the bridge anchors to the ground on both
+        // banks. Without these, the bridge would be an unreachable floating deck.
+        var leftGround = new Vector3(aLocal.X - 1.2f, -_center.Y, aLocal.Z);
+        var rightGround = new Vector3(bLocal.X + 1.2f, -_center.Y, bLocal.Z);
+        AddWalkwaySegment(leftGround, aLocal);
+        AddWalkwaySegment(bLocal, rightGround);
+    }
+
+    private void AddWalkwaySegment(Vector3 from, Vector3 to)
+    {
+        var delta = to - from;
+        var length = delta.Length();
+        if (length < 0.01f) return;
+        var z = delta.Normalized();
+        var x = Vector3.Up.Cross(z);
+        if (x.LengthSquared() < 0.0001f) x = Vector3.Right;
+        x = x.Normalized();
+        var y = z.Cross(x).Normalized();
+        var basis = new Basis(x, y, z);
+        var centre = (from + to) * 0.5f - y * 0.05f;
+
+        _bridgeBody!.AddChild(new CollisionShape3D
+        {
+            Shape = new BoxShape3D { Size = new Vector3(0.9f, 0.1f, length + 0.08f) },
+            Transform = new Transform3D(basis, centre)
+        });
+        AddChild(new MeshInstance3D
+        {
+            Name = "BridgeWalkwaySilk",
+            Mesh = new BoxMesh { Size = new Vector3(0.58f, 0.055f, length + 0.02f) },
+            MaterialOverride = _material,
+            Transform = new Transform3D(basis, centre)
+        });
     }
 
     public void UpdateState(WebState state)

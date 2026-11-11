@@ -1,6 +1,6 @@
 # Evidence index
 
-All evidence was produced on the build host. Commands are copy-pasteable from the
+All evidence was produced on the build host for v0.1.1. Commands are copy-pasteable from the
 repository root unless a working directory is shown. No PASS in this file is
 inferred from source alone: every result comes from a command, a runtime check or
 an inspected screenshot.
@@ -10,8 +10,8 @@ an inspected screenshot.
 - `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
 - Godot .NET export templates 4.7.2 installed
 - GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
-- Final merged implementation commit: `2ef10d7`
-- Release tag: `v0.1.0` (created after the final green checks; see the final report for the tag SHA)
+- Final merged implementation commit: `__RELEASE_COMMIT__`
+- Release tag: `v0.1.1` (created after the final green checks; see the final report for the tag SHA)
 
 ## Pull requests
 
@@ -32,7 +32,7 @@ startup** checks before merge.
 ## P0 — Toolchain and repository
 
 - `dotnet build -warnaserror` → success, 0 warnings, 0 errors
-- `dotnet test` → final result 45 passed, 0 failed, 0 skipped
+- `dotnet test` → final result 51 passed, 0 failed, 0 skipped
 - `godot --headless --path . --editor --quit` → exit 0, GLBs/audio/SVG imported
 - `gh repo view --json nameWithOwner,url,visibility` →
   `{"nameWithOwner":"PhilipGB/webwild","visibility":"PRIVATE"}`
@@ -60,7 +60,7 @@ startup** checks before merge.
   - `occupied-edge-rejected` — “Already connected”
   - `bridge-built` — two real injected mouse clicks on the Pebble gap
   - `dismantle-refunds` — removal restores silk and removes the web
-- Screenshots: `03-build-mode`, `06-build-mode`, `07-capture-web`
+- Screenshots: `06-build-mode`, `07-capture-web`
 
 ## P3 — Insects and economy
 
@@ -74,15 +74,16 @@ startup** checks before merge.
 - `dotnet test --filter WorkerAndMissionTests` → all worker/mission tests pass
 - Runtime checks: `hatch-started`, `worker-hatched`, `worker-visible`,
   `m02-complete`, `worker-crossed-bridge`
-- Screenshot: `09-nursery.png` shows 1 of 5 spiders, the hatch cost and enabled
-  Hatch button before hatching.
+- Screenshots: `09-bridge-crossing.png` shows the ravine and silk bridge;
+  `10-nursery.png` shows 1 of 5 spiders, the hatch cost and enabled Hatch button
+  before hatching.
 
 ## P5 — Missions, UI and victory
 
 - `dotnet test --filter MissionFlowTests` → hint progression test passes
 - Runtime checks: `m01-complete`, `m02-complete`, `m03-complete`, `victory`,
   `victory-screen`, `continue-loads`, `return-to-menu`, `quit-to-menu`
-- Screenshots: `10-wind-warning`, `11-victory`, `14-title-continue`
+- Screenshots: `11-wind-warning`, `12-victory`, `15-title-continue`
 
 ## P6 — Wind, settings and polish
 
@@ -91,8 +92,8 @@ startup** checks before merge.
 - Runtime checks: `wind-completed`, `wind-event`, `web-damaged-or-repaired`,
   `web-restored`, `low-threat-applies`, `ui-scale-applies`,
   `ui-scale-150-applies`, `settings-persist`
-- Screenshots: `03-pause`, `04-help`, `05-colony`, `10-wind-warning`,
-  `12-settings`, `15-ui-scale-125`, `16-ui-scale-150`
+- Screenshots: `03-pause`, `04-help`, `05-colony`, `11-wind-warning`,
+  `13-settings`, `16-ui-scale-125`, `17-ui-scale-150`
 
 ## P7 — Persistence and hardening
 
@@ -101,7 +102,7 @@ startup** checks before merge.
 - Runtime checks: `save-succeeds`, `save-loads`, `save-missions`, `save-webs`,
   `save-workers`, `reload-webs`, `reload-workers`, `reload-victory`,
   `reload-player`
-- Screenshot: `13-reloaded.png`
+- Screenshot: `14-reloaded.png`
 
 ## P8 — End-to-end, exports and release
 
@@ -109,14 +110,14 @@ startup** checks before merge.
 
 ```text
 $ dotnet test
-Passed! - Failed: 0, Passed: 45, Skipped: 0, Total: 45
+Passed! - Failed: 0, Passed: 51, Skipped: 0, Total: 51
 
 $ xvfb-run -a -s "-screen 0 1280x720x24" \
     godot --path . --resolution 1280x720 -- --runtime-probe
-[PROBE] SUMMARY passes=58 failures=0
+[PROBE] SUMMARY passes=66 failures=0
 ```
 
-`artifacts/runtime_probe.json` contains all 58 named checks. The 16 inspected
+`artifacts/runtime_probe.json` contains all 66 named checks. The 17 inspected
 screenshots are in `artifacts/screenshots/`.
 
 ### Exported Linux build
@@ -126,12 +127,12 @@ $ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_6
 exit 0
 
 $ cd exports/linux && ./Webwild.x86_64 --headless -- --runtime-probe
-[PROBE] SUMMARY passes=58 failures=0
+[PROBE] SUMMARY passes=66 failures=0
 exit 0
 
 $ cd exports/linux && xvfb-run -a -s "-screen 0 1280x720x24" \
     ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
-[PROBE] SUMMARY passes=58 failures=0
+[PROBE] SUMMARY passes=66 failures=0
 exit 0
 ```
 
@@ -154,6 +155,28 @@ Export success must not be read as a tested Windows startup.
 ### Checksums
 
 See `docs/EXPORTS.md`.
+
+## v0.1.1 hardening from independent review
+
+- `dotnet test` → **51 passed, 0 failed, 0 skipped**.
+- Headless runtime probe → **66 passed, 0 failed**.
+- Rendered Xvfb runtime probe → **66 passed, 0 failed**, 17 screenshots.
+- New runtime checks:
+  - `pause-freezes-airborne`, `pause-resumes-physics`
+  - `ravine-blocks-without-bridge`, `bridge-enables-player-crossing`
+  - `silk-producers`
+  - `low-threat-restores`
+  - `failed-save-keeps-session`
+  - `settings-save-error-visible`
+- New deterministic tests:
+  - `LongSession_BoundsHistories_AndStillValidatesForSaving`
+  - `Ledger_TrimsOldKeys_ButKeepsRecentIdempotency`
+  - `SilkProduction_ConsumesFood_AndStopsWhenFoodRunsOut`
+  - `SilkProduction_ScalesWithHatchedHelpers`
+  - `GentleWeather_RestoresBaselineWhenSwitchedOff`
+  - `Settings_FailingWrite_IsReported`
+- Repository visibility rechecked with `gh repo view` → `PRIVATE`.
+- Exported Linux v0.1.1 package was launched and passed the 66/66 probe.
 
 ## Honest non-results
 

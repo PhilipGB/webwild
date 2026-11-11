@@ -49,6 +49,7 @@ public partial class GameUI : CanvasLayer
     private bool _colonyOpen;
     private bool _helpOpen;
     private bool _confirmOpen;
+    private bool _saveFailedOpen;
     private float _toastTimer;
     private float _toastDuration;
     private GameSimulation? _lastSim;
@@ -58,14 +59,15 @@ public partial class GameUI : CanvasLayer
     private bool _tutorialPrompts = true;
     private readonly List<Button> _workerChips = new();
 
-    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen;
-    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen;
+    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen;
+    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen;
     public bool BlocksWorldInput => IsModalOpen;
     public bool IsVictoryOpen => _victoryOpen;
     public bool IsPauseOpen => _pauseOpen;
     public bool IsHelpOpen => _helpOpen;
     public bool IsColonyOpen => _colonyOpen;
     public bool IsNurseryOpen => _nurseryOpen;
+    public bool IsSaveFailedOpen => _saveFailedOpen;
 
     public override void _Ready()
     {
@@ -329,7 +331,7 @@ public partial class GameUI : CanvasLayer
 
     public void CloseModal()
     {
-        _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen = false;
+        _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen = _saveFailedOpen = false;
         _modalRoot.Visible = false;
         foreach (var child in _modalContent.GetChildren())
         {
@@ -340,7 +342,7 @@ public partial class GameUI : CanvasLayer
         if (_lastSim is not null && !_victoryOpen) SetStatus(_lastSim.GetHint());
     }
 
-    private void ConfigureModalState(bool pause = false, bool nursery = false, bool victory = false, bool colony = false, bool help = false, bool confirm = false)
+    private void ConfigureModalState(bool pause = false, bool nursery = false, bool victory = false, bool colony = false, bool help = false, bool confirm = false, bool saveFailed = false)
     {
         _pauseOpen = pause;
         _nurseryOpen = nursery;
@@ -348,6 +350,7 @@ public partial class GameUI : CanvasLayer
         _colonyOpen = colony;
         _helpOpen = help;
         _confirmOpen = confirm;
+        _saveFailedOpen = saveFailed;
         _modalRoot.Visible = true;
     }
 
@@ -503,6 +506,35 @@ public partial class GameUI : CanvasLayer
         _modalContent.AddChild(newGame);
         var quit = UiKit.Button("Save and quit to menu", 360, 54);
         quit.Pressed += () => QuitToMenuRequested?.Invoke();
+        _modalContent.AddChild(quit);
+    }
+
+    public void OpenSaveFailedQuitPrompt(string message, Action retry, Action quitWithoutSaving)
+    {
+        OpenModal("Couldn't save", 560);
+        ConfigureModalState(saveFailed: true);
+        _modalContent.AddChild(UiKit.IconLabel("silk", "Your garden is still running.", 21, UiKit.Pine));
+        _modalContent.AddChild(UiKit.Label(message, 18, UiKit.Coral, true));
+        _modalContent.AddChild(UiKit.Label(
+            "Try saving again, keep playing, or leave without saving. Nothing has been discarded yet.",
+            17, new Color(UiKit.Ink, 0.8f), true));
+        _modalContent.AddChild(UiKit.Spacer(6));
+        var retryButton = UiKit.Button("Try saving again", 420, 58, true);
+        retryButton.Pressed += () =>
+        {
+            CloseModal();
+            retry?.Invoke();
+        };
+        _modalContent.AddChild(retryButton);
+        var keepPlaying = UiKit.Button("Keep playing", 420, 52);
+        keepPlaying.Pressed += CloseModal;
+        _modalContent.AddChild(keepPlaying);
+        var quit = UiKit.Button("Quit without saving", 420, 52);
+        quit.Pressed += () =>
+        {
+            CloseModal();
+            quitWithoutSaving?.Invoke();
+        };
         _modalContent.AddChild(quit);
     }
 

@@ -19,12 +19,15 @@ public sealed class PendingHatch
 /// </summary>
 public sealed class GameSimulation
 {
+    public const int HistoryRetentionLimit = 512;
+
     private readonly Dictionary<string, AnchorDefinition> _anchors;
     private readonly Dictionary<string, WebState> _webs = new(StringComparer.Ordinal);
     private readonly List<InsectState> _insects = new();
     private readonly List<WorkerState> _workers = new();
     private readonly List<GameplayEvent> _events = new();
     private readonly HashSet<string> _issuedEventKeys = new(StringComparer.Ordinal);
+    private readonly Queue<string> _issuedEventOrder = new();
     private int _webSequence;
     private int _workerSequence;
     private int _transactionSequence;
@@ -64,6 +67,7 @@ public sealed class GameSimulation
     public IReadOnlyList<GameplayEvent> Events => _events;
     public int TotalSpiders => 1 + _workers.Count + (PendingHatch is not null ? 1 : 0);
     public int MaxSpiders => Tuning.MaxSpidersIncludingPlayer;
+    public int SilkProducers => 1 + _workers.Count;
     public int EmergencyUsesRemaining => Math.Max(0, Tuning.Recovery.EmergencyStarterWebRepairUses - EmergencyRecoveryUses);
 
     public GameSimulation(
@@ -430,14 +434,33 @@ public sealed class GameSimulation
 
     private void ProduceSilk(double dt)
     {
-        if (Tuning.SilkProduction.SilkPerFedWorkerEverySeconds <= 0) return;
-        if (Ledger.Food <= 0) return;
-        _silkAccumulator += dt;
-        while (_silkAccumulator >= Tuning.SilkProduction.SilkPerFedWorkerEverySeconds)
+        var interval = Tuning.SilkProduction.SilkPerFedWorkerEverySeconds;
+        if (interval <= 0) return;
+        var foodCost = Math.Max(0, Tuning.SilkProduction.FoodCostPerSilkBatch);
+        if (Ledger.Silk >= 99) return;
+        if (foodCost > 0 && Ledger.Food < foodCost) return;
+
+        // The player spider gives the colony a slow baseline. Every helper adds
+        // another production stream, so hatching meaningfully improves the economy.
+        _silkAccumulator += dt * SilkProducers;
+        while (_silkAccumulator >= interval)
         {
-            _silkAccumulator -= Tuning.SilkProduction.SilkPerFedWorkerEverySeconds;
-            if (Ledger.Silk < 99 && Ledger.TryGrantSilk(1, NextKey("silk_production")))
-                Emit(new GameplayEvent(NextKey("silk_produced"), "SilkProduced", TickCount, Amount: 1));
+            _silkAccumulator -= interval;
+            if (Ledger.Silk >= 99)
+            {
+                _silkAccumulator = 0;
+                break;
+            }
+            if (foodCost > 0 && Ledger.Food < foodCost) break;
+
+            var batchKey = NextKey("silk_batch");
+            if (foodCost > 0 && !Ledger.TrySpend(foodCost, 0, batchKey + "_food")) break;
+            if (!Ledger.TryGrantSilk(1, batchKey + "_silk"))
+            {
+                if (foodCost > 0) Ledger.TryGrantFood(foodCost, batchKey + "_refund");
+                break;
+            }
+            Emit(new GameplayEvent(NextKey("silk_produced"), "SilkProduced", TickCount, Amount: 1));
         }
     }
 
@@ -824,6 +847,8 @@ public sealed class GameSimulation
     private void Emit(GameplayEvent evt)
     {
         if (!_issuedEventKeys.Add(evt.Key)) return;
+        _issuedEventOrder.Enqueue(evt.Key);
+        TrimIssuedEvents(HistoryRetentionLimit);
         _events.Add(evt);
         if (_events.Count > 300) _events.RemoveRange(0, 100);
 
@@ -843,8 +868,22 @@ public sealed class GameSimulation
         }
     }
 
+    private void TrimIssuedEvents(int maxEntries)
+    {
+        while (_issuedEventOrder.Count > Math.Max(1, maxEntries))
+        {
+            var oldest = _issuedEventOrder.Dequeue();
+            _issuedEventKeys.Remove(oldest);
+        }
+    }
+
     public SaveGameData ExportSave(Vec3 playerPosition, double playerRotationY, SettingsData settings)
     {
+        // Keep only bounded recent history so a long session can always be saved.
+        Ledger.TrimHistory(HistoryRetentionLimit);
+        TrimIssuedEvents(HistoryRetentionLimit);
+        Missions.TrimSeenEvents(HistoryRetentionLimit);
+
         return new SaveGameData
         {
             SchemaVersion = SaveGameData.CurrentSchemaVersion,
@@ -1051,6 +1090,8 @@ public sealed class GameSimulation
             };
         }
         foreach (var key in data.Counters.IssuedEventKeys) sim._issuedEventKeys.Add(key);
+        foreach (var key in data.Counters.IssuedEventKeys) sim._issuedEventOrder.Enqueue(key);
+        sim.TrimIssuedEvents(HistoryRetentionLimit);
         return sim;
     }
 

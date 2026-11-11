@@ -37,7 +37,9 @@ public class CaptureAndEconomyTests
         var anchors = WorldLayout.CreateAnchors();
         anchors.Add(new AnchorDefinition { Id = "lane_miss_a", Position = new Vec3(0, 1.3, 6.0), Exposure = 0.4 });
         anchors.Add(new AnchorDefinition { Id = "lane_miss_b", Position = new Vec3(2, 1.3, 6.0), Exposure = 0.4 });
-        var sim = new GameSimulation(TestWorld.RichTuning(), MissionsConfig.Defaults(), anchors);
+        var sim = new GameSimulation(
+            TestWorld.RichTuning(t => t.SilkProduction.SilkPerFedWorkerEverySeconds = 0),
+            MissionsConfig.Defaults(), anchors);
         Assert.True(sim.TryBuildWeb("lane_miss_a", "lane_miss_b", WebType.Capture, out _, out _));
 
         sim.AdvanceSeconds(40);

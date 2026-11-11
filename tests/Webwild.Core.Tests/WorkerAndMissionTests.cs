@@ -7,7 +7,7 @@ public class WorkerAndMissionTests
 {
     private static GameSimulation ReadyWorkerScenario(out InsectState trapped)
     {
-        var sim = TestWorld.NewSim();
+        var sim = TestWorld.NewSim(t => t.SilkProduction.SilkPerFedWorkerEverySeconds = 0);
         Assert.True(sim.TryBuildWeb(WorldLayout.GapWest, WorldLayout.GapEast, WebType.Bridge, out _, out _));
         Assert.True(sim.TryBuildWeb(WorldLayout.TwigA, WorldLayout.TwigB, WebType.Capture, out _, out _));
         sim.AdvanceSeconds(12);

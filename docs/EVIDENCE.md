@@ -1,17 +1,147 @@
 # Evidence index
 
-All evidence is recorded against concrete commits. Commands were run on the
-build host documented in P0.
+All evidence was produced on the build host. Commands are copy-pasteable from the
+repository root unless a working directory is shown. No PASS in this file is
+inferred from source alone: every result comes from a command, a runtime check or
+an inspected screenshot.
+
+- Host: Linux x64
+- `dotnet --version` → `10.0.114`
+- `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
+- Godot .NET export templates 4.7.2 installed
+- GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
+- Final implementation commit: `__RELEASE_COMMIT__`
+- Release tag: `v0.1.0`
 
 ## P0 — Toolchain and repository
 
-- Host: Linux x64, Ubuntu 26.04, AMD Radeon 890M
-- `dotnet --version` → 10.0.114; SDKs 8.0.427 and 10.0.114
-- `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
-- `gh --version` → 2.103.3, authenticated as `PhilipGB`
-- `dotnet build` → succeeded, 0 warnings, 0 errors
-- `dotnet test` → 1 passed, 0 failed, 0 skipped
-- `godot --headless --path . --editor --quit` → exit 0, all GLBs imported
-- `godot --path . --quit-after 90` → exit 0; audio falls back to dummy driver
-  because the build host has no sound device (not a gameplay error)
-- Repository created privately via `gh` (URL and SHA recorded after push)
+- `dotnet build -warnaserror` → success, 0 warnings, 0 errors
+- `dotnet test` → final result 45 passed, 0 failed, 0 skipped
+- `godot --headless --path . --editor --quit` → exit 0, GLBs/audio/SVG imported
+- `gh repo view --json nameWithOwner,url,visibility` →
+  `{"nameWithOwner":"PhilipGB/webwild","visibility":"PRIVATE"}`
+
+## P1 — Garden, player and title
+
+- `godot --headless --path . -- --runtime-probe` runtime checks:
+  - `title-visible`, `title-no-game`, `new-game-started`, `title-hidden`
+  - `anchors-visible` = 12, `insects-visible` = 4
+  - `movement-wasd` moved 4.86 units
+  - `jump-space` rise 1.03
+  - `climb-stem` height 4.20
+- Screenshots: `artifacts/screenshots/01-title.png`,
+  `artifacts/screenshots/02-garden.png`
+
+## P2 — Two web types
+
+- `dotnet test --filter PlacementTests` → all placement tests pass
+- Runtime checks:
+  - `invalid-pair-rejected` — “Choose two different anchors”; silk unchanged
+  - `low-silk-rejected` — “Need 6 silk”; ledger stays at 0 for the attempt
+  - `cancel-no-charge` — cancel leaves web count 0 and silk untouched
+  - `capture-web-built` — two real injected mouse clicks on Twin Twigs
+  - `capture-web-cost` — silk 20 → 14
+  - `occupied-edge-rejected` — “Already connected”
+  - `bridge-built` — two real injected mouse clicks on the Pebble gap
+  - `dismantle-refunds` — removal restores silk and removes the web
+- Screenshots: `03-build-mode`, `06-build-mode`, `07-capture-web`
+
+## P3 — Insects and economy
+
+- `dotnet test --filter CaptureAndEconomyTests` → all capture/economy tests pass
+- Runtime checks: `insect-trapped`, `food-collected` (5 → 7), `m01-complete`
+- Screenshot: `08-insect-trapped.png` shows the fly inside the capture web with
+  the “A fly is caught!” toast.
+
+## P4 — Nursery and workers
+
+- `dotnet test --filter WorkerAndMissionTests` → all worker/mission tests pass
+- Runtime checks: `hatch-started`, `worker-hatched`, `worker-visible`,
+  `m02-complete`, `worker-crossed-bridge`
+- Screenshot: `09-nursery.png` shows 1 of 5 spiders, the hatch cost and enabled
+  Hatch button before hatching.
+
+## P5 — Missions, UI and victory
+
+- `dotnet test --filter MissionFlowTests` → hint progression test passes
+- Runtime checks: `m01-complete`, `m02-complete`, `m03-complete`, `victory`,
+  `victory-screen`, `continue-loads`, `return-to-menu`, `quit-to-menu`
+- Screenshots: `10-wind-warning`, `11-victory`, `14-title-continue`
+
+## P6 — Wind, settings and polish
+
+- `dotnet test --filter WindTests` → wind damage, repair, rescue and save-validity
+  tests pass
+- Runtime checks: `wind-completed`, `wind-event`, `web-damaged-or-repaired`,
+  `web-restored`, `low-threat-applies`, `ui-scale-applies`,
+  `ui-scale-150-applies`, `settings-persist`
+- Screenshots: `03-pause`, `04-help`, `05-colony`, `10-wind-warning`,
+  `12-settings`, `15-ui-scale-125`, `16-ui-scale-150`
+
+## P7 — Persistence and hardening
+
+- `dotnet test --filter SaveTests` → roundtrip, corrupt-main recovery, invalid
+  schema, failed-write and settings tests pass
+- Runtime checks: `save-succeeds`, `save-loads`, `save-missions`, `save-webs`,
+  `save-workers`, `reload-webs`, `reload-workers`, `reload-victory`,
+  `reload-player`
+- Screenshot: `13-reloaded.png`
+
+## P8 — End-to-end, exports and release
+
+### Final source/runtime result
+
+```text
+$ dotnet test
+Passed! - Failed: 0, Passed: 45, Skipped: 0, Total: 45
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=58 failures=0
+```
+
+`artifacts/runtime_probe.json` contains all 58 named checks. The 16 inspected
+screenshots are in `artifacts/screenshots/`.
+
+### Exported Linux build
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+
+$ cd exports/linux && ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=58 failures=0
+exit 0
+
+$ cd exports/linux && xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=58 failures=0
+exit 0
+```
+
+This confirms the Linux release export launches, renders and completes the
+runtime acceptance flow.
+
+### Exported Windows build
+
+```text
+$ godot --headless --path . --export-release "Windows" exports/windows/Webwild.exe
+exit 0
+
+$ file exports/windows/Webwild.exe
+PE32+ executable for MS Windows 5.02 (GUI), x86-64
+```
+
+**Windows runtime verification: NOT VERIFIED.** No Windows host was available.
+Export success must not be read as a tested Windows startup.
+
+### Checksums
+
+See `docs/EXPORTS.md`.
+
+## Honest non-results
+
+- Child playtest: **NOT VERIFIED** (`docs/PLAYTEST_NOTES.md`).
+- Windows runtime: **NOT VERIFIED**.
+- Actual full-screen presentation on a desktop compositor: **NOT VERIFIED**;
+  the setting persists and calls Godot’s window-mode API.

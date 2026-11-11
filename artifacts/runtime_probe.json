@@ -1,0 +1,299 @@
+{
+  "generatedUtc": "2026-11-11T14:23:46.756107Z",
+  "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
+  "renderer": "X11",
+  "passes": 58,
+  "failures": 0,
+  "checks": [
+    {
+      "name": "title-visible",
+      "pass": true,
+      "detail": "Title menu built"
+    },
+    {
+      "name": "title-no-game",
+      "pass": true,
+      "detail": "No garden before New Game"
+    },
+    {
+      "name": "new-game-started",
+      "pass": true,
+      "detail": "Simulation created"
+    },
+    {
+      "name": "title-hidden",
+      "pass": true,
+      "detail": "Title hidden in garden"
+    },
+    {
+      "name": "anchors-visible",
+      "pass": true,
+      "detail": "anchors=12"
+    },
+    {
+      "name": "insects-visible",
+      "pass": true,
+      "detail": "insects=4"
+    },
+    {
+      "name": "hud-ready",
+      "pass": true,
+      "detail": "Player exists"
+    },
+    {
+      "name": "audio-buses",
+      "pass": true,
+      "detail": "Music and SFX buses"
+    },
+    {
+      "name": "invalid-pair-rejected",
+      "pass": true,
+      "detail": "Choose two different anchors"
+    },
+    {
+      "name": "low-silk-rejected",
+      "pass": true,
+      "detail": "Need 6 silk"
+    },
+    {
+      "name": "cancel-no-charge",
+      "pass": true,
+      "detail": "Cancel leaves silk untouched"
+    },
+    {
+      "name": "pause-opens",
+      "pass": true,
+      "detail": "Pause menu"
+    },
+    {
+      "name": "pause-closes",
+      "pass": true,
+      "detail": "Resume hides pause"
+    },
+    {
+      "name": "help-opens",
+      "pass": true,
+      "detail": "How to Play"
+    },
+    {
+      "name": "colony-opens",
+      "pass": true,
+      "detail": "Colony overview"
+    },
+    {
+      "name": "movement-wasd",
+      "pass": true,
+      "detail": "moved=4.86 units"
+    },
+    {
+      "name": "jump-space",
+      "pass": true,
+      "detail": "rise=1.03"
+    },
+    {
+      "name": "climb-stem",
+      "pass": true,
+      "detail": "height=3.92"
+    },
+    {
+      "name": "build-tool-open",
+      "pass": true,
+      "detail": "All anchor sockets exposed"
+    },
+    {
+      "name": "capture-web-built",
+      "pass": true,
+      "detail": "Two mouse clicks on Twin Twigs"
+    },
+    {
+      "name": "capture-web-visible",
+      "pass": true,
+      "detail": "webs=1"
+    },
+    {
+      "name": "capture-web-cost",
+      "pass": true,
+      "detail": "silk 20-\u003E14"
+    },
+    {
+      "name": "occupied-edge-rejected",
+      "pass": true,
+      "detail": "Already connected"
+    },
+    {
+      "name": "insect-trapped",
+      "pass": true,
+      "detail": "Fly crossed the capture plane"
+    },
+    {
+      "name": "food-collected",
+      "pass": true,
+      "detail": "food 5-\u003E7"
+    },
+    {
+      "name": "m01-complete",
+      "pass": true,
+      "detail": "First Threads"
+    },
+    {
+      "name": "bridge-built",
+      "pass": true,
+      "detail": "Two mouse clicks on Pebble gap"
+    },
+    {
+      "name": "bridge-visible",
+      "pass": true,
+      "detail": "webs=2"
+    },
+    {
+      "name": "hatch-started",
+      "pass": true,
+      "detail": "Nursery spends food and silk"
+    },
+    {
+      "name": "worker-hatched",
+      "pass": true,
+      "detail": "workers=1"
+    },
+    {
+      "name": "worker-visible",
+      "pass": true,
+      "detail": "views=1"
+    },
+    {
+      "name": "m02-complete",
+      "pass": true,
+      "detail": "Tiny Team"
+    },
+    {
+      "name": "worker-crossed-bridge",
+      "pass": true,
+      "detail": "Bridge traversal event"
+    },
+    {
+      "name": "wind-completed",
+      "pass": true,
+      "detail": "Deterministic wind event"
+    },
+    {
+      "name": "wind-event",
+      "pass": true,
+      "detail": "Wind event emitted"
+    },
+    {
+      "name": "web-damaged-or-repaired",
+      "pass": true,
+      "detail": "Damage or repair observed"
+    },
+    {
+      "name": "web-restored",
+      "pass": true,
+      "detail": "Repair or sheltered alternative"
+    },
+    {
+      "name": "m03-complete",
+      "pass": true,
+      "detail": "Storm-Smart"
+    },
+    {
+      "name": "victory",
+      "pass": true,
+      "detail": "Three story missions complete"
+    },
+    {
+      "name": "victory-screen",
+      "pass": true,
+      "detail": "Victory screen shown"
+    },
+    {
+      "name": "save-succeeds",
+      "pass": true,
+      "detail": "Save written atomically"
+    },
+    {
+      "name": "save-loads",
+      "pass": true,
+      "detail": "Save loaded"
+    },
+    {
+      "name": "save-missions",
+      "pass": true,
+      "detail": "completed=3"
+    },
+    {
+      "name": "save-webs",
+      "pass": true,
+      "detail": "webs=2"
+    },
+    {
+      "name": "save-workers",
+      "pass": true,
+      "detail": "workers=1"
+    },
+    {
+      "name": "reload-webs",
+      "pass": true,
+      "detail": "webs 2-\u003E2"
+    },
+    {
+      "name": "reload-workers",
+      "pass": true,
+      "detail": "workers 1-\u003E1"
+    },
+    {
+      "name": "reload-victory",
+      "pass": true,
+      "detail": "Victory restored"
+    },
+    {
+      "name": "reload-player",
+      "pass": true,
+      "detail": "Player restored"
+    },
+    {
+      "name": "settings-persist",
+      "pass": true,
+      "detail": "Accessibility values round-trip"
+    },
+    {
+      "name": "low-threat-applies",
+      "pass": true,
+      "detail": "Gentle weather caps wind damage"
+    },
+    {
+      "name": "return-to-menu",
+      "pass": true,
+      "detail": "Game returns to title menu"
+    },
+    {
+      "name": "continue-available",
+      "pass": true,
+      "detail": "Continue button reports saved garden"
+    },
+    {
+      "name": "continue-loads",
+      "pass": true,
+      "detail": "Continue restores saved garden"
+    },
+    {
+      "name": "dismantle-refunds",
+      "pass": true,
+      "detail": "Dismantle removes web and refunds silk"
+    },
+    {
+      "name": "ui-scale-applies",
+      "pass": true,
+      "detail": "scale=1.25"
+    },
+    {
+      "name": "ui-scale-150-applies",
+      "pass": true,
+      "detail": "scale=1.50"
+    },
+    {
+      "name": "quit-to-menu",
+      "pass": true,
+      "detail": "Save and quit returns to title"
+    }
+  ]
+}

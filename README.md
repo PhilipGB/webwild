@@ -7,23 +7,25 @@ Webwild is an original, offline 3D game built with **Godot 4.7.2 .NET**, **C#** 
 catch flying insects, build silk bridges, hatch helper spiders, weather a gust of
 wind and complete three short story goals.
 
-This repository is the complete first-playable vertical slice (P0–P8). The
-deterministic game rules live in `src/Core` with no Godot dependency; Godot scenes
-and scripts adapt those rules to 3D presentation, physics and UI.
+This repository is the first-playable vertical slice (P0–P8). The deterministic
+game rules live in `src/Core` with no `Godot.*` dependency; Godot scenes and
+scripts adapt those rules to 3D presentation, physics, input and UI.
 
 ## Requirements
 
 - Godot **4.7.2 .NET** editor/executable (the Mono/.NET build, not the standard build)
-- .NET SDK **10.0** and matching Godot .NET export templates (Linux and Windows x64)
-- Linux x64 development host (tested), Windows x64 export target
+- .NET SDK **10.0** (verified with 10.0.114)
+- Matching Godot .NET export templates for Linux and Windows x64
 
 ## Build and test
 
 ```bash
 dotnet restore
-dotnet build
+dotnet build -warnaserror
 dotnet test
 ```
+
+Final verified result: **45 passed, 0 failed, 0 skipped**.
 
 ## Run from source
 
@@ -39,31 +41,95 @@ If `godot` points at the non-.NET build, call the actual .NET executable, e.g.
 
 ```bash
 godot --headless --path . --editor --quit     # import and C# build
-godot --headless --path . -- --runtime-probe  # deterministic runtime assertions
+godot --headless --path . -- --runtime-probe  # headless runtime acceptance
 ```
 
-See `docs/EVIDENCE.md`, `ACCEPTANCE.md` and `PROGRESS.md` for reproducible evidence.
+For rendered acceptance and real screenshots:
+
+```bash
+xvfb-run -a -s "-screen 0 1280x720x24" \
+  godot --path . --resolution 1280x720 -- --runtime-probe
+```
+
+The probe writes `artifacts/runtime_probe.json` and real PNGs in
+`artifacts/screenshots/` when run from the project. Final verified result:
+**58 passed, 0 failed**. The exported Linux build was also launched both
+headlessly and under Xvfb and passed the same **58/58** probe.
 
 ## How to play
 
 - **WASD / arrow keys** move, **Space** jumps, mouse wheel zooms.
+- Right-drag orbits the camera when no build tool is active.
 - **1** capture web, **2** silk bridge. Click two glowing anchors; right-click or
-  **Esc** cancels without spending silk.
+  **Esc** cancels without spending silk. Green preview means safe, coral means
+  the reason is shown.
 - **E** interacts (collect a trapped insect, use the nursery, repair a web).
-- **Tab** colony overview, **Esc** pause.
-- Walk into the tall stem's glowing climb volume and push forward to climb.
+  The action column also provides mouse buttons for Interact, Remove web and Pause.
+- **X** dismantles a nearby web. **Tab** shows the colony. **Esc** pauses or
+  cancels a build.
+- Walk into the tall stem’s climb volume and push forward to climb.
 
-Your goal: build a capture web, collect food, build a bridge, hatch a helper,
-protect the colony through a wind gust, then collect once more.
+Story: build a capture web and collect food, build a silk bridge and hatch a
+helper, then protect a web through the wind and collect food afterwards. The
+optional **Clever Weaver** badge asks for three insects with two or fewer capture
+webs and is never required for victory.
+
+## Implemented scope
+
+- One authored 38 × 28 garden clearing with layered flora, rocks, log, nursery,
+  flower lane, pebble gap, windy edge and a tall climbable stem.
+- Player walk/jump/assisted climb, orbit camera, collision-safe spring arm.
+- Twelve typed anchor sockets, capture-web and bridge previews, validation,
+  costs, cancellation, dismantling and bridge collision/path edges.
+- Four authored insect routes with swept-segment capture, exactly-once rewards
+  and respawns.
+- Nursery hatching up to five spiders, named autonomous workers that collect,
+  repair and patrol across bridge edges.
+- Three sequential missions, escalating one-line hints, optional mastery,
+  victory screen and continued play.
+- Telegraph warning, deterministic exposed/sheltered wind damage, repair or
+  sheltered alternative, visible wind leaves and audio feedback.
+- Title/new game/continue, pause, help, colony, settings, save and quit flows.
+- Versioned JSON save with validation, atomic write, healthy backup recovery and
+  explicit failure messages.
+- Accessibility: large labelled controls, 100/125/150% UI scale, reduced motion,
+  gentle-weather mode, volume controls, camera sensitivity and persisted settings.
+- Original synthesised WAV music/SFX; all gameplay information also appears
+  visually. No online services, accounts, ads, telemetry or purchases.
 
 ## Repository layout
 
 - `src/Core/` — deterministic rules, simulation, validation, missions and saves
 - `scripts/` and `scenes/` — Godot presentation, input, physics and UI
-- `art/models/` — original low-poly GLB starter assets (see `ATTRIBUTION.md`)
+- `art/models/` — supplied original low-poly GLB starter assets (see `ATTRIBUTION.md`)
+- `art/audio/` — original synthesised WAV files
 - `tests/Webwild.Core.Tests/` — pure deterministic xUnit suite
 - `data/` — tuning, missions and scenario definitions
-- `docs/` — handoff specification, evidence, playtest and release notes
+- `artifacts/` — real runtime probe report and rendered screenshots
+- `docs/` — handoff specification, evidence, playtest and export notes
+
+## Exports
+
+Final local export paths (not committed as binaries because they are large):
+
+- Linux x64: `exports/linux/Webwild.x86_64` plus `Webwild.pck` and
+  `data_Webwild_linuxbsd_x86_64/`
+- Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
+  `data_Webwild_windows_x86_64/`
+
+The Linux export was launched, rendered and passed the 58/58 runtime probe. The
+Windows export built successfully as a PE32+ x86-64 executable, but **Windows
+runtime verification is NOT VERIFIED** because no Windows host was available.
+See `docs/EXPORTS.md` for checksums and exact commands.
+
+## Evidence and limitations
+
+- `docs/EVIDENCE.md` — commands, counts, screenshots and export evidence.
+- `ACCEPTANCE.md` — per-criterion PASS / FAIL / NOT VERIFIED table.
+- `PROGRESS.md` — phase status.
+- `docs/PLAYTEST_NOTES.md` — child playtest is explicitly **NOT VERIFIED**.
+- Windows startup, child playtests and actual full-screen mode on a desktop
+  compositor remain unverified.
 
 ## Safety and scope
 

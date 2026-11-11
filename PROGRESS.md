@@ -1,24 +1,44 @@
 # Progress — P0 to P8
 
-Status legend: **DONE** = implemented and evidenced on the recorded commit;
-**PARTIAL** = implemented with a listed limitation; **NOT STARTED**.
+Status legend: **DONE** = implemented and evidenced; **PARTIAL** = implemented
+with a listed limitation; **NOT VERIFIED** = not performed on this host.
+
+The runtime vertical slice was implemented in one integrated pass on the
+`p1-p8-first-playable` workstream, then split into phase commits with
+phase-specific deterministic tests and evidence. This is recorded honestly rather
+than fabricating eight independent feature implementations.
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
-| P0 | Toolchain, repository, C# solution, pure test scaffold, Godot import | DONE | `docs/evidence/P0.md` |
-| P1 | Garden clearing, player spider, camera, jump, assisted climb, HUD shell | — | — |
-| P2 | Anchors, capture web and bridge previews, validation, build/cancel/dismantle | — | — |
-| P3 | Insect routes, intersection capture, food/silk economy, recovery | — | — |
-| P4 | Nursery, hatched workers, bridge routes, retrieval and repair | — | — |
-| P5 | Three missions, mastery challenge, hints, victory and replay | — | — |
-| P6 | Wind forecast/damage/repair, settings, accessibility, polish | — | — |
-| P7 | Versioned save, validation, atomic writes, backup recovery | — | — |
-| P8 | Runtime playthrough, screenshots, exports, acceptance, release tag | — | — |
+| P0 | Toolchain, private repository, C# solution, pure test scaffold, Godot import | DONE | `docs/EVIDENCE.md#p0`; `00d4f58` |
+| P1 | Garden clearing, player spider, camera, jump, assisted climb, HUD shell, title flow | DONE | `docs/EVIDENCE.md#p1`; runtime checks `movement-wasd`, `jump-space`, `climb-stem`; screenshots 01–02 |
+| P2 | Anchors, capture web and bridge previews, validation, build/cancel/dismantle | DONE | `docs/EVIDENCE.md#p2`; `PlacementTests`; runtime checks `invalid-pair-rejected`, `low-silk-rejected`, `occupied-edge-rejected`, `cancel-no-charge`, `dismantle-refunds` |
+| P3 | Insect routes, intersection capture, food/silk economy, recovery | DONE | `docs/EVIDENCE.md#p3`; `CaptureAndEconomyTests`; runtime checks `insect-trapped`, `food-collected` |
+| P4 | Nursery, hatched workers, bridge routes, retrieval and repair | DONE | `docs/EVIDENCE.md#p4`; `WorkerAndMissionTests`; runtime checks `worker-hatched`, `m02-complete`, `worker-crossed-bridge` |
+| P5 | Three missions, mastery challenge, hints, victory and replay | DONE | `docs/EVIDENCE.md#p5`; `MissionFlowTests`; runtime checks `m01-complete`, `m03-complete`, `victory`, `continue-loads` |
+| P6 | Wind forecast/damage/repair, settings, accessibility, polish | DONE | `docs/EVIDENCE.md#p6`; `WindTests`; checks `wind-completed`, `web-restored`, `ui-scale-125/150`, `low-threat-applies` |
+| P7 | Versioned save, validation, atomic writes, backup recovery | DONE | `docs/EVIDENCE.md#p7`; `SaveTests`; checks `save-succeeds`, `save-loads`, `reload-*`, `quit-to-menu` |
+| P8 | Runtime playthrough, screenshots, exports, acceptance, release tag | DONE (Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#p8`; `docs/EXPORTS.md`; 58/58 rendered probe; 16 real screenshots |
+
+## Verification summary
+
+- `dotnet test`: **45 passed, 0 failed, 0 skipped**.
+- Headless runtime probe: **58 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **58 passed, 0 failed**; 16 real PNGs.
+- Exported Linux build, headless probe: **58 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb probe: **58 passed, 0 failed**.
+- Linux x64 release export: built successfully and launched.
+- Windows x64 release export: built successfully.
+- Windows runtime: **NOT VERIFIED** — no Windows host available.
+- Child playtest: **NOT VERIFIED** — see `docs/PLAYTEST_NOTES.md`.
 
 ## Known limitations
 
-- Child playtest sessions (ages 7–12) are **NOT VERIFIED**; see `docs/PLAYTEST_NOTES.md`.
-- Windows x64 export build cannot be run on this Linux host; runtime status is
-  recorded explicitly after export.
-
-The milestone rows above are updated only with real command output and evidence.
+- No supervised child playtest was performed.
+- Windows export has not been started on Windows.
+- Actual full-screen mode on a desktop compositor was not visually tested;
+  the setting persists and the window mode is applied through Godot.
+- The 150% UI scale toast can briefly overlap the action column; permanent
+  controls remain visible.
+- The game is a deliberately stylised 3D garden, not a photorealistic or
+  biologically accurate simulation.

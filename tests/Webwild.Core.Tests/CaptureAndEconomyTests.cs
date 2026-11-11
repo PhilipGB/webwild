@@ -62,7 +62,7 @@ public class CaptureAndEconomyTests
         Assert.False(sim.TryCollectInsect(insect.Id, "player", out var secondFood, out _));
         Assert.Equal(0, secondFood);
         Assert.Equal(before + food, sim.Ledger.Food);
-        Assert.Single(sim.Events.Where(e => e.Type == "FoodCollected"));
+        Assert.Single(sim.Events, e => e.Type == "FoodCollected");
 
         // Respawn is deterministic and yields a fresh generation that can be caught again.
         sim.AdvanceSeconds(25);

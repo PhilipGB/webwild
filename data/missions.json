@@ -17,7 +17,7 @@
           "count": 1
         }
       ],
-      "hint": "Choose the glowing twigs and catch your first fly."
+      "hint": "Choose the glowing twigs and catch a fly."
     },
     {
       "id": "M02",
@@ -39,7 +39,7 @@
           "count": 1
         }
       ],
-      "hint": "Build a shortcut and meet a new spider helper."
+      "hint": "Build a shortcut and hatch a helper."
     },
     {
       "id": "M03",
@@ -58,7 +58,7 @@
           "count": 1
         }
       ],
-      "hint": "Protect your web, then collect food after the wind."
+      "hint": "Protect a web, then collect food after the wind."
     }
   ],
   "optionalMastery": {

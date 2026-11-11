@@ -11,6 +11,10 @@
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
     <Compile Remove="tools/**/*.cs" />
+    <Compile Remove="src/Core/**/*.cs" />
+    <Compile Remove=".godot/**/*.cs" />
+    <Compile Remove="**/bin/**/*.cs" />
+    <Compile Remove="**/obj/**/*.cs" />
     <ProjectReference Include="src/Core/Webwild.Core.csproj" />
   </ItemGroup>
 </Project>

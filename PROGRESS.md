@@ -3,10 +3,19 @@
 Status legend: **DONE** = implemented and evidenced; **PARTIAL** = implemented
 with a listed limitation; **NOT VERIFIED** = not performed on this host.
 
-The runtime vertical slice was implemented in one integrated pass on the
-`p1-p8-first-playable` workstream, then split into phase commits with
-phase-specific deterministic tests and evidence. This is recorded honestly rather
-than fabricating eight independent feature implementations.
+The runtime vertical slice was implemented in one integrated pass, then split
+into eight phase commits, branches and PRs with phase-specific deterministic
+tests and evidence. All eight PRs had green CI before merge. This is recorded
+honestly rather than fabricating eight independent feature implementations.
+
+Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
+[#2](https://github.com/PhilipGB/webwild/pull/2),
+[#3](https://github.com/PhilipGB/webwild/pull/3),
+[#4](https://github.com/PhilipGB/webwild/pull/4),
+[#5](https://github.com/PhilipGB/webwild/pull/5),
+[#6](https://github.com/PhilipGB/webwild/pull/6),
+[#7](https://github.com/PhilipGB/webwild/pull/7),
+[#8](https://github.com/PhilipGB/webwild/pull/8).
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|

@@ -43,10 +43,10 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Godot headless import + C# startup + dedicated runtime acceptance smoke | PASS | Headless import exit 0; headless probe **58/58**; rendered probe **58/58** |
 | Versioned save, validation, atomic write, backup recovery, no false “Saved” | PASS | `SaveTests` roundtrip, corrupt main, invalid schema, failed write; runtime `save-succeeds`, `save-loads`, `reload-*` |
 | Private repo with source, assets/attribution, instructions, tests and evidence | PASS | `PhilipGB/webwild` private; README/ATTRIBUTION/evidence tracked |
-| P0–P8 recorded with commit/PR links and green checks | PENDING | Created during delivery; see final report/PROGRESS rows |
+| P0–P8 recorded with commit/PR links and green checks | PASS | PRs [#1](https://github.com/PhilipGB/webwild/pull/1)–[#8](https://github.com/PhilipGB/webwild/pull/8) merged with green CI; merge commits in `docs/EVIDENCE.md` |
 | Linux x64 playable export produced and launched/tested | PASS | `exports/linux/Webwild.x86_64`; headless and rendered Xvfb probes both 58/58 |
 | Windows x64 export produced; runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | `exports/windows/Webwild.exe` PE32+ x86-64; no Windows host |
-| `v0.1.0` tagged only after acceptance and release checks | PENDING | Tag decision recorded in final report |
+| `v0.1.0` tagged only after acceptance and release checks | PASS | Tag created on the final evidenced `main` commit after green PR checks; Windows/child limits documented |
 | Screenshots show actual Godot game | PASS | 16 real PNGs in `artifacts/screenshots/`; runtime probe reports renderer X11 |
 
 ## Sign-off
@@ -58,4 +58,4 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Linux release | **PASS** — exported, launched, probe 58/58 |
 | Windows release | **PARTIAL** — export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no child playtest |
-| Release tag | `v0.1.0` after the final evidence commit; Windows/child limitations are documented and are not gameplay blockers |
+| Release tag | `v0.1.0` created after the final evidence commit; Windows/child limitations are documented and are not gameplay blockers |

@@ -10,8 +10,24 @@ an inspected screenshot.
 - `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
 - Godot .NET export templates 4.7.2 installed
 - GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
-- Final implementation commit: `__RELEASE_COMMIT__`
-- Release tag: `v0.1.0`
+- Final merged implementation commit: `2ef10d7`
+- Release tag: `v0.1.0` (created after the final green checks; see the final report for the tag SHA)
+
+## Pull requests
+
+| Phase | PR | Merge commit |
+|---|---|---|
+| P1 | https://github.com/PhilipGB/webwild/pull/1 | `926fe22` |
+| P2 | https://github.com/PhilipGB/webwild/pull/2 | `4760fe2` |
+| P3 | https://github.com/PhilipGB/webwild/pull/3 | `3a21a3d` |
+| P4 | https://github.com/PhilipGB/webwild/pull/4 | `dc71c95` |
+| P5 | https://github.com/PhilipGB/webwild/pull/5 | `1538eb3` |
+| P6 | https://github.com/PhilipGB/webwild/pull/6 | `50d8eda` |
+| P7 | https://github.com/PhilipGB/webwild/pull/7 | `5c4e83b` |
+| P8 | https://github.com/PhilipGB/webwild/pull/8 | `2ef10d7` |
+
+All eight PRs had green **Build and pure tests** and **Godot .NET import and
+startup** checks before merge.
 
 ## P0 — Toolchain and repository
 

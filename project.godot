@@ -6,7 +6,7 @@ config_version=5
 
 config/name="Webwild"
 config/description="A child-friendly spider colony adventure in one garden clearing."
-run/main_scene="res://scenes/boot/AssetPreview.tscn"
+run/main_scene="res://scenes/boot/Main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://art/ui/icons/web.svg"
 
@@ -60,6 +60,10 @@ build_capture={
 build_bridge={
 "deadzone": 0.2,
 "events": [Object(InputEventKey,"physical_keycode":50)]
+}
+dismantle={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":88)]
 }
 colony={
 "deadzone": 0.2,

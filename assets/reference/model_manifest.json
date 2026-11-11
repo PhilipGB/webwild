@@ -1,0 +1,1196 @@
+{
+  "version": "2.0",
+  "coordinate_system": "glTF 2.0 +Y-up; native units metres",
+  "naming": "snake_case.glb; Godot wrappers PascalCase.tscn",
+  "total": 66,
+  "models": [
+    {
+      "id": "ant",
+      "file": "ant.glb",
+      "group": "creatures",
+      "purpose": "Future hazard reference: do not add predator simulation in slice",
+      "usage": "optional",
+      "godot_path": "res://art/models/creatures/ant.glb",
+      "vertices": 426,
+      "faces": 800,
+      "bounds_xyz_metres": [
+        0.658,
+        0.557,
+        1.026
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "beetle",
+      "file": "beetle.glb",
+      "group": "creatures",
+      "purpose": "Ground insect/optional catch",
+      "usage": "optional",
+      "godot_path": "res://art/models/creatures/beetle.glb",
+      "vertices": 486,
+      "faces": 920,
+      "bounds_xyz_metres": [
+        0.658,
+        0.62,
+        0.693
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "butterfly",
+      "file": "butterfly.glb",
+      "group": "creatures",
+      "purpose": "Decorative butterfly, avoid mandatory capture",
+      "usage": "optional",
+      "godot_path": "res://art/models/creatures/butterfly.glb",
+      "vertices": 528,
+      "faces": 1000,
+      "bounds_xyz_metres": [
+        0.956,
+        0.498,
+        0.832
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "fly",
+      "file": "fly.glb",
+      "group": "creatures",
+      "purpose": "Flying prey on fixed paths",
+      "usage": "active",
+      "godot_path": "res://art/models/creatures/fly.glb",
+      "vertices": 444,
+      "faces": 840,
+      "bounds_xyz_metres": [
+        0.956,
+        0.498,
+        0.757
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "ladybird",
+      "file": "ladybird.glb",
+      "group": "creatures",
+      "purpose": "Decorative garden insect",
+      "usage": "optional",
+      "godot_path": "res://art/models/creatures/ladybird.glb",
+      "vertices": 486,
+      "faces": 920,
+      "bounds_xyz_metres": [
+        0.658,
+        0.62,
+        0.693
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "moth",
+      "file": "moth.glb",
+      "group": "creatures",
+      "purpose": "Optional second flying prey",
+      "usage": "optional",
+      "godot_path": "res://art/models/creatures/moth.glb",
+      "vertices": 444,
+      "faces": 840,
+      "bounds_xyz_metres": [
+        0.956,
+        0.498,
+        0.757
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "spider_player",
+      "file": "spider_player.glb",
+      "group": "creatures",
+      "purpose": "Controllable player jumping spider; add locomotion/idle/jump animations",
+      "usage": "active",
+      "godot_path": "res://art/models/creatures/spider_player.glb",
+      "vertices": 1448,
+      "faces": 2784,
+      "bounds_xyz_metres": [
+        1.717,
+        0.787,
+        1.485
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "visual_root"
+    },
+    {
+      "id": "spider_worker_green",
+      "file": "spider_worker_green.glb",
+      "group": "creatures",
+      "purpose": "Extra worker palette variant",
+      "usage": "active",
+      "godot_path": "res://art/models/creatures/spider_worker_green.glb",
+      "vertices": 1448,
+      "faces": 2784,
+      "bounds_xyz_metres": [
+        1.717,
+        0.787,
+        1.485
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "spider_worker_orange",
+      "file": "spider_worker_orange.glb",
+      "group": "creatures",
+      "purpose": "Autonomous worker variant",
+      "usage": "active",
+      "godot_path": "res://art/models/creatures/spider_worker_orange.glb",
+      "vertices": 1448,
+      "faces": 2784,
+      "bounds_xyz_metres": [
+        1.717,
+        0.787,
+        1.485
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "spider_worker_violet",
+      "file": "spider_worker_violet.glb",
+      "group": "creatures",
+      "purpose": "Autonomous worker variant",
+      "usage": "active",
+      "godot_path": "res://art/models/creatures/spider_worker_violet.glb",
+      "vertices": 1448,
+      "faces": 2784,
+      "bounds_xyz_metres": [
+        1.717,
+        0.787,
+        1.485
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "spiderling",
+      "file": "spiderling.glb",
+      "group": "creatures",
+      "purpose": "Small baby spider; scale as game needs",
+      "usage": "active",
+      "godot_path": "res://art/models/creatures/spiderling.glb",
+      "vertices": 1448,
+      "faces": 2784,
+      "bounds_xyz_metres": [
+        1.69,
+        0.665,
+        1.458
+      ],
+      "front": "-Z",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "broad_leaf",
+      "file": "broad_leaf.glb",
+      "group": "flora",
+      "purpose": "Large fallen/flat leaf; ground dressing",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/broad_leaf.glb",
+      "vertices": 194,
+      "faces": 376,
+      "bounds_xyz_metres": [
+        1.519,
+        0.175,
+        0.833
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "bush",
+      "file": "bush.glb",
+      "group": "flora",
+      "purpose": "Background bush / optional interactive prop",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/bush.glb",
+      "vertices": 168,
+      "faces": 320,
+      "bounds_xyz_metres": [
+        1.52,
+        0.92,
+        1.45
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "bush_berries",
+      "file": "bush_berries.glb",
+      "group": "flora",
+      "purpose": "Background bush / optional interactive prop",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/bush_berries.glb",
+      "vertices": 294,
+      "faces": 560,
+      "bounds_xyz_metres": [
+        1.52,
+        0.92,
+        1.45
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "clover_patch",
+      "file": "clover_patch.glb",
+      "group": "flora",
+      "purpose": "Ground-cover clover",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/clover_patch.glb",
+      "vertices": 140,
+      "faces": 264,
+      "bounds_xyz_metres": [
+        0.578,
+        0.309,
+        0.537
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "clover_tall",
+      "file": "clover_tall.glb",
+      "group": "flora",
+      "purpose": "Ground-cover clover",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/clover_tall.glb",
+      "vertices": 140,
+      "faces": 264,
+      "bounds_xyz_metres": [
+        0.63,
+        0.653,
+        0.577
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "daisy",
+      "file": "daisy.glb",
+      "group": "flora",
+      "purpose": "Repeated flowers / visual landmark; may be a socket parent",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/daisy.glb",
+      "vertices": 556,
+      "faces": 1068,
+      "bounds_xyz_metres": [
+        0.905,
+        1.29,
+        0.928
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "fallen_leaf",
+      "file": "fallen_leaf.glb",
+      "group": "flora",
+      "purpose": "Single autumn leaf",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/fallen_leaf.glb",
+      "vertices": 58,
+      "faces": 108,
+      "bounds_xyz_metres": [
+        1.87,
+        0.121,
+        0.792
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "fern",
+      "file": "fern.glb",
+      "group": "flora",
+      "purpose": "Feathered fern; set dressing",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/fern.glb",
+      "vertices": 772,
+      "faces": 1468,
+      "bounds_xyz_metres": [
+        1.09,
+        1.25,
+        0.114
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "flower_pink",
+      "file": "flower_pink.glb",
+      "group": "flora",
+      "purpose": "Repeated flowers / visual landmark; may be a socket parent",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/flower_pink.glb",
+      "vertices": 556,
+      "faces": 1068,
+      "bounds_xyz_metres": [
+        0.905,
+        1.29,
+        0.928
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "flower_purple",
+      "file": "flower_purple.glb",
+      "group": "flora",
+      "purpose": "Repeated flowers / visual landmark; may be a socket parent",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/flower_purple.glb",
+      "vertices": 556,
+      "faces": 1068,
+      "bounds_xyz_metres": [
+        0.905,
+        1.29,
+        0.928
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "flower_yellow",
+      "file": "flower_yellow.glb",
+      "group": "flora",
+      "purpose": "Repeated flowers / visual landmark; may be a socket parent",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/flower_yellow.glb",
+      "vertices": 556,
+      "faces": 1068,
+      "bounds_xyz_metres": [
+        0.905,
+        1.29,
+        0.928
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "grass_tuft",
+      "file": "grass_tuft.glb",
+      "group": "flora",
+      "purpose": "Lightweight ground-cover mesh",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/grass_tuft.glb",
+      "vertices": 56,
+      "faces": 80,
+      "bounds_xyz_metres": [
+        0.376,
+        0.761,
+        0.382
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "leaf_pile",
+      "file": "leaf_pile.glb",
+      "group": "flora",
+      "purpose": "Layered leaf pile; cover/dressing",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/leaf_pile.glb",
+      "vertices": 294,
+      "faces": 560,
+      "bounds_xyz_metres": [
+        1.594,
+        0.189,
+        0.963
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "leaf_platform",
+      "file": "leaf_platform.glb",
+      "group": "flora",
+      "purpose": "Traversal leaf platform: add separate simple collision",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/leaf_platform.glb",
+      "vertices": 194,
+      "faces": 376,
+      "bounds_xyz_metres": [
+        2.48,
+        0.207,
+        1.36
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "moss_patch",
+      "file": "moss_patch.glb",
+      "group": "flora",
+      "purpose": "Small moss patch repeated under rocks",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/moss_patch.glb",
+      "vertices": 336,
+      "faces": 640,
+      "bounds_xyz_metres": [
+        0.976,
+        0.119,
+        0.874
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "mushroom",
+      "file": "mushroom.glb",
+      "group": "flora",
+      "purpose": "Colourful mushroom cluster prop",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/mushroom.glb",
+      "vertices": 268,
+      "faces": 508,
+      "bounds_xyz_metres": [
+        0.8,
+        0.69,
+        0.8
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "mushroom_blue",
+      "file": "mushroom_blue.glb",
+      "group": "flora",
+      "purpose": "Colourful mushroom cluster prop",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/mushroom_blue.glb",
+      "vertices": 268,
+      "faces": 508,
+      "bounds_xyz_metres": [
+        0.8,
+        0.69,
+        0.8
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "reed",
+      "file": "reed.glb",
+      "group": "flora",
+      "purpose": "Reed foliage; optional pond-edge dressing",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/reed.glb",
+      "vertices": 142,
+      "faces": 268,
+      "bounds_xyz_metres": [
+        1.0,
+        1.58,
+        0.2
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "sapling",
+      "file": "sapling.glb",
+      "group": "flora",
+      "purpose": "Small sapling; high web anchors nearby",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/sapling.glb",
+      "vertices": 184,
+      "faces": 348,
+      "bounds_xyz_metres": [
+        1.74,
+        1.82,
+        1.74
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "sunflower",
+      "file": "sunflower.glb",
+      "group": "flora",
+      "purpose": "Repeated flowers / visual landmark; may be a socket parent",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/sunflower.glb",
+      "vertices": 682,
+      "faces": 1308,
+      "bounds_xyz_metres": [
+        1.232,
+        2.16,
+        1.172
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "tall_grass",
+      "file": "tall_grass.glb",
+      "group": "flora",
+      "purpose": "Lightweight ground-cover mesh",
+      "usage": "active",
+      "godot_path": "res://art/models/flora/tall_grass.glb",
+      "vertices": 56,
+      "faces": 80,
+      "bounds_xyz_metres": [
+        0.375,
+        1.356,
+        0.382
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "bark_plate",
+      "file": "bark_plate.glb",
+      "group": "terrain",
+      "purpose": "Flat path platform or log decoration",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/bark_plate.glb",
+      "vertices": 56,
+      "faces": 92,
+      "bounds_xyz_metres": [
+        1.4,
+        0.143,
+        0.8
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "boulder",
+      "file": "boulder.glb",
+      "group": "terrain",
+      "purpose": "Rock obstacle or traversal landmark",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/boulder.glb",
+      "vertices": 42,
+      "faces": 80,
+      "bounds_xyz_metres": [
+        2.0,
+        1.44,
+        1.8
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "branch_platform",
+      "file": "branch_platform.glb",
+      "group": "terrain",
+      "purpose": "Bridge or branch platform",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/branch_platform.glb",
+      "vertices": 64,
+      "faces": 112,
+      "bounds_xyz_metres": [
+        2.4,
+        0.39,
+        0.8
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "crossing_twigs",
+      "file": "crossing_twigs.glb",
+      "group": "terrain",
+      "purpose": "Web anchor scenery",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/crossing_twigs.glb",
+      "vertices": 164,
+      "faces": 300,
+      "bounds_xyz_metres": [
+        1.57,
+        1.61,
+        0.561
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "Add authored AnchorSocket3D node; do not infer from mesh"
+    },
+    {
+      "id": "exposed_roots",
+      "file": "exposed_roots.glb",
+      "group": "terrain",
+      "purpose": "Ground level roots",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/exposed_roots.glb",
+      "vertices": 32,
+      "faces": 56,
+      "bounds_xyz_metres": [
+        2.277,
+        0.498,
+        0.876
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "fallen_log",
+      "file": "fallen_log.glb",
+      "group": "terrain",
+      "purpose": "Climbable fallen log / arch / nursery cover",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/fallen_log.glb",
+      "vertices": 404,
+      "faces": 696,
+      "bounds_xyz_metres": [
+        3.017,
+        0.808,
+        0.815
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "flat_stone",
+      "file": "flat_stone.glb",
+      "group": "terrain",
+      "purpose": "Rock obstacle or traversal landmark",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/flat_stone.glb",
+      "vertices": 42,
+      "faces": 80,
+      "bounds_xyz_metres": [
+        0.96,
+        0.499,
+        0.864
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "hollow_log",
+      "file": "hollow_log.glb",
+      "group": "terrain",
+      "purpose": "Climbable fallen log / arch / nursery cover",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/hollow_log.glb",
+      "vertices": 446,
+      "faces": 776,
+      "bounds_xyz_metres": [
+        3.017,
+        0.808,
+        0.815
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "hollow_stump",
+      "file": "hollow_stump.glb",
+      "group": "terrain",
+      "purpose": "Short stump / optional sheltered anchor",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/hollow_stump.glb",
+      "vertices": 190,
+      "faces": 340,
+      "bounds_xyz_metres": [
+        0.9,
+        0.961,
+        0.9
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "moss_rock",
+      "file": "moss_rock.glb",
+      "group": "terrain",
+      "purpose": "Rock obstacle or traversal landmark",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/moss_rock.glb",
+      "vertices": 168,
+      "faces": 320,
+      "bounds_xyz_metres": [
+        2.0,
+        1.44,
+        1.8
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "pebble",
+      "file": "pebble.glb",
+      "group": "terrain",
+      "purpose": "Rock obstacle or traversal landmark",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/pebble.glb",
+      "vertices": 42,
+      "faces": 80,
+      "bounds_xyz_metres": [
+        0.96,
+        0.691,
+        0.864
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "pebble_cluster",
+      "file": "pebble_cluster.glb",
+      "group": "terrain",
+      "purpose": "Multiple stones",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/pebble_cluster.glb",
+      "vertices": 126,
+      "faces": 240,
+      "bounds_xyz_metres": [
+        1.36,
+        0.33,
+        0.85
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "root_arch",
+      "file": "root_arch.glb",
+      "group": "terrain",
+      "purpose": "Walk-under root arch; use simple collision",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/root_arch.glb",
+      "vertices": 64,
+      "faces": 112,
+      "bounds_xyz_metres": [
+        1.72,
+        1.21,
+        0.3
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "small_log",
+      "file": "small_log.glb",
+      "group": "terrain",
+      "purpose": "Climbable fallen log / arch / nursery cover",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/small_log.glb",
+      "vertices": 404,
+      "faces": 696,
+      "bounds_xyz_metres": [
+        1.599,
+        0.776,
+        0.738
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "soil_mound",
+      "file": "soil_mound.glb",
+      "group": "terrain",
+      "purpose": "Low soil mound",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/soil_mound.glb",
+      "vertices": 42,
+      "faces": 80,
+      "bounds_xyz_metres": [
+        1.7,
+        0.391,
+        1.36
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "tree_stump",
+      "file": "tree_stump.glb",
+      "group": "terrain",
+      "purpose": "Short stump / optional sheltered anchor",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/tree_stump.glb",
+      "vertices": 148,
+      "faces": 260,
+      "bounds_xyz_metres": [
+        0.9,
+        0.934,
+        0.9
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "twig_anchor",
+      "file": "twig_anchor.glb",
+      "group": "terrain",
+      "purpose": "Web anchor scenery",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/twig_anchor.glb",
+      "vertices": 48,
+      "faces": 84,
+      "bounds_xyz_metres": [
+        1.249,
+        1.43,
+        0.19
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "Add authored AnchorSocket3D node; do not infer from mesh"
+    },
+    {
+      "id": "twig_fork",
+      "file": "twig_fork.glb",
+      "group": "terrain",
+      "purpose": "Web anchor scenery",
+      "usage": "active",
+      "godot_path": "res://art/models/terrain/twig_fork.glb",
+      "vertices": 64,
+      "faces": 112,
+      "bounds_xyz_metres": [
+        1.249,
+        1.61,
+        0.561
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "Add authored AnchorSocket3D node; do not infer from mesh"
+    },
+    {
+      "id": "cache_leaf",
+      "file": "cache_leaf.glb",
+      "group": "colony",
+      "purpose": "Food/silk storage station",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/cache_leaf.glb",
+      "vertices": 168,
+      "faces": 320,
+      "bounds_xyz_metres": [
+        1.56,
+        0.467,
+        1.17
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "dew_cluster",
+      "file": "dew_cluster.glb",
+      "group": "colony",
+      "purpose": "Dew visual; not additional resource currency",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/dew_cluster.glb",
+      "vertices": 612,
+      "faces": 1200,
+      "bounds_xyz_metres": [
+        1.04,
+        0.583,
+        0.64
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "dew_drop",
+      "file": "dew_drop.glb",
+      "group": "colony",
+      "purpose": "Dew visual; not additional resource currency",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/dew_drop.glb",
+      "vertices": 204,
+      "faces": 400,
+      "bounds_xyz_metres": [
+        0.6,
+        0.648,
+        0.6
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "egg_cluster",
+      "file": "egg_cluster.glb",
+      "group": "colony",
+      "purpose": "Nest dressing eggs",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/egg_cluster.glb",
+      "vertices": 810,
+      "faces": 1600,
+      "bounds_xyz_metres": [
+        0.764,
+        0.462,
+        0.694
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "explore_marker",
+      "file": "explore_marker.glb",
+      "group": "colony",
+      "purpose": "Visual navigation / anchor / status marker; provide authored socket in wrapper",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/explore_marker.glb",
+      "vertices": 100,
+      "faces": 188,
+      "bounds_xyz_metres": [
+        0.42,
+        1.119,
+        0.17
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "top of post"
+    },
+    {
+      "id": "food_bundle",
+      "file": "food_bundle.glb",
+      "group": "colony",
+      "purpose": "Harvested food inventory pile",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/food_bundle.glb",
+      "vertices": 168,
+      "faces": 320,
+      "bounds_xyz_metres": [
+        1.134,
+        0.33,
+        0.84
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "leaf_nursery",
+      "file": "leaf_nursery.glb",
+      "group": "colony",
+      "purpose": "Nest / spider hatching area",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/leaf_nursery.glb",
+      "vertices": 826,
+      "faces": 1628,
+      "bounds_xyz_metres": [
+        2.93,
+        0.791,
+        1.56
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "mission_marker",
+      "file": "mission_marker.glb",
+      "group": "colony",
+      "purpose": "Visual navigation / anchor / status marker; provide authored socket in wrapper",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/mission_marker.glb",
+      "vertices": 100,
+      "faces": 188,
+      "bounds_xyz_metres": [
+        0.42,
+        1.119,
+        0.17
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "top of post"
+    },
+    {
+      "id": "nursery_canopy",
+      "file": "nursery_canopy.glb",
+      "group": "colony",
+      "purpose": "Optional weather cover visual",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/nursery_canopy.glb",
+      "vertices": 106,
+      "faces": 188,
+      "bounds_xyz_metres": [
+        2.125,
+        1.52,
+        1.536
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "repair_marker",
+      "file": "repair_marker.glb",
+      "group": "colony",
+      "purpose": "Visual navigation / anchor / status marker; provide authored socket in wrapper",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/repair_marker.glb",
+      "vertices": 124,
+      "faces": 228,
+      "bounds_xyz_metres": [
+        0.42,
+        1.119,
+        0.318
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "top of post"
+    },
+    {
+      "id": "silk_cocoon",
+      "file": "silk_cocoon.glb",
+      "group": "colony",
+      "purpose": "Silk cocoon storage prop",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/silk_cocoon.glb",
+      "vertices": 246,
+      "faces": 460,
+      "bounds_xyz_metres": [
+        0.672,
+        0.84,
+        0.641
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "silk_flag",
+      "file": "silk_flag.glb",
+      "group": "colony",
+      "purpose": "Decorative completion flag",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/silk_flag.glb",
+      "vertices": 66,
+      "faces": 120,
+      "bounds_xyz_metres": [
+        0.6,
+        1.71,
+        0.16
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "silk_spindle",
+      "file": "silk_spindle.glb",
+      "group": "colony",
+      "purpose": "Visual representation of silk storage",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/silk_spindle.glb",
+      "vertices": 130,
+      "faces": 228,
+      "bounds_xyz_metres": [
+        0.76,
+        0.8,
+        0.76
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "supply_cache",
+      "file": "supply_cache.glb",
+      "group": "colony",
+      "purpose": "Generic storage prop (non-interactive until P4)",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/supply_cache.glb",
+      "vertices": 66,
+      "faces": 116,
+      "bounds_xyz_metres": [
+        0.735,
+        0.592,
+        0.757
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": ""
+    },
+    {
+      "id": "web_anchor_post",
+      "file": "web_anchor_post.glb",
+      "group": "colony",
+      "purpose": "Visual navigation / anchor / status marker; provide authored socket in wrapper",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/web_anchor_post.glb",
+      "vertices": 100,
+      "faces": 188,
+      "bounds_xyz_metres": [
+        0.42,
+        1.119,
+        0.17
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "top of post"
+    },
+    {
+      "id": "web_anchor_ring",
+      "file": "web_anchor_ring.glb",
+      "group": "colony",
+      "purpose": "Visual navigation / anchor / status marker; provide authored socket in wrapper",
+      "usage": "active",
+      "godot_path": "res://art/models/colony/web_anchor_ring.glb",
+      "vertices": 202,
+      "faces": 348,
+      "bounds_xyz_metres": [
+        0.648,
+        1.115,
+        0.648
+      ],
+      "front": "N/A",
+      "pivot": "XZ centre, bottom at Y=0",
+      "socket_hint": "top of post"
+    }
+  ]
+}

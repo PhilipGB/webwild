@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "seed": 27011,
+  "fixedSimulationTickSeconds": 0.2,
+  "worldBoundsUnits": {
+    "x": 38,
+    "z": 28
+  },
+  "initial": {
+    "food": 5,
+    "silk": 20,
+    "spidersIncludingPlayer": 1
+  },
+  "maxSpidersIncludingPlayer": 5,
+  "webs": {
+    "capture": {
+      "silkCost": 6,
+      "minAnchorDistance": 1.3,
+      "maxAnchorDistance": 7.0,
+      "durability": 100,
+      "captureRadius": 1.3
+    },
+    "bridge": {
+      "silkCost": 5,
+      "minAnchorDistance": 1.0,
+      "maxAnchorDistance": 6.0,
+      "durability": 100,
+      "maxInclineDegrees": 25
+    },
+    "dismantleRefundFraction": 0.6,
+    "tutorialRefundFraction": 1.0,
+    "repairSilkCost": 2
+  },
+  "insects": {
+    "fly": {
+      "foodYield": 2,
+      "speedWorldUnitsPerSecond": 2.2,
+      "respawnSeconds": 22
+    },
+    "moth": {
+      "foodYield": 3,
+      "speedWorldUnitsPerSecond": 1.5,
+      "respawnSeconds": 34
+    }
+  },
+  "nursery": {
+    "hatchFoodCost": 4,
+    "hatchSilkCost": 4,
+    "hatchTimeSeconds": 3
+  },
+  "silkProduction": {
+    "silkPerFedWorkerEverySeconds": 18,
+    "foodCostPerSilkBatch": 1
+  },
+  "weather": {
+    "warningSeconds": 20,
+    "exposedWebDamage": 50,
+    "shelteredWebDamage": 5
+  },
+  "recovery": {
+    "emergencyStarterWebRepairUses": 3,
+    "hintSecondsBeforeEscalation": 45
+  }
+}

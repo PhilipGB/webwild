@@ -1,0 +1,70 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/creatures/spider_player.glb" id="1_spider_player"]
+[ext_resource type="PackedScene" path="res://art/models/creatures/spider_worker_orange.glb" id="2_spider_worker_orange"]
+[ext_resource type="PackedScene" path="res://art/models/creatures/spiderling.glb" id="3_spiderling"]
+[ext_resource type="PackedScene" path="res://art/models/creatures/fly.glb" id="4_fly"]
+[ext_resource type="PackedScene" path="res://art/models/colony/leaf_nursery.glb" id="5_leaf_nursery"]
+[ext_resource type="PackedScene" path="res://art/models/flora/flower_purple.glb" id="6_flower_purple"]
+[ext_resource type="PackedScene" path="res://art/models/flora/sunflower.glb" id="7_sunflower"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/twig_anchor.glb" id="8_twig_anchor"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/fallen_log.glb" id="9_fallen_log"]
+[ext_resource type="PackedScene" path="res://art/models/flora/mushroom.glb" id="10_mushroom"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/moss_rock.glb" id="11_moss_rock"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
+size = Vector2(25, 25)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.52, 0.73, 0.45, 1)
+roughness = 0.9
+
+[node name="AssetPreview" type="Node3D"]
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_floor")
+material_override = SubResource("StandardMaterial3D_floor")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-50, -35, 0)
+light_energy = 1.4
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(8, 7, 11)
+rotation_degrees = Vector3(-29, 37, 0)
+current = true
+fov = 45.0
+
+[node name="spider_player" parent="." instance=ExtResource("1_spider_player")]
+position = Vector3(-2.7, 0.01, -2.3)
+
+[node name="spider_worker_orange" parent="." instance=ExtResource("2_spider_worker_orange")]
+position = Vector3(-1.3, 0.01, -2.3)
+
+[node name="spiderling" parent="." instance=ExtResource("3_spiderling")]
+position = Vector3(0.2, 0.01, -2.3)
+
+[node name="fly" parent="." instance=ExtResource("4_fly")]
+position = Vector3(1.6, 0.01, -2.3)
+
+[node name="leaf_nursery" parent="." instance=ExtResource("5_leaf_nursery")]
+position = Vector3(-2.5, 0.01, 0.4)
+
+[node name="flower_purple" parent="." instance=ExtResource("6_flower_purple")]
+position = Vector3(-1.0, 0.01, 0.4)
+
+[node name="sunflower" parent="." instance=ExtResource("7_sunflower")]
+position = Vector3(0.55, 0.01, 0.4)
+
+[node name="twig_anchor" parent="." instance=ExtResource("8_twig_anchor")]
+position = Vector3(2.0, 0.01, 0.4)
+
+[node name="fallen_log" parent="." instance=ExtResource("9_fallen_log")]
+position = Vector3(-2.4, 0.01, 2.5)
+
+[node name="mushroom" parent="." instance=ExtResource("10_mushroom")]
+position = Vector3(-0.5, 0.01, 2.5)
+
+[node name="moss_rock" parent="." instance=ExtResource("11_moss_rock")]
+position = Vector3(1.4, 0.01, 2.5)
+

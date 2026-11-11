@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "missions": [
+    {
+      "id": "M01",
+      "title": "First Threads",
+      "steps": [
+        {
+          "event": "WebBuilt",
+          "filter": {
+            "type": "capture"
+          },
+          "count": 1
+        },
+        {
+          "event": "FoodCollected",
+          "count": 1
+        }
+      ],
+      "hint": "Choose the glowing twigs and catch your first fly."
+    },
+    {
+      "id": "M02",
+      "title": "Tiny Team",
+      "steps": [
+        {
+          "event": "WebBuilt",
+          "filter": {
+            "type": "bridge"
+          },
+          "count": 1
+        },
+        {
+          "event": "SpiderHatched",
+          "count": 1
+        },
+        {
+          "event": "WorkerUsedBridge",
+          "count": 1
+        }
+      ],
+      "hint": "Build a shortcut and meet a new spider helper."
+    },
+    {
+      "id": "M03",
+      "title": "Storm-Smart",
+      "steps": [
+        {
+          "event": "WindEventCompleted",
+          "count": 1
+        },
+        {
+          "event": "WebRestoredOrSheltered",
+          "count": 1
+        },
+        {
+          "event": "FoodCollectedAfterWind",
+          "count": 1
+        }
+      ],
+      "hint": "Protect your web, then collect food after the wind."
+    }
+  ],
+  "optionalMastery": {
+    "id": "O01",
+    "title": "Clever Weaver",
+    "description": "Collect 3 insects with 2 or fewer capture webs.",
+    "reward": "Clever Weaver decorative badge",
+    "requiredForVictory": false
+  }
+}

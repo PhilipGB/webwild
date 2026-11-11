@@ -1,0 +1,3 @@
+# Context recovery / continue coding agent
+
+Resume Webwild implementation from the existing repository. Before making changes read `AGENTS.md`, `docs/handoff/01_AGENT_MASTER_PROMPT.md` if present, `PROGRESS.md`, current open PRs, `ACCEPTANCE.md`, and latest relevant `prompts/P*.md`. Inspect `git status`, current SHA and GitHub PR/CI state; never infer a phase is merged from a status note alone. Identify earliest incomplete P0–P8 milestone, reproduce its tests or failure, then complete it. Leave `main` stable, produce exact evidence, and continue subsequent milestones automatically to P8. Do not create a duplicate repository or overwrite previous work.

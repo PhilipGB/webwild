@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/Webwild.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Webwild.Core.Tests/Webwild.Core.Tests.csproj" />
+  </Folder>
+  <Project Path="Webwild.csproj" />
+</Solution>

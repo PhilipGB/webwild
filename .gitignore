@@ -1,0 +1,20 @@
+# Godot auto-generated files
+.godot/
+.import/
+.mono/
+# .NET
+**/bin/
+**/obj/
+**/TestResults/
+# OS/editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
+# Builds and local saves
+exports/
+builds/
+coverage/
+*.sav
+*.tmp
+# Do not ignore imported original .glb models, .tscn or .tres resources.

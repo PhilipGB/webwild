@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "tests": [
+    {
+      "id": "S01",
+      "description": "new game M01 first web and fly capture",
+      "expect": "M01 advances and exactly one food reward"
+    },
+    {
+      "id": "S02",
+      "description": "invalid anchor self pair and too distant",
+      "expect": "placement rejected, silk unchanged"
+    },
+    {
+      "id": "S03",
+      "description": "remove bridge during worker travel",
+      "expect": "worker reroutes/releases task, never teleports"
+    },
+    {
+      "id": "S04",
+      "description": "place capture web away from authored insect path",
+      "expect": "no food reward without intersection"
+    },
+    {
+      "id": "S05",
+      "description": "wind damages exposed web, repair it",
+      "expect": "capture resumes, survival and resources valid"
+    },
+    {
+      "id": "S06",
+      "description": "save after M02, reload scene",
+      "expect": "progress and worker route valid, no duplicate rewards"
+    },
+    {
+      "id": "S07",
+      "description": "corrupt main JSON and leave valid backup",
+      "expect": "backup recovered and explicit notification"
+    },
+    {
+      "id": "S08",
+      "description": "starve resources intentionally during tutorial",
+      "expect": "recovery action prevents permanent softlock"
+    },
+    {
+      "id": "S09",
+      "description": "new game to victory using only UI",
+      "expect": "M01\u2192M03 and victory replay function"
+    },
+    {
+      "id": "S10",
+      "description": "fail save write",
+      "expect": "no false Saved message"
+    }
+  ]
+}

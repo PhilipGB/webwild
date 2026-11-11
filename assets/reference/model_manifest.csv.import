@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cw2xadnmjs3rp"
+
+[deps]
+
+files=["res://assets/reference/model_manifest.file.translation", "res://assets/reference/model_manifest.group.translation", "res://assets/reference/model_manifest.purpose.translation", "res://assets/reference/model_manifest.usage.translation", "res://assets/reference/model_manifest.godot.translation", "res://assets/reference/model_manifest.vertices.translation", "res://assets/reference/model_manifest.faces.translation", "res://assets/reference/model_manifest.bounds.translation", "res://assets/reference/model_manifest.front.translation", "res://assets/reference/model_manifest.pivot.translation", "res://assets/reference/model_manifest.socket.translation"]
+
+source_file="res://assets/reference/model_manifest.csv"
+dest_files=["res://assets/reference/model_manifest.file.translation", "res://assets/reference/model_manifest.group.translation", "res://assets/reference/model_manifest.purpose.translation", "res://assets/reference/model_manifest.usage.translation", "res://assets/reference/model_manifest.godot.translation", "res://assets/reference/model_manifest.vertices.translation", "res://assets/reference/model_manifest.faces.translation", "res://assets/reference/model_manifest.bounds.translation", "res://assets/reference/model_manifest.front.translation", "res://assets/reference/model_manifest.pivot.translation", "res://assets/reference/model_manifest.socket.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

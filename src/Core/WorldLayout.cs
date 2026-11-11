@@ -34,8 +34,10 @@ public static class WorldLayout
 
     public static readonly Vec3 PlayerSpawn = new(-13.5, 0.45, 8.5);
     public static readonly Vec3 NurseryPosition = new(12.0, 0, 4.0);
-    public static readonly Vec3 ClimbBase = new(-1.5, 0, 9.0);
-    public static readonly Vec3 ClimbTop = new(-1.5, 4.4, 9.0);
+    public static readonly Vec3 ClimbBase = new(-5.0, 0, 9.0);
+    public static readonly Vec3 ClimbTop = new(-5.0, 4.4, 9.0);
+    public const float RavineHalfWidth = 3.0f;
+    public const float RavineDepth = 3.2f;
 
     public static List<AnchorDefinition> CreateAnchors() => new()
     {
@@ -71,7 +73,7 @@ public static class WorldLayout
         },
         new AnchorDefinition
         {
-            Id = FlowerA, Position = new Vec3(2.0, 1.35, -6.2), Normal = new Vec3(0, 0, -1),
+            Id = FlowerA, Position = new Vec3(4.4, 1.35, -6.2), Normal = new Vec3(0, 0, -1),
             Surface = "flower", Group = "flowers", Capacity = 3, Exposure = 0.45,
             Label = "Flower stem"
         },
@@ -107,7 +109,7 @@ public static class WorldLayout
         },
         new AnchorDefinition
         {
-            Id = StemTop, Position = new Vec3(-1.5, 4.55, 9.0), Normal = new Vec3(0, 0, 1),
+            Id = StemTop, Position = new Vec3(-5.0, 4.55, 9.0), Normal = new Vec3(0, 0, 1),
             Surface = "leaf", Group = "overlook", Capacity = 2, Exposure = 0.7,
             Label = "Overlook leaf"
         }

@@ -18,6 +18,7 @@ public partial class GardenClearing : Node3D
     public IReadOnlyList<GameplayEvent> EventLog => _eventLog;
 
     private GameSimulation _sim = null!;
+    private Tuning _baselineTuning = null!;
     private SaveService _saves = null!;
     private SpiderPlayer _player = null!;
     private GameUI _ui = null!;
@@ -52,6 +53,7 @@ public partial class GardenClearing : Node3D
     private bool _started;
     private bool _probeMode;
     private bool _bridgeCrossToastShown;
+    private bool _fallToastShown;
     private bool _interiorBuilt;
     private string _lastContext = "";
 
@@ -228,8 +230,9 @@ public partial class GardenClearing : Node3D
         _victoryShown = false;
         _bridgeCrossToastShown = false;
         _autosaveTimer = 0;
-        var tuning = GameData.LoadTuning();
-        GameData.ApplyDifficulty(tuning, Settings.LowThreat);
+        _baselineTuning = GameData.LoadTuning();
+        var tuning = _baselineTuning.Clone();
+        GameData.ApplyDifficulty(tuning, _baselineTuning, Settings.LowThreat);
         _sim = new GameSimulation(tuning, GameData.LoadMissions());
         ResetPresentation();
         _player.GlobalPosition = ToVector3(WorldLayout.PlayerSpawn);
@@ -258,7 +261,8 @@ public partial class GardenClearing : Node3D
             SettingsChanged?.Invoke(Settings);
         }
         var tuning = GameData.LoadTuning();
-        GameData.ApplyDifficulty(tuning, Settings.LowThreat);
+        _baselineTuning = tuning.Clone();
+        GameData.ApplyDifficulty(tuning, _baselineTuning, Settings.LowThreat);
         _sim = GameSimulation.FromSave(data, tuning, GameData.LoadMissions());
         ResetPresentation();
         _player.GlobalPosition = new Vector3((float)data.Player.X, (float)data.Player.Y, (float)data.Player.Z);
@@ -295,6 +299,7 @@ public partial class GardenClearing : Node3D
     {
         if (!_started || _sim is null) return;
         var paused = _ui.PausesSimulation || _settingsDialog.Visible;
+        if (_player is not null) _player.PhysicsPaused = paused || _ui.BlocksWorldInput;
         if (!paused)
         {
             var step = Math.Max(0.05, _sim.Tuning.FixedSimulationTickSeconds);
@@ -314,6 +319,16 @@ public partial class GardenClearing : Node3D
         UpdateSuggestions();
         UpdateContext();
         UpdatePreview();
+
+        if (_player is not null && _player.GlobalPosition.Y < -3.1f && !_fallToastShown)
+        {
+            _fallToastShown = true;
+            _ui.ShowToast("Whoops! The ravine sends you back to the home leaf.", UiKit.Coral, 4f);
+        }
+        else if (_player is not null && _player.GlobalPosition.Y > -1f)
+        {
+            _fallToastShown = false;
+        }
 
         _hudTimer += delta;
         if (_hudTimer >= 0.1)
@@ -901,24 +916,48 @@ public partial class GardenClearing : Node3D
         Settings.Normalise();
         _audio.ApplySettings(Settings);
         _ui.SetTutorialPrompts(Settings.TutorialPrompts);
-        if (_sim is not null) GameData.ApplyDifficulty(_sim.Tuning, Settings.LowThreat);
-        GameData.CreateSettingsService().Save(Settings);
+        if (_sim is not null) _baselineTuning ??= GameData.LoadTuning();
+        if (_sim is not null) GameData.ApplyDifficulty(_sim.Tuning, _baselineTuning, Settings.LowThreat);
+        TrySaveSettings();
         SettingsChanged?.Invoke(Settings);
     }
 
     private void SaveAndQuit()
     {
         var saved = SaveGame(false, true);
-        if (!saved && _ui is not null)
-            _ui.ShowToast("Couldn't save. Returning to the menu anyway.", UiKit.Coral, 4f);
-        QuitToMenuRequested?.Invoke();
+        if (saved)
+        {
+            QuitToMenuRequested?.Invoke();
+            return;
+        }
+        var message = string.IsNullOrWhiteSpace(LastSaveError)
+            ? "Couldn't save. Your progress is still here — you can retry."
+            : "Couldn't save: " + LastSaveError;
+        _ui?.OpenSaveFailedQuitPrompt(message, SaveAndQuit,
+            () => QuitToMenuRequested?.Invoke());
+    }
+
+    private void TrySaveSettings()
+    {
+        var result = GameData.CreateSettingsService().Save(Settings);
+        if (result.Success)
+        {
+            _settingsDialog?.ClearPersistenceError();
+            return;
+        }
+        _settingsDialog?.ShowPersistenceError(
+            "Couldn't save settings. Check disk space or permissions, then retry.",
+            TrySaveSettings);
+        _ui?.ShowToast("Couldn't save settings. Open Settings to retry.", UiKit.Coral, 6f);
     }
 
     public bool SaveGame(bool showToast, bool quiet = false)
     {
         if (_sim is null || _player is null) return false;
         var data = _sim.ExportSave(_player.ToCorePosition(), _player.CameraPivot.Rotation.Y, Settings);
-        var result = _saves.Save(data);
+        var result = SimulateSaveFailureForProbe
+            ? SaveResult.Fail("Simulated save failure", "simulated")
+            : _saves.Save(data);
         LastSaveError = result.Error ?? "";
         if (showToast) _ui.ShowSaveResult(result.Success, result.Message);
         else if (!result.Success || (!quiet && result.Success)) _ui.ShowSaveResult(result.Success, result.Message);
@@ -940,7 +979,8 @@ public partial class GardenClearing : Node3D
         _ui?.SetTutorialPrompts(Settings.TutorialPrompts);
         _settingsDialog?.Configure(Settings);
         _audio?.ApplySettings(Settings);
-        if (_sim is not null) GameData.ApplyDifficulty(_sim.Tuning, Settings.LowThreat);
+        if (_sim is not null) _baselineTuning ??= GameData.LoadTuning();
+        if (_sim is not null) GameData.ApplyDifficulty(_sim.Tuning, _baselineTuning, Settings.LowThreat);
     }
 
     private void SyncWebViews()
@@ -1101,6 +1141,11 @@ public partial class GardenClearing : Node3D
 
     public void ProbeCloseSettings() => _settingsDialog.Close();
 
+    public void ProbeShowSettingsError() =>
+        _settingsDialog.ShowPersistenceError("Simulated settings write failure", () => { });
+
+    public bool SettingsErrorVisible => _settingsDialog.PersistenceErrorVisible;
+
     public void ProbeOpenPause() => _ui.OpenPause();
 
     public void ProbeOpenHelp() => _ui.OpenHelp();
@@ -1121,6 +1166,9 @@ public partial class GardenClearing : Node3D
     public bool PauseModalOpen => _ui.IsPauseOpen;
     public bool HelpModalOpen => _ui.IsHelpOpen;
     public bool ColonyModalOpen => _ui.IsColonyOpen;
+    public bool SaveFailedPromptOpen => _ui.IsSaveFailedOpen;
+    public bool SimulateSaveFailureForProbe { get; set; }
+    public bool PlayerPhysicsPaused => _player?.PhysicsPaused ?? false;
     public bool PlayerClimbing => _player?.IsClimbing ?? false;
     public Vector3 PlayerPosition => _player?.GlobalPosition ?? Vector3.Zero;
     public string ProbeJson { get; set; } = "";

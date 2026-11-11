@@ -3,7 +3,10 @@ namespace Webwild.Core;
 /// <summary>Non-negative food and silk ledger with exactly-once event keys.</summary>
 public sealed class ResourceLedger
 {
+    public const int HistoryRetentionLimit = 512;
+
     private readonly HashSet<string> _processed = new(StringComparer.Ordinal);
+    private readonly Queue<string> _processedOrder = new();
 
     public int Food { get; private set; }
     public int Silk { get; private set; }
@@ -18,13 +21,31 @@ public sealed class ResourceLedger
     public bool CanSpend(int food, int silk) =>
         food >= 0 && silk >= 0 && Food >= food && Silk >= silk;
 
+    private bool Remember(string key)
+    {
+        if (!_processed.Add(key)) return false;
+        _processedOrder.Enqueue(key);
+        TrimHistory(HistoryRetentionLimit);
+        return true;
+    }
+
+    /// <summary>Keep only recent transaction keys so long sessions remain saveable.</summary>
+    public void TrimHistory(int maxEntries)
+    {
+        while (_processedOrder.Count > Math.Max(1, maxEntries))
+        {
+            var oldest = _processedOrder.Dequeue();
+            _processed.Remove(oldest);
+        }
+    }
+
     /// <summary>Atomic spend. A duplicate transaction ID never charges twice.</summary>
     public bool TrySpend(int food, int silk, string transactionId)
     {
         if (string.IsNullOrWhiteSpace(transactionId)) return false;
         if (food < 0 || silk < 0) return false;
         if (!CanSpend(food, silk)) return false;
-        if (!_processed.Add("spend:" + transactionId)) return false;
+        if (!Remember("spend:" + transactionId)) return false;
         Food -= food;
         Silk -= silk;
         Version++;
@@ -36,7 +57,7 @@ public sealed class ResourceLedger
     {
         if (food < 0 || silk < 0) return false;
         if (string.IsNullOrWhiteSpace(eventId)) return false;
-        if (!_processed.Add("grant:" + eventId)) return false;
+        if (!Remember("grant:" + eventId)) return false;
         Food += food;
         Silk += silk;
         Version++;
@@ -51,7 +72,13 @@ public sealed class ResourceLedger
     public void RestoreProcessed(IEnumerable<string> keys)
     {
         _processed.Clear();
-        foreach (var key in keys) _processed.Add(key);
+        _processedOrder.Clear();
+        foreach (var key in keys)
+        {
+            if (string.IsNullOrWhiteSpace(key)) continue;
+            if (_processed.Add(key)) _processedOrder.Enqueue(key);
+        }
+        TrimHistory(HistoryRetentionLimit);
     }
 
     public void Restore(int food, int silk)
@@ -61,5 +88,6 @@ public sealed class ResourceLedger
         Version++;
     }
 
+    public int ProcessedKeyCount => _processed.Count;
     public IReadOnlyCollection<string> ProcessedKeys => _processed;
 }

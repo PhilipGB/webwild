@@ -60,7 +60,7 @@ public sealed class NurseryTuning
 public sealed class SilkProductionTuning
 {
     public double SilkPerFedWorkerEverySeconds { get; set; } = 18;
-    public int FoodCostPerSilkBatch { get; set; } = 0;
+    public int FoodCostPerSilkBatch { get; set; } = 1;
 }
 
 public sealed class WeatherTuning
@@ -131,6 +131,18 @@ public sealed class Tuning
         return Parse(json);
     }
 
+    /// <summary>
+    /// Derive gentle-weather values from an immutable baseline so turning the
+    /// option off restores the normal storm exactly.
+    /// </summary>
+    public void ApplyWeatherProfile(WeatherTuning baseline, bool gentle)
+    {
+        baseline ??= Weather;
+        Weather.ExposedWebDamage = gentle ? Math.Min(baseline.ExposedWebDamage, 25) : baseline.ExposedWebDamage;
+        Weather.ShelteredWebDamage = gentle ? 0 : baseline.ShelteredWebDamage;
+        Weather.WarningSeconds = gentle ? Math.Max(baseline.WarningSeconds, 30) : baseline.WarningSeconds;
+    }
+
     public void Normalise()
     {
         Seed = Math.Max(0, Seed);
@@ -151,6 +163,8 @@ public sealed class Tuning
         Weather ??= new WeatherTuning();
         Recovery ??= new RecoveryTuning();
         SilkProduction ??= new SilkProductionTuning();
+        SilkProduction.SilkPerFedWorkerEverySeconds = Math.Max(0, SilkProduction.SilkPerFedWorkerEverySeconds);
+        SilkProduction.FoodCostPerSilkBatch = Math.Max(0, SilkProduction.FoodCostPerSilkBatch);
         Insects ??= new Dictionary<string, InsectTuning>();
         if (!Insects.ContainsKey("fly")) Insects["fly"] = new InsectTuning();
         if (!Insects.ContainsKey("moth")) Insects["moth"] = new InsectTuning { FoodYield = 3, SpeedWorldUnitsPerSecond = 1.5, RespawnSeconds = 34 };

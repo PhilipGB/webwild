@@ -87,34 +87,56 @@ public static class GardenScenery
 
     private static void AddGround(Node3D parent)
     {
-        var ground = new StaticBody3D
-        {
-            Name = "Ground",
-            CollisionLayer = 1,
-            CollisionMask = 0
-        };
-        var collision = new CollisionShape3D
-        {
-            Shape = new BoxShape3D { Size = new Vector3(38f, 0.6f, 28f) },
-            Position = new Vector3(0, -0.3f, 0)
-        };
-        ground.AddChild(collision);
+        // The clearing is split by a real ravine. The player and the worker graph
+        // both require the silk bridge to cross; there is no invisible shortcut.
+        AddGroundBlock(parent, "WestMeadow", new Vector3(-11f, -0.3f, 0), new Vector3(16f, 0.6f, 28f));
+        AddGroundBlock(parent, "EastMeadow", new Vector3(11f, -0.3f, 0), new Vector3(16f, 0.6f, 28f));
 
-        var mesh = new MeshInstance3D
+        var cliffMaterial = Flat(SoilDark, 1f);
+        foreach (var x in new[] { -3f, 3f })
         {
-            Name = "MeadowTop",
-            Mesh = new PlaneMesh { Size = new Vector2(38f, 28f), SubdivideWidth = 2, SubdivideDepth = 2 },
-            MaterialOverride = Flat(Grass, 0.95f),
-            Position = new Vector3(0, 0.002f, 0)
-        };
-        ground.AddChild(mesh);
-        parent.AddChild(ground);
+            var cliff = new MeshInstance3D
+            {
+                Name = x < 0 ? "WestCliff" : "EastCliff",
+                Mesh = new BoxMesh { Size = new Vector3(0.32f, 3.1f, 28f) },
+                MaterialOverride = cliffMaterial,
+                Position = new Vector3(x, -1.55f, 0)
+            };
+            parent.AddChild(cliff);
+        }
 
-        // Layered patches break up the large green plane without hiding anchors.
+        var streamBed = new MeshInstance3D
+        {
+            Name = "RavineBed",
+            Mesh = new BoxMesh { Size = new Vector3(5.7f, 0.2f, 28f) },
+            MaterialOverride = Flat(Soil, 1f),
+            Position = new Vector3(0, -3.0f, 0)
+        };
+        parent.AddChild(streamBed);
+        var waterMaterial = new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.22f, 0.62f, 0.68f, 0.62f),
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            Roughness = 0.18f,
+            Metallic = 0.05f,
+            EmissionEnabled = true,
+            Emission = new Color("5EC8C2"),
+            EmissionEnergyMultiplier = 0.15f
+        };
+        var stream = new MeshInstance3D
+        {
+            Name = "RavineStream",
+            Mesh = new PlaneMesh { Size = new Vector2(5.6f, 28f) },
+            MaterialOverride = waterMaterial,
+            Position = new Vector3(0, -2.72f, 0)
+        };
+        parent.AddChild(stream);
+
+        // Layered patches break up the large green planes without hiding anchors.
         var patchPositions = new[]
         {
             new Vector3(-13f, 0, 5f), new Vector3(-8f, 0, 8f), new Vector3(-4f, 0, -4f),
-            new Vector3(2f, 0, 6f), new Vector3(8f, 0, 8f), new Vector3(13f, 0, -7f),
+            new Vector3(5.4f, 0, 6f), new Vector3(8f, 0, 8f), new Vector3(13f, 0, -7f),
             new Vector3(5f, 0, -10f), new Vector3(-15f, 0, -9f), new Vector3(15f, 0, 6f)
         };
         for (var i = 0; i < patchPositions.Length; i++)
@@ -134,6 +156,35 @@ public static class GardenScenery
             };
             parent.AddChild(patch);
         }
+
+        // A few stones and reeds make the ravine read as a real place, not a hole.
+        Spawn(parent, "res://art/models/terrain/pebble_cluster.glb", new Vector3(0.4f, -2.5f, 4.2f), 1.1f, 18f, "RavineStonesA");
+        Spawn(parent, "res://art/models/terrain/moss_rock.glb", new Vector3(-0.8f, -2.55f, -5.0f), 0.9f, 42f, "RavineStonesB");
+        Spawn(parent, "res://art/models/flora/reed.glb", new Vector3(2.2f, -2.7f, 9.8f), 1.0f, 10f, "RavineReedA");
+        Spawn(parent, "res://art/models/flora/reed.glb", new Vector3(-2.2f, -2.7f, -9.4f), 1.0f, -14f, "RavineReedB");
+    }
+
+    private static void AddGroundBlock(Node3D parent, string name, Vector3 position, Vector3 size)
+    {
+        var body = new StaticBody3D
+        {
+            Name = name,
+            CollisionLayer = 1,
+            CollisionMask = 0
+        };
+        body.AddChild(new CollisionShape3D
+        {
+            Shape = new BoxShape3D { Size = size },
+            Position = position
+        });
+        body.AddChild(new MeshInstance3D
+        {
+            Name = name + "Top",
+            Mesh = new BoxMesh { Size = size },
+            MaterialOverride = Flat(Grass, 0.95f),
+            Position = position
+        });
+        parent.AddChild(body);
     }
 
     private static void AddPath(Node3D parent)
@@ -143,10 +194,9 @@ public static class GardenScenery
             new Vector3(-13.0f, 0, 7.4f), new Vector3(-11.8f, 0, 5.2f),
             new Vector3(-10.6f, 0, 3.2f), new Vector3(-9.7f, 0, 1.2f),
             new Vector3(-7.4f, 0, 0.8f), new Vector3(-5.2f, 0, 1.0f),
-            new Vector3(-3.0f, 0, 1.2f), new Vector3(-0.2f, 0, 1.1f),
-            new Vector3(2.6f, 0, 1.2f), new Vector3(5.0f, 0, 2.2f),
-            new Vector3(7.5f, 0, 3.4f), new Vector3(10.0f, 0, 4.0f),
-            new Vector3(12.0f, 0, 4.2f)
+            new Vector3(-4.0f, 0, 1.2f), new Vector3(4.0f, 0, 1.2f),
+            new Vector3(5.0f, 0, 2.2f), new Vector3(7.5f, 0, 3.4f),
+            new Vector3(10.0f, 0, 4.0f), new Vector3(12.0f, 0, 4.2f)
         };
         for (var i = 0; i < path.Length; i++)
         {
@@ -161,6 +211,7 @@ public static class GardenScenery
             var a = path[i];
             var b = path[i + 1];
             var centre = (a + b) * 0.5f;
+            if (Math.Abs(centre.X) < WorldLayout.RavineHalfWidth + 0.2f) continue;
             var length = a.DistanceTo(b);
             var soil = new MeshInstance3D
             {
@@ -185,23 +236,15 @@ public static class GardenScenery
         Spawn(parent, "res://art/models/terrain/twig_fork.glb", new Vector3(-9.5f, 0, 1.6f), 1.05f, -12f, "TwinTwigB");
         Spawn(parent, "res://art/models/terrain/crossing_twigs.glb", new Vector3(-9.5f, 0.03f, 0.1f), 0.7f, 90f, "TwinCrossing");
 
-        // Pebble gap.
+        // Pebble gap over the ravine.
         Spawn(parent, "res://art/models/terrain/pebble.glb", new Vector3(-3.0f, 0.02f, 1.2f), 1.35f, 24f, "GapWestPebble");
         Spawn(parent, "res://art/models/terrain/pebble.glb", new Vector3(3.0f, 0.02f, 1.2f), 1.35f, -18f, "GapEastPebble");
-        Spawn(parent, "res://art/models/terrain/pebble_cluster.glb", new Vector3(0, 0.02f, 1.2f), 0.7f, 6f, "GapDip");
-        var dip = new MeshInstance3D
-        {
-            Name = "GapShade",
-            Mesh = new CylinderMesh { TopRadius = 2.1f, BottomRadius = 2.4f, Height = 0.02f, RadialSegments = 20 },
-            MaterialOverride = Flat(new Color("6D8F55"), 1f),
-            Position = new Vector3(0, 0.015f, 1.2f)
-        };
-        parent.AddChild(dip);
+        Spawn(parent, "res://art/models/terrain/pebble_cluster.glb", new Vector3(0, -2.55f, 1.2f), 0.9f, 6f, "GapDip");
 
         // Flower lane.
-        Spawn(parent, "res://art/models/flora/flower_pink.glb", new Vector3(2.0f, 0, -6.2f), 1.5f, 12f, "FlowerA");
+        Spawn(parent, "res://art/models/flora/flower_pink.glb", new Vector3(4.4f, 0, -6.2f), 1.5f, 12f, "FlowerA");
         Spawn(parent, "res://art/models/flora/flower_purple.glb", new Vector3(6.2f, 0, -6.2f), 1.5f, -14f, "FlowerB");
-        Spawn(parent, "res://art/models/flora/daisy.glb", new Vector3(4.1f, 0, -5.1f), 1.15f, 70f, "FlowerMiddle");
+        Spawn(parent, "res://art/models/flora/daisy.glb", new Vector3(5.3f, 0, -5.1f), 1.15f, 70f, "FlowerMiddle");
 
         // Wind edge.
         Spawn(parent, "res://art/models/flora/reed.glb", new Vector3(9.5f, 0, -8.0f), 1.45f, 10f, "WindReedA");
@@ -221,23 +264,23 @@ public static class GardenScenery
         Spawn(parent, "res://art/models/colony/egg_cluster.glb", new Vector3(13.0f, 0.15f, 3.7f), 0.85f, 20f, "NurseryEggs");
         Spawn(parent, "res://art/models/colony/silk_cocoon.glb", new Vector3(11.1f, 0.12f, 4.6f), 0.7f, 0, "NurseryCocoon");
 
-        // Tall stem and overlook.
-        Spawn(parent, "res://art/models/flora/sapling.glb", new Vector3(-1.5f, 0, 9.0f), 1.5f, 22f, "ClimbSapling");
+        // Tall stem and overlook on the west bank.
+        Spawn(parent, "res://art/models/flora/sapling.glb", new Vector3(-5.0f, 0, 9.0f), 1.5f, 22f, "ClimbSapling");
         var stem = new MeshInstance3D
         {
             Name = "ClimbStem",
             Mesh = new CylinderMesh { TopRadius = 0.11f, BottomRadius = 0.18f, Height = 4.6f, RadialSegments = 10 },
             MaterialOverride = Flat(new Color("5E8E45"), 0.92f),
-            Position = new Vector3(-1.5f, 2.3f, 9.0f)
+            Position = new Vector3(-5.0f, 2.3f, 9.0f)
         };
         parent.AddChild(stem);
         for (var i = 0; i < 4; i++)
         {
             Spawn(parent, "res://art/models/flora/broad_leaf.glb",
-                new Vector3(-1.5f + (i % 2 == 0 ? 0.36f : -0.36f), 1.1f + i * 0.9f, 9.0f),
+                new Vector3(-5.0f + (i % 2 == 0 ? 0.36f : -0.36f), 1.1f + i * 0.9f, 9.0f),
                 0.62f, i * 70f, $"ClimbLeaf{i}");
         }
-        Spawn(parent, "res://art/models/flora/leaf_platform.glb", new Vector3(-1.5f, 4.25f, 9.0f), 0.85f, 0, "OverlookLeaf");
+        Spawn(parent, "res://art/models/flora/leaf_platform.glb", new Vector3(-5.0f, 4.25f, 9.0f), 0.85f, 0, "OverlookLeaf");
 
         // The map board-like stone marker at spawn.
         Spawn(parent, "res://art/models/colony/explore_marker.glb", new Vector3(-12.3f, 0.05f, 7.7f), 0.75f, 0, "SpawnMarker");
@@ -249,8 +292,8 @@ public static class GardenScenery
         var clover = new[]
         {
             new Vector3(-14.8f, 0, 2.5f), new Vector3(-12.4f, 0, -2.8f), new Vector3(-10.8f, 0, 5.8f),
-            new Vector3(-7.2f, 0, 5.4f), new Vector3(-6.4f, 0, -4.8f), new Vector3(-2.0f, 0, 5.4f),
-            new Vector3(1.8f, 0, 7.6f), new Vector3(5.2f, 0, 8.9f), new Vector3(8.8f, 0, 7.4f),
+            new Vector3(-7.2f, 0, 5.4f), new Vector3(-6.4f, 0, -4.8f), new Vector3(-4.6f, 0, 5.4f),
+            new Vector3(-5.4f, 0, 7.6f), new Vector3(5.2f, 0, 8.9f), new Vector3(8.8f, 0, 7.4f),
             new Vector3(14.6f, 0, 8.0f), new Vector3(15.1f, 0, -5.2f), new Vector3(5.8f, 0, -11.1f),
             new Vector3(-4.8f, 0, -10.4f), new Vector3(-15.2f, 0, -6.2f), new Vector3(16.2f, 0, 0.8f)
         };
@@ -263,9 +306,9 @@ public static class GardenScenery
         var tufts = new[]
         {
             new Vector3(-16.8f, 0, 4.2f), new Vector3(-16.2f, 0, -2.6f), new Vector3(-12.8f, 0, 11.4f),
-            new Vector3(-5.5f, 0, 11.0f), new Vector3(2.4f, 0, 11.8f), new Vector3(9.8f, 0, 11.1f),
+            new Vector3(-5.5f, 0, 11.0f), new Vector3(-5.4f, 0, 11.8f), new Vector3(9.8f, 0, 11.1f),
             new Vector3(15.0f, 0, 1.2f), new Vector3(16.9f, 0, -3.6f), new Vector3(12.5f, 0, -12.0f),
-            new Vector3(1.4f, 0, -12.3f), new Vector3(-8.4f, 0, -11.6f), new Vector3(-16.1f, 0, -10.2f)
+            new Vector3(-4.4f, 0, -12.3f), new Vector3(-8.4f, 0, -11.6f), new Vector3(-16.1f, 0, -10.2f)
         };
         for (var i = 0; i < tufts.Length; i++)
         {
@@ -333,6 +376,7 @@ public static class GardenScenery
         }
         for (var i = 0; i < spots.Count; i++)
         {
+            if (Math.Abs(spots[i].X) < WorldLayout.RavineHalfWidth + 0.2f) continue;
             var model = (i % 5) switch
             {
                 0 => "res://art/models/flora/bush.glb",

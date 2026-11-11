@@ -215,6 +215,17 @@ public class SaveTests : IDisposable
         Assert.True(loaded.Fullscreen);
     }
 
+    [Fact]
+    public void Settings_FailingWrite_IsReported()
+    {
+        var path = Path.Combine(_dir, "settings-failing.json");
+        var service = new SettingsService(path, new FailingSaveFileSystem { FailWrites = true });
+        var result = service.Save(new SettingsData { ReducedMotion = true });
+        Assert.False(result.Success);
+        Assert.Contains("Couldn't save settings", result.Message);
+        Assert.False(File.Exists(path));
+    }
+
     private sealed class FailingSaveFileSystem : ISaveFileSystem
     {
         private readonly DefaultSaveFileSystem _inner = new();

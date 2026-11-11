@@ -25,7 +25,7 @@ dotnet build -warnaserror
 dotnet test
 ```
 
-Final verified result: **45 passed, 0 failed, 0 skipped**.
+Final verified result: **51 passed, 0 failed, 0 skipped**.
 
 ## Run from source
 
@@ -53,8 +53,7 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 The probe writes `artifacts/runtime_probe.json` and real PNGs in
 `artifacts/screenshots/` when run from the project. Final verified result:
-**58 passed, 0 failed**. The exported Linux build was also launched both
-headlessly and under Xvfb and passed the same **58/58** probe.
+**66 passed, 0 failed**. The exported Linux build is re-tested for this release.
 
 ## How to play
 
@@ -76,22 +75,25 @@ webs and is never required for victory.
 
 ## Implemented scope
 
-- One authored 38 × 28 garden clearing with layered flora, rocks, log, nursery,
-  flower lane, pebble gap, windy edge and a tall climbable stem.
+- One authored 38 × 28 garden clearing split by a real ravine, with layered
+  flora, rocks, log, nursery, flower lane, pebble bridge crossing, windy edge and
+  a tall climbable stem.
 - Player walk/jump/assisted climb, orbit camera, collision-safe spring arm.
 - Twelve typed anchor sockets, capture-web and bridge previews, validation,
-  costs, cancellation, dismantling and bridge collision/path edges.
+  costs, cancellation, dismantling and walkable bridge ramps/deck collision.
 - Four authored insect routes with swept-segment capture, exactly-once rewards
   and respawns.
 - Nursery hatching up to five spiders, named autonomous workers that collect,
   repair and patrol across bridge edges.
+- Clearly communicated colony economy: silk production consumes food and scales
+  with the player plus each hatched helper.
 - Three sequential missions, escalating one-line hints, optional mastery,
   victory screen and continued play.
 - Telegraph warning, deterministic exposed/sheltered wind damage, repair or
   sheltered alternative, visible wind leaves and audio feedback.
 - Title/new game/continue, pause, help, colony, settings, save and quit flows.
-- Versioned JSON save with validation, atomic write, healthy backup recovery and
-  explicit failure messages.
+- Versioned JSON save with bounded histories, validation, atomic write, healthy
+  backup recovery, save-failed quit confirmation and explicit failure messages.
 - Accessibility: large labelled controls, 100/125/150% UI scale, reduced motion,
   gentle-weather mode, volume controls, camera sensitivity and persisted settings.
 - Original synthesised WAV music/SFX; all gameplay information also appears
@@ -117,7 +119,7 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The Linux export was launched, rendered and passed the 58/58 runtime probe. The
+The Linux export was launched, rendered and passed the 66/66 runtime probe. The
 Windows export built successfully as a PE32+ x86-64 executable, but **Windows
 runtime verification is NOT VERIFIED** because no Windows host was available.
 See `docs/EXPORTS.md` for checksums and exact commands.
@@ -130,6 +132,9 @@ See `docs/EXPORTS.md` for checksums and exact commands.
 - `docs/PLAYTEST_NOTES.md` — child playtest is explicitly **NOT VERIFIED**.
 - Windows startup, child playtests and actual full-screen mode on a desktop
   compositor remain unverified.
+- Persistent garden geometry is constructed in `GardenScenery.cs` for v0.1.x;
+  moving it into authored `.tscn` scenes is planned for v0.2.0. Runtime webs,
+  bridges, insects and workers stay dynamic.
 
 ## Safety and scope
 

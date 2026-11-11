@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-11T14:23:46.756107Z",
+  "generatedUtc": "2026-11-11T17:53:32.0258757Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
-  "passes": 58,
+  "passes": 66,
   "failures": 0,
   "checks": [
     {
@@ -91,6 +91,16 @@
       "detail": "rise=1.03"
     },
     {
+      "name": "pause-freezes-airborne",
+      "pass": true,
+      "detail": "start=0.37 paused=0.37"
+    },
+    {
+      "name": "pause-resumes-physics",
+      "pass": true,
+      "detail": "resumed=0.00 paused=0.37"
+    },
+    {
       "name": "climb-stem",
       "pass": true,
       "detail": "height=3.92"
@@ -128,12 +138,17 @@
     {
       "name": "food-collected",
       "pass": true,
-      "detail": "food 5-\u003E7"
+      "detail": "food 3-\u003E5"
     },
     {
       "name": "m01-complete",
       "pass": true,
       "detail": "First Threads"
+    },
+    {
+      "name": "ravine-blocks-without-bridge",
+      "pass": true,
+      "detail": "x=-5.01"
     },
     {
       "name": "bridge-built",
@@ -144,6 +159,11 @@
       "name": "bridge-visible",
       "pass": true,
       "detail": "webs=2"
+    },
+    {
+      "name": "bridge-enables-player-crossing",
+      "pass": true,
+      "detail": "x=11.19"
     },
     {
       "name": "hatch-started",
@@ -159,6 +179,11 @@
       "name": "worker-visible",
       "pass": true,
       "detail": "views=1"
+    },
+    {
+      "name": "silk-producers",
+      "pass": true,
+      "detail": "producers=2"
     },
     {
       "name": "m02-complete",
@@ -261,6 +286,11 @@
       "detail": "Gentle weather caps wind damage"
     },
     {
+      "name": "low-threat-restores",
+      "pass": true,
+      "detail": "damage=50"
+    },
+    {
       "name": "return-to-menu",
       "pass": true,
       "detail": "Game returns to title menu"
@@ -274,6 +304,16 @@
       "name": "continue-loads",
       "pass": true,
       "detail": "Continue restores saved garden"
+    },
+    {
+      "name": "failed-save-keeps-session",
+      "pass": true,
+      "detail": "Failed save offers retry instead of quitting"
+    },
+    {
+      "name": "settings-save-error-visible",
+      "pass": true,
+      "detail": "Settings failure shows a retry affordance"
     },
     {
       "name": "dismantle-refunds",

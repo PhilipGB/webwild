@@ -181,9 +181,23 @@ public partial class Main : Node3D
     {
         CopySettings(settings, Settings);
         Settings.Normalise();
-        GameData.CreateSettingsService().Save(Settings);
         GameData.ApplyUiScale(Settings);
         _game?.ApplySettings(Settings);
+        SaveSettingsWithFeedback();
+    }
+
+    private void SaveSettingsWithFeedback()
+    {
+        var result = GameData.CreateSettingsService().Save(Settings);
+        if (result.Success)
+        {
+            _settingsDialog.ClearPersistenceError();
+            return;
+        }
+        _settingsDialog.ShowPersistenceError(
+            "Couldn't save settings. Check disk space or permissions, then retry.",
+            SaveSettingsWithFeedback);
+        ShowMessage("Couldn't save settings. Try again.", UiKit.Coral);
     }
 
     private void RefreshContinue()

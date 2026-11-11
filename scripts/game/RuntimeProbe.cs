@@ -107,7 +107,26 @@ public partial class RuntimeProbe : Node
         }
         Check("jump-space", maxY > jumpStart + 0.25f, $"rise={maxY - jumpStart:0.00}");
 
-        game.ProbeTeleport(new Vec3(-1.5, 0.5, 9.0));
+        Input.ActionPress("jump");
+        await PhysicsFrames(4);
+        Input.ActionRelease("jump");
+        await PhysicsFrames(2);
+        game.ProbeOpenPause();
+        await Frames(5);
+        await PhysicsFrames(2);
+        var pausedStart = game.PlayerPosition;
+        await PhysicsFrames(30);
+        var pausedEnd = game.PlayerPosition;
+        Check("pause-freezes-airborne", pausedStart.DistanceTo(pausedEnd) < 0.02f,
+            $"start={pausedStart.Y:0.00} paused={pausedEnd.Y:0.00}");
+        game.ProbeCloseModal();
+        await Frames(5);
+        await PhysicsFrames(50);
+        Check("pause-resumes-physics", !game.PlayerPhysicsPaused &&
+            Math.Abs(game.PlayerPosition.Y - pausedEnd.Y) > 0.05f,
+            $"resumed={game.PlayerPosition.Y:0.00} paused={pausedEnd.Y:0.00}");
+
+        game.ProbeTeleport(new Vec3(-5.0, 0.5, 9.0));
         await Frames(3);
         Input.ActionPress("move_forward");
         var climbStart = game.PlayerPosition.Y;
@@ -177,7 +196,19 @@ public partial class RuntimeProbe : Node
         }
         Check("m01-complete", game.Simulation.Missions.CompletedMissions.Contains("M01"), "First Threads");
 
-        game.ProbeTeleport(new Vec3(0, 0.5, 6.0));
+        game.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
+        game.ProbeLookAt(new Vec3(8.0, 0.6, 1.2));
+        await Frames(3);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(150);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(30);
+        Check("ravine-blocks-without-bridge", game.PlayerPosition.X < -2.5f,
+            $"x={game.PlayerPosition.X:0.00}");
+        game.ProbeTeleport(WorldLayout.PlayerSpawn);
+        await Frames(3);
+
+        game.ProbeTeleport(new Vec3(-5.0, 0.5, 6.0));
         game.ProbeLookAt(new Vec3(0, 0.8, 1.2));
         await Frames(4);
         game.ProbeSetTool(WebType.Bridge);
@@ -205,10 +236,27 @@ public partial class RuntimeProbe : Node
         Check("bridge-built", bridgeBuilt, "Two mouse clicks on Pebble gap");
         Check("bridge-visible", game.VisibleWebCount >= 2, $"webs={game.VisibleWebCount}");
         game.ProbeClearBuild();
+
+        game.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
+        game.ProbeLookAt(new Vec3(8.0, 0.6, 1.2));
+        await Frames(4);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(180);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(30);
+        Check("bridge-enables-player-crossing", game.PlayerPosition.X > 3.2f,
+            $"x={game.PlayerPosition.X:0.00}");
+        game.ProbeTeleport(new Vec3(8.0, 0.5, 5.0));
+        game.ProbeLookAt(new Vec3(0, 0.6, 1.2));
+        await Frames(4);
+        await Capture("09-bridge-crossing");
+        game.ProbeTeleport(WorldLayout.PlayerSpawn);
+        await Frames(3);
+
         game.ProbeOpenNursery();
         await Frames(4);
         GD.Print("[PROBE] NURSERY " + game.DebugUi);
-        await Capture("09-nursery");
+        await Capture("10-nursery");
         game.ProbeCloseModal();
         await Frames(2);
 
@@ -218,6 +266,7 @@ public partial class RuntimeProbe : Node
         Check("hatch-started", hatchStarted, "Nursery spends food and silk");
         Check("worker-hatched", game.Simulation.Workers.Count >= 1, $"workers={game.Simulation.Workers.Count}");
         Check("worker-visible", game.VisibleWorkerCount >= 1, $"views={game.VisibleWorkerCount}");
+        Check("silk-producers", game.Simulation.SilkProducers == 2, $"producers={game.Simulation.SilkProducers}");
 
         for (var i = 0; i < 72 && !game.Simulation.Missions.CompletedMissions.Contains("M02"); i++)
         {
@@ -228,7 +277,7 @@ public partial class RuntimeProbe : Node
         Check("m02-complete", m02, "Tiny Team");
         Check("worker-crossed-bridge", HasEvent("WorkerUsedBridge") || m02, "Bridge traversal event");
 
-        await Capture("10-wind-warning");
+        await Capture("11-wind-warning");
         if (!game.Simulation.WindCompleted) game.ProbeAdvance(45);
         await Frames(3);
         Check("wind-completed", game.Simulation.WindCompleted, "Deterministic wind event");
@@ -281,13 +330,13 @@ public partial class RuntimeProbe : Node
         Check("victory", game.Simulation.Victory, "Three story missions complete");
         await Frames(5);
         Check("victory-screen", game.VictoryModalOpen, "Victory screen shown");
-        await Capture("11-victory");
+        await Capture("12-victory");
 
         game.ProbeCloseModal();
         await Frames(3);
         game.ProbeOpenSettings();
         await Frames(4);
-        await Capture("12-settings");
+        await Capture("13-settings");
         game.ProbeCloseSettings();
         await Frames(2);
 
@@ -317,7 +366,7 @@ public partial class RuntimeProbe : Node
                 $"workers {workerCount}->{reloaded.Simulation.Workers.Count}");
             Check("reload-victory", reloaded.Simulation.Victory, "Victory restored");
             Check("reload-player", reloaded.Player is not null, "Player restored");
-            await Capture("13-reloaded");
+            await Capture("14-reloaded");
         }
 
         var settings = _main.Settings;
@@ -333,15 +382,20 @@ public partial class RuntimeProbe : Node
         {
             settings.LowThreat = true;
             activeGame.ApplySettings(settings);
-            Check("low-threat-applies", activeGame.Simulation.Tuning.Weather.ExposedWebDamage <= 25 &&
+            var gentleDamage = activeGame.Simulation.Tuning.Weather.ExposedWebDamage;
+            Check("low-threat-applies", gentleDamage <= 25 &&
                 activeGame.Simulation.Tuning.Weather.WarningSeconds >= 30, "Gentle weather caps wind damage");
+            settings.LowThreat = false;
+            activeGame.ApplySettings(settings);
+            Check("low-threat-restores", activeGame.Simulation.Tuning.Weather.ExposedWebDamage > gentleDamage,
+                $"damage={activeGame.Simulation.Tuning.Weather.ExposedWebDamage}");
         }
 
         _main.ProbeReturnToTitle();
         await Frames(8);
         Check("return-to-menu", _main.TitleVisible, "Game returns to title menu");
         Check("continue-available", _main.ContinueAvailable, "Continue button reports saved garden");
-        await Capture("14-title-continue");
+        await Capture("15-title-continue");
         var continued = _main.ProbeContinue();
         await Frames(10);
         Check("continue-loads", continued is not null && continued.Simulation.Victory &&
@@ -349,6 +403,23 @@ public partial class RuntimeProbe : Node
 
         if (continued is not null)
         {
+            continued.SimulateSaveFailureForProbe = true;
+            continued.ProbeQuitToMenu();
+            await Frames(6);
+            Check("failed-save-keeps-session", continued.SaveFailedPromptOpen && !_main.TitleVisible,
+                "Failed save offers retry instead of quitting");
+            continued.ProbeCloseModal();
+            await Frames(2);
+            continued.ProbeOpenSettings();
+            await Frames(3);
+            continued.ProbeShowSettingsError();
+            await Frames(3);
+            Check("settings-save-error-visible", continued.SettingsErrorVisible,
+                "Settings failure shows a retry affordance");
+            continued.ProbeCloseSettings();
+            await Frames(2);
+            continued.SimulateSaveFailureForProbe = false;
+
             var beforeDismantle = continued.Simulation.Webs.Count;
             var tempBuilt = continued.ProbeBuildWeb(WorldLayout.FlowerA, WorldLayout.FlowerB, WebType.Capture);
             var silkAfterBuild = continued.Simulation.Ledger.Silk;
@@ -367,14 +438,14 @@ public partial class RuntimeProbe : Node
         await Frames(6);
         Check("ui-scale-applies", Math.Abs(GetTree().Root.ContentScaleFactor - 1.25f) < 0.01f,
             $"scale={GetTree().Root.ContentScaleFactor:0.00}");
-        await Capture("15-ui-scale-125");
+        await Capture("16-ui-scale-125");
 
         settings.UiScalePercent = 150;
         GameData.ApplyUiScale(settings);
         await Frames(6);
         Check("ui-scale-150-applies", Math.Abs(GetTree().Root.ContentScaleFactor - 1.5f) < 0.01f,
             $"scale={GetTree().Root.ContentScaleFactor:0.00}");
-        await Capture("16-ui-scale-150");
+        await Capture("17-ui-scale-150");
 
         continued?.ProbeQuitToMenu();
         await Frames(8);

@@ -247,6 +247,11 @@ public partial class RuntimeProbe : Node
             Check("food-collected", game.Simulation.Ledger.Food > foodBefore,
                 $"food {foodBefore}->{game.Simulation.Ledger.Food}");
         }
+        await Frames(8);
+        Check("status-clears-after-objective",
+            !game.ProbeStatusText.Contains("Capture web built") &&
+            game.ProbeStatusText.Length > 0,
+            $"status='{game.ProbeStatusText}'");
         Check("m01-complete", game.Simulation.Missions.CompletedMissions.Contains("M01"), "First Threads");
 
         game.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
@@ -295,6 +300,18 @@ public partial class RuntimeProbe : Node
         Check("bridge-visible", game.VisibleWebCount >= 2, $"webs={game.VisibleWebCount}");
         var gapBridge = game.Simulation.Webs.First(w => w.Type == WebType.Bridge &&
             w.Connects(WorldLayout.GapWest, WorldLayout.GapEast));
+        Check("bridge-build-animation-starts",
+            game.ProbeBridgeConstructionActive(gapBridge.Id) &&
+            game.ProbeBridgeConstructionPartCount(gapBridge.Id) > 0,
+            $"active={game.ProbeBridgeConstructionActive(gapBridge.Id)} parts={game.ProbeBridgeConstructionPartCount(gapBridge.Id)}");
+        await Capture("09a-bridge-construction");
+        if (DisplayServer.GetName() != "headless")
+        {
+            await Frames(100);
+            Check("bridge-build-animation-finishes",
+                !game.ProbeBridgeConstructionActive(gapBridge.Id),
+                "Planks finish appearing; collision was complete from the first frame");
+        }
         var gapRamps = game.ProbeBridgeRampGroundPoints(gapBridge.Id).OrderBy(r => r.X).ToList();
         Check("bridge-ramps-west-east", gapRamps.Count == 2 &&
             gapRamps[0].X <= -WorldLayout.RavineHalfWidth &&
@@ -655,6 +672,8 @@ public partial class RuntimeProbe : Node
         var edge = _main.StartGame(null)!;
         await Frames(10);
         Check("edge-game-started", edge.Simulation is not null, "Fresh garden for bridge regressions");
+        settings.ReducedMotion = true;
+        edge.ApplySettings(settings);
 
         var reverseBuilt = edge.ProbeBuildWeb(WorldLayout.GapEast, WorldLayout.GapWest, WebType.Bridge);
         await Frames(4);
@@ -670,6 +689,9 @@ public partial class RuntimeProbe : Node
                 $"rampX={string.Join(",", reverseRamps.Select(r => r.X.ToString("0.00")))}");
             Check("bridge-reverse-collision", edge.ProbeBridgeWalkwayShapeCount(reverseWeb.Id) > 0,
                 $"shapes={edge.ProbeBridgeWalkwayShapeCount(reverseWeb.Id)}");
+            Check("bridge-animation-respects-reduced-motion",
+                !edge.ProbeBridgeConstructionActive(reverseWeb.Id),
+                "Reduced motion skips the grow-in effect");
             CheckBridgeVisual(edge, reverseWeb.Id, "bridge-reverse");
 
             edge.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
@@ -1076,6 +1098,7 @@ public partial class RuntimeProbe : Node
         Check("reed-capture-web-built", game.ProbeBuildWeb(ReedwaterLayout.EasyA,
             ReedwaterLayout.EasyB, WebType.Capture), "Capture web across the reed stems");
         var caught = 0;
+        var playerSpeciesNamed = false;
         for (var i = 0; i < 30 && caught < 3; i++)
         {
             game.ProbeAdvance(5);
@@ -1089,9 +1112,12 @@ public partial class RuntimeProbe : Node
             game.ProbeTeleport(trapped.Position);
             await Frames(2);
             game.ProbeInteract();
+            await Frames(2);
+            playerSpeciesNamed |= game.ProbeToastText.Contains("You collected a");
             caught++;
             await Frames(2);
         }
+        Check("player-collection-names-species", playerSpeciesNamed, game.ProbeToastText);
         Check("reedwater-insects-collected", caught >= 3, $"caught={caught}");
         Check("r02-complete", sim.RegionalObjectives.CompletedObjectives.Contains("R02"),
             "The Reed Harvest");
@@ -1120,14 +1146,35 @@ public partial class RuntimeProbe : Node
             ReedwaterLayout.FarB, WebType.Capture), "Far-bank capture web");
         var workerCrossed = false;
         var regionComplete = false;
+        var workerAttributed = false;
+        var farBankFeedback = false;
+        var dragonflyNamed = false;
+        var workerGlow = false;
+        var workerGlowCaptured = false;
         for (var i = 0; i < 100 && !regionComplete; i++)
         {
             game.ProbeAdvance(2);
-            await Frames(1);
+            await Frames(2);
             workerCrossed |= HasRegionEvent("WorkerUsedBridge", RegionIds.ReedwaterBank);
+            var toast = game.ProbeToastText;
+            workerAttributed |= toast.Contains("collected a") && !toast.StartsWith("You collected");
+            farBankFeedback |= toast.Contains("from the far bank");
+            dragonflyNamed |= toast.Contains("dragonfly");
+            workerGlow |= sim.RegionWorkers.Any(worker =>
+                worker.Activity == WorkerActivity.Collecting &&
+                game.ProbeWorkerActivityGlowVisible(worker.Id));
+            if (workerGlow && !workerGlowCaptured)
+            {
+                workerGlowCaptured = true;
+                await Capture("26a-worker-collecting");
+            }
             regionComplete = sim.RegionalObjectives.CompletedObjectives.Contains("R03");
         }
         Check("worker-used-reedwater-bridge", workerCrossed, "Worker crossed a real bridge edge");
+        Check("worker-attributed-collection", workerAttributed, "Worker collection names the helper");
+        Check("far-bank-delivery-feedback", farBankFeedback, "Far-bank delivery is announced");
+        Check("dragonfly-named-correctly", dragonflyNamed, "Collection toast names the dragonfly");
+        Check("worker-activity-glow", workerGlow, "A working helper is visibly marked");
         Check("r03-complete", sim.RegionalObjectives.CompletedObjectives.Contains("R03"),
             "The Far Bank");
         Check("reedwater-completion-feedback", game.RegionCompleteModalOpen,
@@ -1138,6 +1185,18 @@ public partial class RuntimeProbe : Node
             game.ProbeCloseModal();
             await Frames(2);
         }
+        Check("far-bank-trail-visible", game.ProbeFarBankTrailVisible,
+            "Optional reed trail appears after R03");
+        game.ProbeSetSafePosition(new Vec3(-9.6, 0.55, -2.8));
+        game.ProbeTeleport(new Vec3(-9.6, 0.55, -2.8));
+        await Frames(3);
+        game.ProbeInteract();
+        await Frames(6);
+        var outpost = new Vec3(10.2, 0.55, 6.8);
+        Check("far-bank-return-shortcut",
+            Vec3.Distance(new Vec3(game.PlayerPosition.X, game.PlayerPosition.Y, game.PlayerPosition.Z),
+                outpost) < 2.5f,
+            $"player={game.PlayerPosition}");
         var farWorker = sim.RegionWorkers.FirstOrDefault();
         if (farWorker is not null)
         {

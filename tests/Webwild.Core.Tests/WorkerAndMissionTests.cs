@@ -99,6 +99,26 @@ public class WorkerAndMissionTests
     }
 
     [Fact]
+    public void FirstHelperPatrol_CrossesABridgeWithoutWaitingForRandomLuck()
+    {
+        var sim = TestWorld.NewSim();
+        Assert.True(sim.TryBuildWeb(WorldLayout.GapWest, WorldLayout.GapEast,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryStartHatch(out var reason), reason);
+        sim.AdvanceSeconds(5);
+        Assert.Single(sim.Workers);
+
+        var seconds = 0;
+        while (!sim.Events.Any(e => e.Type == "WorkerUsedBridge") && seconds < 20)
+        {
+            sim.AdvanceSeconds(1);
+            seconds++;
+        }
+        Assert.Contains(sim.Events, e => e.Type == "WorkerUsedBridge");
+        Assert.InRange(seconds, 1, 15);
+    }
+
+    [Fact]
     public void Hatching_StopsAtFiveSpidersIncludingPlayer()
     {
         var sim = TestWorld.NewSim();
@@ -170,7 +190,9 @@ public class WorkerAndMissionTests
         // M02
         Assert.True(sim.TryBuildWeb(WorldLayout.GapWest, WorldLayout.GapEast, WebType.Bridge, out _, out _));
         Assert.True(sim.TryStartHatch(out _));
-        sim.AdvanceSeconds(40);
+        var m02Guard = 0;
+        while (sim.Missions.ActiveMissionId == "M02" && m02Guard++ < 30)
+            sim.AdvanceSeconds(1);
         Assert.Contains(sim.Events, e => e.Type == "WorkerUsedBridge");
         Assert.Equal("M03", sim.Missions.ActiveMissionId);
         Assert.True(sim.WindStarted);

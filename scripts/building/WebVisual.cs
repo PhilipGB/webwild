@@ -27,8 +27,10 @@ public partial class WebVisual : Node3D
     public int ProbeBridgeDamageOverlayCount => _bridgeVisual?.DamageOverlayCount ?? 0;
     public int ProbeBridgeUnstyledMeshCount => _bridgeVisual?.UnstyledMeshCount ?? -1;
     public bool ProbeBridgeUsesAllPlankVariants => _bridgeVisual?.HasAllPlankVariants == true;
+    public bool ProbeBridgeConstructionActive => _bridgeVisual?.ProbeConstructionActive == true;
+    public int ProbeBridgeConstructionPartCount => _bridgeVisual?.ProbeConstructionPartCount ?? 0;
 
-    public void Configure(WebState state, Vector3 a, Vector3 b)
+    public void Configure(WebState state, Vector3 a, Vector3 b, bool reducedMotion = false)
     {
         WebId = state.Id;
         Type = state.Type;
@@ -70,7 +72,8 @@ public partial class WebVisual : Node3D
                 state.Id, a - _center, b - _center,
                 groundA - _center, groundB - _center,
                 BridgeVisualMode.Constructed,
-                state.MaxDurability <= 0 ? 1f : (float)state.Durability / state.MaxDurability);
+                state.MaxDurability <= 0 ? 1f : (float)state.Durability / state.MaxDurability,
+                reducedMotion);
             BuildBridgeCollision(a, b, approach);
         }
 

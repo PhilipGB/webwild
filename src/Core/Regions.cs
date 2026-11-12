@@ -264,7 +264,7 @@ public static class ReedwaterLayout
         new()
         {
             Id = "rw_reed_fly", Region = RegionId, Kind = "fly", Model = "fly",
-            FoodYield = 2, Speed = 1.7, RespawnSeconds = 20, StartProgress = 0.15,
+            FoodYield = 2, Speed = 1.7, RespawnSeconds = 10, StartProgress = 0.15,
             Waypoints = new[]
             {
                 new Vec3(11.2, 2.0, 13.0), new Vec3(11.2, 2.0, 8.0),
@@ -277,7 +277,7 @@ public static class ReedwaterLayout
         new()
         {
             Id = "rw_dragonfly_lilies", Region = RegionId, Kind = "dragonfly",
-            Model = "dragonfly", FoodYield = 4, Speed = 2.8, RespawnSeconds = 36,
+            Model = "dragonfly", FoodYield = 4, Speed = 2.8, RespawnSeconds = 10,
             StartProgress = 0.45,
             Waypoints = new[]
             {
@@ -291,7 +291,7 @@ public static class ReedwaterLayout
         new()
         {
             Id = "rw_far_dragonfly", Region = RegionId, Kind = "dragonfly",
-            Model = "dragonfly", FoodYield = 4, Speed = 2.4, RespawnSeconds = 34,
+            Model = "dragonfly", FoodYield = 4, Speed = 2.4, RespawnSeconds = 10,
             StartProgress = 0.2,
             Waypoints = new[]
             {

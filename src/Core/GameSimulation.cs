@@ -540,7 +540,7 @@ public sealed class GameSimulation
             Position = hatchRegion.NurseryPosition,
             CurrentNode = hatchRegion.NurseryNode,
             Activity = WorkerActivity.Resting,
-            PatrolCooldown = 2.0
+            PatrolCooldown = 1.0
         };
         _workers.Add(worker);
         PendingHatch = null;
@@ -811,6 +811,14 @@ public sealed class GameSimulation
             .Select(x => (x.Id, Route: x.Route!))
             .ToList();
         var bridgeCandidates = candidates.Where(c => c.Route.UsesBridge).ToList();
+        // The first patrol after hatching must show the helper using a bridge,
+        // so the M02 objective never depends on a lucky random patrol.
+        if (worker.BridgeCrossings == 0 && bridgeCandidates.Count > 0)
+        {
+            var first = bridgeCandidates[_rng.Next(bridgeCandidates.Count)];
+            BeginRoute(worker, first.Route, WorkerActivity.Patrolling, null, null);
+            return;
+        }
         var pool = bridgeCandidates.Count > 0 && _rng.NextDouble() < 0.8 ? bridgeCandidates : candidates;
         if (pool.Count == 0)
         {
@@ -886,6 +894,7 @@ public sealed class GameSimulation
         if (edgeIndex < 0 || edgeIndex >= worker.PathEdges.Count) return;
         var edge = worker.PathEdges[edgeIndex];
         if (!edge.UsesBridge) return;
+        worker.BridgeCrossings++;
         Emit(new GameplayEvent(NextKey($"worker_bridge_{worker.Id}"), "WorkerUsedBridge", TickCount,
             worker.Id, "bridge", _windCompleted, Detail: edge.WebId, Region: worker.Region));
     }
@@ -893,7 +902,6 @@ public sealed class GameSimulation
     private void FinishWorkerRoute(WorkerState worker)
     {
         var targetWeb = worker.TargetWebId is null ? null : GetWeb(worker.TargetWebId);
-        var usedBridge = worker.PathEdges.Any(edge => edge.UsesBridge);
         switch (worker.Activity)
         {
             case WorkerActivity.Collecting:
@@ -901,7 +909,7 @@ public sealed class GameSimulation
                     TryCollectInsect(worker.TargetInsectId, worker.Id, out _, out _))
                 {
                     worker.CollectCount++;
-                    if (worker.Region == RegionIds.ReedwaterBank && usedBridge &&
+                    if (worker.Region == RegionIds.ReedwaterBank &&
                         targetWeb is not null && targetWeb.Region == RegionIds.ReedwaterBank &&
                         IsFarBankWeb(targetWeb))
                     {
@@ -1176,7 +1184,8 @@ public sealed class GameSimulation
                 ArrivalDelay = w.ArrivalDelay,
                 PatrolCooldown = w.PatrolCooldown,
                 CollectCount = w.CollectCount,
-                RepairCount = w.RepairCount
+                RepairCount = w.RepairCount,
+                BridgeCrossings = w.BridgeCrossings
             }).ToList(),
             Insects = _insects.Select(i => new InsectSave
             {
@@ -1301,7 +1310,8 @@ public sealed class GameSimulation
                 ArrivalDelay = saved.ArrivalDelay,
                 PatrolCooldown = saved.PatrolCooldown,
                 CollectCount = saved.CollectCount,
-                RepairCount = saved.RepairCount
+                RepairCount = saved.RepairCount,
+                BridgeCrossings = saved.BridgeCrossings
             };
             worker.PathEdges = new List<GroundEdge>();
             for (var i = 0; i < worker.PathNodes.Count - 1; i++)
@@ -1403,9 +1413,9 @@ public sealed class GameSimulation
         if (ActiveRegionId == RegionIds.ReedwaterBank) return GetRegionObjectiveHint();
         if (_victory) return "Garden complete! A new path has opened by the east hedge — follow the tall reeds to Reedwater Bank.";
         if (WeatherPhase == WeatherPhase.Warning)
-            return $"Wind is coming in {(int)Math.Ceiling(_weatherRemaining)}s. Repair or shelter your web.";
+            return $"Wind is coming in {(int)Math.Ceiling(_weatherRemaining)}s. Sheltered webs near the log take less damage.";
         if (WeatherPhase == WeatherPhase.Aftermath && _webs.Values.Any(w => w.Type == WebType.Capture && w.Durability < w.MaxDurability))
-            return "A web was damaged. Press E beside it to repair for 2 silk.";
+            return "The wind has passed. Press E beside a damaged web to repair it for 2 silk.";
         if (Missions.ActiveMissionId == "M01")
         {
             if (CaptureWebsBuilt == 0) return "Choose the two glowing twin twigs, then click them to build a capture web.";
@@ -1420,9 +1430,9 @@ public sealed class GameSimulation
         }
         if (Missions.ActiveMissionId == "M03")
         {
-            if (!_windCompleted) return "Wind is on its way. Keep an eye on exposed webs.";
+            if (!_windCompleted) return "Wind is on its way. Sheltered webs near the log take less damage.";
             if (!_webs.Values.Any(w => w.Durability < w.MaxDurability) && !_webs.Values.Any(w => w is { Type: WebType.Capture, Sheltered: true }))
-                return "Build a sheltered web near the log or repair a damaged one.";
+                return "Shelter a web near the log, or repair a damaged one with E.";
             if (!_insects.Any(i => i.CanBeCollected)) return "Catch one more insect after the wind.";
             return "Collect the trapped insect to finish the story.";
         }
@@ -1448,16 +1458,16 @@ public sealed class GameSimulation
             },
             "R02" => RegionalObjectives.StepProgress switch
             {
-                0 => "Build a capture web across the reed stems, then collect the caught insect with E.",
+                0 => "Build a capture web across a flyway near you, then press E to collect the caught insect.",
                 _ => $"The colony needs food. Collect {3 - RegionalObjectives.StepProgress} more insect" +
                      (3 - RegionalObjectives.StepProgress == 1 ? "." : "s.")
             },
             "R03" => !BuildFarBankRoute()
-                ? "Build one more bridge from the root island post to the far bank post."
+                ? "Build one more bridge: press 2, then click the root island post and the far bank post."
                 : !_webs.Values.Any(w => w.Region == RegionIds.ReedwaterBank &&
                                          w.Type == WebType.Capture &&
                                          w.Connects(ReedwaterLayout.FarA, ReedwaterLayout.FarB))
-                    ? "At the far bank, press 1 and click the two far reed roots to make a capture web."
+                    ? "Press 1 and click the two far reed roots to make a capture web. You can build it from the root island."
                     : "A helper will cross the bridges and collect prey on the far bank. Watch the far reeds!",
             _ => objective.Hint
         };

@@ -212,6 +212,52 @@ public class RegionTests
     }
 
     [Fact]
+    public void FarBankDelivery_CountsWhenTheHelperIsAlreadyOnTheFarBank()
+    {
+        var sim = UnlockedSim();
+        UnlockAndTravel(sim);
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.StartPost, ReedwaterLayout.IslandAPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandBPost, ReedwaterLayout.FarPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryStartHatch(out var reason), reason);
+        sim.AdvanceSeconds(5);
+        var worker = Assert.Single(sim.Workers);
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.EasyA, ReedwaterLayout.EasyB,
+            WebType.Capture, out _, out _));
+        var guard = 0;
+        while (!sim.RegionalObjectives.CompletedObjectives.Contains("R02") && guard++ < 80)
+        {
+            sim.AdvanceSeconds(1);
+            foreach (var insect in sim.RegionInsects.Where(i => i.CanBeCollected).ToList())
+                sim.TryCollectInsect(insect.Id, "player", out _, out _);
+        }
+        Assert.Contains("R02", sim.RegionalObjectives.CompletedObjectives);
+
+        // Simulate a helper that already patrolled to the far bank: its current
+        // collection leg uses ground edges only, not a bridge.
+        sim.ReleaseWorkerTask(worker, "test setup", keepPosition: true);
+        worker.CurrentNode = ReedwaterLayout.FarBankNode;
+        worker.Position = ReedwaterLayout.FarBankPosition;
+        worker.Activity = WorkerActivity.Resting;
+        worker.PatrolCooldown = 0;
+        worker.BridgeCrossings = 0;
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.FarA, ReedwaterLayout.FarB,
+            WebType.Capture, out _, out _));
+
+        var seconds = 0;
+        while (!sim.RegionalObjectives.CompletedObjectives.Contains("R03") && seconds < 60)
+        {
+            sim.AdvanceSeconds(1);
+            seconds++;
+        }
+        Assert.Contains("R03", sim.RegionalObjectives.CompletedObjectives);
+        Assert.Contains(sim.Events, e => e.Type == "FarBankDelivery");
+    }
+
+    [Fact]
     public void ReversedBridgeSelectionOrder_BuildsTheSameRoute()
     {
         var sim = UnlockedSim();

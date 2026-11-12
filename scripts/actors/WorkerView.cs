@@ -8,6 +8,8 @@ public partial class WorkerView : Node3D
     private WorkerState _state = null!;
     private Node3D _visual = null!;
     private Label3D _nameplate = null!;
+    private Sprite3D _activityGlow = null!;
+    private float _flash;
     private float _time;
     private float _spawn;
     private Vector3 _lastPosition;
@@ -44,6 +46,19 @@ public partial class WorkerView : Node3D
             Visible = true
         };
         AddChild(_nameplate);
+
+        _activityGlow = new Sprite3D
+        {
+            Texture = AnchorNode.RadialTexture,
+            PixelSize = 0.013f,
+            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+            Modulate = new Color(1, 0.88f, 0.4f, 0),
+            NoDepthTest = false,
+            Visible = false,
+            Position = new Vector3(0, 0.55f, 0)
+        };
+        AddChild(_activityGlow);
+
         Position = new Vector3((float)state.Position.X, 0.2f, (float)state.Position.Z);
         _lastPosition = Position;
         Scale = Vector3.Zero;
@@ -71,7 +86,21 @@ public partial class WorkerView : Node3D
         _lastPosition = target;
         _nameplate.Text = $"{_state.Name} · {_state.DisplayState}";
         _nameplate.Visible = near || _state.IsMoving;
+
+        // A restrained gold halo marks a helper that is actively collecting,
+        // repairing or delivering, and flashes when it completes a collection.
+        _flash = Mathf.Max(0, _flash - (float)delta);
+        var working = _state.Activity is WorkerActivity.Collecting or WorkerActivity.Repairing;
+        var glow = Mathf.Max(working ? 0.45f + Mathf.Sin(_time * 4.2f) * 0.12f : 0f,
+            Mathf.Min(1f, _flash * 1.6f));
+        _activityGlow.Visible = glow > 0.03f;
+        _activityGlow.Modulate = new Color(1, 0.88f, 0.4f, glow * 0.8f);
+        _activityGlow.Scale = Vector3.One * (1.1f + Mathf.Sin(_time * 5f) * 0.12f);
     }
+
+    public void FlashActivity() => _flash = 1.1f;
+
+    public bool ProbeActivityGlowVisible => _activityGlow.Visible;
 
     private bool IsOnBridge()
     {

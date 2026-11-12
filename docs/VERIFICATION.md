@@ -96,6 +96,17 @@
 - `dotnet test`: 119/119; scene contract 55/55; headless and rendered Linux
   runtime probes 295/295.
 
+## Integration performed in the v0.2.2 hardening pass (PR 3)
+
+- Guidance text, species naming, worker attribution, far-bank feedback, the
+  optional reed trail, the shorter Reedwater respawns, the guaranteed first
+  worker bridge crossing and the bridge grow-in effect were exercised in the
+  headless and rendered probes.
+- A fresh, real-input six-mission playthrough (New Garden through both regions,
+  save/quit/continue) completed without probes, teleports or simulation calls.
+- `dotnet test`: 124/124; scene contract 55/55; headless 305/305 and rendered
+  306/306 runtime checks.
+
 ## Not performed
 
 - Windows runtime: no Windows host was available. The v0.2.1 Windows export was

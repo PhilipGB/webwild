@@ -38,6 +38,9 @@ public partial class BridgeVisualAssembler : Node3D
     private Vector3 _localAnchorB;
     private Vector3? _localGroundA;
     private Vector3? _localGroundB;
+    private readonly List<(Node3D Node, float Delay)> _constructionParts = new();
+    private float _constructionTime;
+    private bool _constructing;
 
     public BridgeDeckPlan? Plan => _plan;
 
@@ -74,7 +77,8 @@ public partial class BridgeVisualAssembler : Node3D
         Vector3? groundA,
         Vector3? groundB,
         BridgeVisualMode mode,
-        float damageRatio = 1f)
+        float damageRatio = 1f,
+        bool reducedMotion = false)
     {
         _mode = mode;
         _damageRatio = Mathf.Clamp(damageRatio, 0, 1);
@@ -82,6 +86,9 @@ public partial class BridgeVisualAssembler : Node3D
         _localAnchorB = anchorB;
         _localGroundA = groundA;
         _localGroundB = groundB;
+        _constructionParts.Clear();
+        _constructionTime = 0;
+        _constructing = false;
         _plankCount = _panelCount = _detailCount = _railTriangles = 0;
         _variantMask = 0;
         _meshes.Clear();
@@ -104,6 +111,34 @@ public partial class BridgeVisualAssembler : Node3D
         if (mode == BridgeVisualMode.Constructed) BuildDetails();
         else ApplyGhostMaterial();
         ApplyDamage(_damageRatio);
+        if (mode == BridgeVisualMode.Constructed && !reducedMotion && _constructionParts.Count > 0)
+        {
+            _constructing = true;
+            _constructionTime = 0;
+            foreach (var part in _constructionParts)
+                part.Node.Scale = Vector3.One * 0.01f;
+        }
+    }
+
+    public bool ProbeConstructionActive => _constructing;
+    public int ProbeConstructionPartCount => _constructionParts.Count;
+
+    public override void _Process(double delta)
+    {
+        if (!_constructing) return;
+        _constructionTime += (float)delta;
+        var complete = true;
+        foreach (var (node, delay) in _constructionParts)
+        {
+            var t = Mathf.Clamp((_constructionTime - delay) / 0.30f, 0, 1);
+            node.Scale = Vector3.One * Mathf.Max(0.01f, Mathf.Ease(t, 0.4f));
+            if (t < 1) complete = false;
+        }
+        if (complete || _constructionTime > 1.8f)
+        {
+            foreach (var (node, _) in _constructionParts) node.Scale = Vector3.One;
+            _constructing = false;
+        }
     }
 
     public void SetDamageRatio(float ratio)
@@ -177,6 +212,8 @@ public partial class BridgeVisualAssembler : Node3D
             var position = frame.Position + frame.Across * placement.LateralOffset;
             part.Transform = new Transform3D(basis, ToVector(position));
             _partsRoot.AddChild(part);
+            if (_mode == BridgeVisualMode.Constructed)
+                _constructionParts.Add((part, 0.10f + placement.Index * 0.012f));
             if (_mode == BridgeVisualMode.Constructed)
                 ArtMaterials.ApplyVertexColors(part);
             RegisterMeshes(part);
@@ -335,6 +372,8 @@ public partial class BridgeVisualAssembler : Node3D
         part.Name = $"{name}{_detailCount:00}";
         part.Transform = new Transform3D(FrameBasis(frame, yaw), ToVector(frame.Position));
         _partsRoot.AddChild(part);
+        if (_mode == BridgeVisualMode.Constructed)
+            _constructionParts.Add((part, 0.55f));
         ArtMaterials.ApplyVertexColors(part);
         RegisterMeshes(part);
         _detailCount++;

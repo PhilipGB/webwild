@@ -36,6 +36,7 @@ public partial class GardenClearing : Node3D
     private Label3D _nurseryLabel = null!;
     private Label3D _climbLabel = null!;
     private Label3D _travelLabel = null!;
+    private Label3D _farBankTrailLabel = null!;
 
     private string _activeRegionId = RegionIds.GardenClearing;
     private Node3D _gardenWorld = null!;
@@ -192,6 +193,21 @@ public partial class GardenClearing : Node3D
             Visible = false
         };
         AddChild(_travelLabel);
+
+        _farBankTrailLabel = new Label3D
+        {
+            Text = "E · Reed trail to the outpost",
+            FontSize = 28,
+            PixelSize = 0.006f,
+            Modulate = UiKit.Gold,
+            OutlineModulate = UiKit.Pine,
+            OutlineSize = 8,
+            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+            NoDepthTest = true,
+            Position = new Vector3(-9.6f, 1.7f, -2.8f),
+            Visible = false
+        };
+        AddChild(_farBankTrailLabel);
     }
 
     private void BuildWind()
@@ -479,6 +495,8 @@ public partial class GardenClearing : Node3D
         _travelLabel.Text = region.Id == RegionIds.GardenClearing
             ? "E · Path to Reedwater Bank"
             : "E · Return to Garden Clearing";
+        _farBankTrailLabel.Visible = region.Id == RegionIds.ReedwaterBank &&
+            _sim?.RegionalObjectives.CompletedObjectives.Contains("R03") == true;
     }
 
     private void ResetPresentation()
@@ -676,8 +694,25 @@ public partial class GardenClearing : Node3D
         }
         else if (objective == "R02")
         {
-            Suggest(ReedwaterLayout.EasyA);
-            Suggest(ReedwaterLayout.EasyB);
+            // Point at the closest viable flyway instead of always sending the
+            // player back to the reed bank.
+            var player = _player?.ToCorePosition() ?? ReedwaterLayout.ArrivalPoint;
+            var lilyDistance = Math.Min(
+                Vec3.Distance(player, _sim.GetAnchor(ReedwaterLayout.MidA)?.Position ?? ReedwaterLayout.ArrivalPoint),
+                Vec3.Distance(player, _sim.GetAnchor(ReedwaterLayout.MidB)?.Position ?? ReedwaterLayout.ArrivalPoint));
+            var reedDistance = Math.Min(
+                Vec3.Distance(player, _sim.GetAnchor(ReedwaterLayout.EasyA)?.Position ?? ReedwaterLayout.ArrivalPoint),
+                Vec3.Distance(player, _sim.GetAnchor(ReedwaterLayout.EasyB)?.Position ?? ReedwaterLayout.ArrivalPoint));
+            if (lilyDistance < reedDistance)
+            {
+                Suggest(ReedwaterLayout.MidA);
+                Suggest(ReedwaterLayout.MidB);
+            }
+            else
+            {
+                Suggest(ReedwaterLayout.EasyA);
+                Suggest(ReedwaterLayout.EasyB);
+            }
         }
         else if (objective == "R03")
         {
@@ -708,7 +743,17 @@ public partial class GardenClearing : Node3D
         string text;
         if (_tool is not null)
         {
-            text = _anchorA is null ? "Right-click or Esc cancels" : "Right-click cancels · green preview is safe";
+            text = _pendingAnchorB is not null
+                ? "Choose Build to spend silk, or Cancel"
+                : _anchorA is null
+                    ? "Click a glowing anchor · right-click cancels"
+                    : "Click the second anchor · right-click cancels";
+        }
+        else if (_activeRegionId == RegionIds.ReedwaterBank &&
+                 _sim.RegionalObjectives.CompletedObjectives.Contains("R03") &&
+                 Vector3DistanceToPlayer(new Vector3(-9.6f, 0f, -2.8f), 2.6f))
+        {
+            text = "E · Follow the reed trail back to the outpost";
         }
         else if (Vector3DistanceToPlayer(TravelInteractionPoint, 2.4f))
         {
@@ -841,6 +886,9 @@ public partial class GardenClearing : Node3D
         }
     }
 
+    private string InsectName(string? insectId) =>
+        _sim?.GetInsect(insectId ?? "")?.Definition.Kind ?? "insect";
+
     private void HandleEvent(GameplayEvent evt)
     {
         // Events from an inactive region keep simulating, but only the active
@@ -872,11 +920,39 @@ public partial class GardenClearing : Node3D
                 break;
             case "InsectTrapped":
                 _audio.Play("catch");
-                _ui.ShowToast("A fly is caught! Walk close and press E.", UiKit.Gold, 4f);
+                _ui.ShowToast($"A {InsectName(evt.SubjectId)} is caught! Walk close and press E.",
+                    UiKit.Gold, 4f);
                 break;
             case "FoodCollected":
                 _audio.Play("collect");
-                _ui.ShowToast($"+{evt.Amount} food", UiKit.LeafDark, 2.8f);
+                var collector = evt.Detail ?? "player";
+                var insectName = InsectName(evt.SubjectId);
+                if (collector == "player")
+                {
+                    _ui.ShowToast($"You collected a {insectName} · +{evt.Amount} food",
+                        UiKit.LeafDark, 3.2f);
+                }
+                else
+                {
+                    var collectorWorker = _sim.GetWorker(collector);
+                    var collectorName = collectorWorker?.Name ?? "A helper";
+                    _ui.ShowToast($"{collectorName} collected a {insectName} · +{evt.Amount} food",
+                        UiKit.LeafDark, 3.4f);
+                    if (collectorWorker is not null &&
+                        _workerViews.TryGetValue(collectorWorker.Id, out var collectingView))
+                        collectingView.FlashActivity();
+                }
+                break;
+            case "FarBankDelivery":
+                var deliveryWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                var deliveryName = deliveryWorker?.Name ?? "A helper";
+                if (_ui.ToastText.StartsWith(deliveryName) && _ui.ToastText.Contains("collected a"))
+                    _ui.AppendToast(" from the far bank");
+                else
+                    _ui.ShowToast($"{deliveryName} brought far-bank prey home!", UiKit.Violet, 3.6f);
+                if (deliveryWorker is not null &&
+                    _workerViews.TryGetValue(deliveryWorker.Id, out var deliveryView))
+                    deliveryView.FlashActivity();
                 break;
             case "SpiderHatched":
                 _audio.Play("hatch");
@@ -923,8 +999,10 @@ public partial class GardenClearing : Node3D
                 break;
             case "RegionalObjectiveCompleted":
                 _audio.Play("success");
-                _ui.ShowToast($"Reedwater objective {evt.SubjectId} complete!", UiKit.LeafDark, 4.5f);
+                if (evt.SubjectId != "R03")
+                    _ui.ShowToast($"Reedwater objective {evt.SubjectId} complete!", UiKit.LeafDark, 4.5f);
                 _ui.SetStatus(_sim.GetActiveRegionHint());
+                if (evt.SubjectId == "R03") _farBankTrailLabel.Visible = true;
                 SaveGame(false, true);
                 break;
             case "RegionalMasteryEarned":
@@ -1217,7 +1295,9 @@ public partial class GardenClearing : Node3D
         var tool = _tool.Value;
         ProcessEvents();
         ClearBuild();
-        _ui.SetStatus(tool == WebType.Capture ? "Capture web built! Watch for a fly." : "Silk bridge built!");
+        _ui.ShowToast(tool == WebType.Capture
+            ? "Capture web built! Watch for a fly."
+            : "Silk bridge built! Walk across when you are ready.", UiKit.TealDark, 4f);
         _autosaveTimer = 0;
         SaveGame(false, true);
     }
@@ -1276,34 +1356,55 @@ public partial class GardenClearing : Node3D
     private void TryInteract()
     {
         if (_sim is null || _ui.BlocksWorldInput) return;
+        // After the far bank is reached, a short reed trail saves the long walk
+        // back over three bridges. It is optional: the bridges still work.
+        if (_activeRegionId == RegionIds.ReedwaterBank &&
+            _sim.RegionalObjectives.CompletedObjectives.Contains("R03") &&
+            Vector3DistanceToPlayer(new Vector3(-9.6f, 0f, -2.8f), 2.6f))
+        {
+            _audio.Play("click");
+            _player.GlobalPosition = new Vector3(10.2f, 0.55f, 6.8f);
+            _player.Velocity = Vector3.Zero;
+            _regionSafePosition = _player.GlobalPosition;
+            _ui.ShowToast("You followed the reed trail back to the outpost.", UiKit.TealDark, 3.5f);
+            return;
+        }
         var player = _player.ToCorePosition();
-        if (_sim.TryCollectNearest(player, 3.2, out var insect, out var food, out _))
+        if (_sim.TryCollectNearest(player, 3.2, out _, out _, out _))
         {
             _audio.Play("collect");
-            _ui.ShowToast($"+{food} food from the {insect?.Definition.Kind ?? "insect"}.", UiKit.LeafDark, 3.2f);
             ProcessEvents();
             return;
         }
         if (_sim.TryRepairNearest(player, 3.2, out _))
         {
             _audio.Play("repair");
-            _ui.ShowToast("Web repaired for 2 silk.", UiKit.TealDark, 3f);
             ProcessEvents();
             return;
         }
-        if (Vector3DistanceToPlayer(NurseryInteractionPoint, 2.8f))
-        {
-            _audio.Play("click");
-            _ui.OpenNursery(_sim);
-            return;
-        }
-        if (Vector3DistanceToPlayer(TravelInteractionPoint, 2.4f))
+        var nurseryDistance = _player.GlobalPosition.DistanceTo(NurseryInteractionPoint);
+        var travelDistance = _player.GlobalPosition.DistanceTo(TravelInteractionPoint);
+        // At the Reedwater outpost the nursery and the trail are close together.
+        // Use whichever is actually nearer so E never opens the wrong panel.
+        if (travelDistance <= 2.4f && travelDistance <= nurseryDistance)
         {
             _audio.Play("click");
             OpenTravelDialog();
             return;
         }
-        _ui.ShowToast("Move closer to a caught insect, a damaged web, or the nursery.", UiKit.Coral, 4f);
+        if (nurseryDistance <= 2.8f)
+        {
+            _audio.Play("click");
+            _ui.OpenNursery(_sim);
+            return;
+        }
+        if (travelDistance <= 2.4f)
+        {
+            _audio.Play("click");
+            OpenTravelDialog();
+            return;
+        }
+        _ui.ShowToast("Move closer to a caught insect, a damaged web, the nursery or a trail.", UiKit.Coral, 4f);
     }
 
     private void OpenTravelDialog()
@@ -1507,7 +1608,7 @@ public partial class GardenClearing : Node3D
             if (a is null || b is null) continue;
             var view = new WebVisual { Name = $"Web_{web.Id}" };
             _websRoot.AddChild(view);
-            view.Configure(web, ToVector3(a.Position), ToVector3(b.Position));
+            view.Configure(web, ToVector3(a.Position), ToVector3(b.Position), Settings.ReducedMotion);
             _webViews[web.Id] = view;
         }
         var activeIds = _sim.RegionWebs.Select(web => web.Id).ToHashSet(StringComparer.Ordinal);
@@ -1764,6 +1865,14 @@ public partial class GardenClearing : Node3D
     public bool ProbeBridgeUsesAllPlankVariants(string webId) =>
         _webViews.TryGetValue(webId, out var view) && view.ProbeBridgeUsesAllPlankVariants;
 
+    public bool ProbeBridgeConstructionActive(string webId) =>
+        _webViews.TryGetValue(webId, out var view) && view.ProbeBridgeConstructionActive;
+    public int ProbeBridgeConstructionPartCount(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.ProbeBridgeConstructionPartCount : 0;
+    public bool ProbeWorkerActivityGlowVisible(string workerId) =>
+        _workerViews.TryGetValue(workerId, out var view) && view.ProbeActivityGlowVisible;
+    public bool ProbeFarBankTrailVisible => _farBankTrailLabel.Visible;
+
     public bool ProbeToastVisible => _ui.ProbeToastVisible;
     public string ProbeToastText => _ui.ProbeToastText;
     public Rect2 ProbeToastRect => _ui.ProbeToastRect;
@@ -1906,6 +2015,7 @@ public partial class GardenClearing : Node3D
 
     public bool ProbeBuildConfirmVisible => _ui.BuildConfirmVisible;
     public string ProbeBuildConfirmText => _ui.ProbeBuildConfirmText;
+    public string ProbeStatusText => _ui.ProbeStatusText;
     public Rect2 ProbeBuildConfirmRect => _ui.ProbeBuildConfirmRect;
     public bool ProbeNurseryProgressVisible => _ui.ProbeNurseryProgressVisible;
     public double ProbeNurseryProgressValue => _ui.ProbeNurseryProgressValue;

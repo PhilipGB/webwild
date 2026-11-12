@@ -46,6 +46,7 @@ public sealed class WorkerSave
     public double PatrolCooldown { get; set; }
     public int CollectCount { get; set; }
     public int RepairCount { get; set; }
+    public int BridgeCrossings { get; set; }
 }
 
 public sealed class InsectSave

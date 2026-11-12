@@ -168,6 +168,35 @@ Follow-up to the six-mission real-input playtest. No new region or mechanics.
 - Verification: 119/119 .NET tests, 55/55 scene checks, 295/295 headless and
   295/295 rendered runtime checks.
 
+### PR 3 — guidance, pacing and feedback
+
+- The status line now follows the active mission step on every HUD tick, so
+  "Capture web built" or "helper is exploring" cannot linger after the objective
+  moves on.
+- Catch and collect toasts name the actual species (fly, moth, dragonfly).
+  Worker collections are attributed by name, and far-bank deliveries append
+  "from the far bank" instead of replacing the collection message.
+- R02 points at the nearest viable flyway (reed bank or lily island). R03
+  explains that the far capture web can be built across the water from the root
+  island. Wind guidance describes sheltering before the gust and repairing after.
+- At the Reedwater outpost, E now chooses the nearer of the nursery and the
+  trail, so the travel dialog is no longer hidden behind the nursery.
+- Shortened Reedwater insect respawns to 10 s, made a helper's first patrol
+  deliberately cross an existing bridge, and made far-bank delivery count even
+  when the helper is already on the far bank (its current leg need not use a
+  bridge).
+- Added an optional reed-trail shortcut back to the outpost after R03.
+- Helpers show a restrained gold activity halo while collecting/repairing and
+  flash on a collection; their nameplate already names the current task.
+- Bridges grow in sequentially over about a second; collision is complete from
+  the first frame and reduced-motion settings skip the effect.
+- Verification: 124/124 .NET tests, 55/55 scene checks, 305/305 headless and
+  306/306 rendered runtime checks. A fresh real-input six-mission playthrough
+  passed with no probes or teleports: M01 0:24, M02 1:14 (helper crossing
+  18.2 s after the hatch), M03 2:45, R01 3:58, R02 5:21, R03 6:11, region
+  complete 6:11, return/save/continue 7:27. R02's longest catch gap was 29.6 s
+  and R03's far-bank delivery took 13.2 s.
+
 
 ## Webwild v0.2.0 P1 — Reedwater Bank second region (unreleased milestone)
 

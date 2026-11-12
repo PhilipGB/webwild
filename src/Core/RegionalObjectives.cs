@@ -39,7 +39,7 @@ public sealed class RegionalObjectivesConfig
             new()
             {
                 Id = "R01", Title = "Across the Water",
-                Hint = "Build two silk bridges: reed bank to mossy island, then to the lily island.",
+                Hint = "Press 2 and build two silk bridges: reed bank, mossy island, then lily island.",
                 Steps = new List<RegionalStepDefinition>
                 {
                     new()
@@ -53,7 +53,7 @@ public sealed class RegionalObjectivesConfig
             new()
             {
                 Id = "R02", Title = "The Reed Harvest",
-                Hint = "Catch three insects in Reedwater Bank to feed the colony.",
+                Hint = "Build a capture web on a flyway near you, then collect three insects.",
                 Steps = new List<RegionalStepDefinition>
                 {
                     new()

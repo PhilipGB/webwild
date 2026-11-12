@@ -88,6 +88,7 @@ public partial class GameUI : CanvasLayer
     public Rect2 ProbeActionColumnRect => _actionsColumn.GetGlobalRect();
     public Rect2 ProbeToolbarRect => _toolbar.GetGlobalRect();
     public Rect2 ProbeStatusRect => _statusLabel.GetGlobalRect();
+    public string ProbeStatusText => _statusLabel.Text;
     public bool BuildConfirmVisible => _buildConfirmPanel.Visible;
     public string ProbeBuildConfirmText => _buildConfirmLabel.Text;
     public Rect2 ProbeBuildConfirmRect => _buildConfirmPanel.GetGlobalRect();
@@ -451,7 +452,11 @@ public partial class GameUI : CanvasLayer
         var warning = sim.WeatherPhase == WeatherPhase.Warning;
         _warningPanel.Visible = warning;
         if (warning)
-            _warningLabel.Text = $"Wind in {(int)Math.Ceiling(sim.WeatherRemaining)}s — protect your web!";
+            _warningLabel.Text = $"Wind in {(int)Math.Ceiling(sim.WeatherRemaining)}s — sheltered webs take less damage";
+        // Keep the status line current with the active step so an old build or
+        // collection message can never linger after the objective moved on.
+        if (_activeTool is null && !IsModalOpen)
+            SetStatus(sim.GetActiveRegionHint());
         if (sim.ActiveRegionId == RegionIds.ReedwaterBank)
         {
             _masteryLabel.Visible = true;
@@ -626,6 +631,17 @@ public partial class GameUI : CanvasLayer
         _toastPanel.Modulate = Colors.White;
         _toastTimer = Mathf.Clamp(duration, 1.2f, 4.5f);
         _toastDuration = _toastTimer;
+    }
+
+    public string ToastText => _toastLabel.Text;
+
+    /// <summary>Add a short clause to the visible toast without replacing it.</summary>
+    public void AppendToast(string suffix, float extraSeconds = 1.2f)
+    {
+        if (!_toastPanel.Visible) return;
+        _toastLabel.Text += suffix;
+        _toastTimer = Mathf.Min(4.5f, _toastTimer + extraSeconds);
+        _toastDuration = Mathf.Max(_toastDuration, _toastTimer);
     }
 
     private void UpdateToast(float delta)

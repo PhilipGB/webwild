@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T18:57:03.4702362Z",
+  "generatedUtc": "2026-11-12T20:46:49.8209997Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
-  "passes": 295,
+  "passes": 306,
   "failures": 0,
   "checks": [
     {
@@ -368,12 +368,12 @@
     {
       "name": "pause-freezes-airborne",
       "pass": true,
-      "detail": "start=0.60 paused=0.60"
+      "detail": "start=0.20 paused=0.20"
     },
     {
       "name": "pause-resumes-physics",
       "pass": true,
-      "detail": "resumed=0.00 paused=0.60"
+      "detail": "resumed=0.00 paused=0.20"
     },
     {
       "name": "climb-stem",
@@ -456,6 +456,11 @@
       "detail": "food 2-\u003E4"
     },
     {
+      "name": "status-clears-after-objective",
+      "pass": true,
+      "detail": "status=\u0027Select the two pebble posts and build a silk bridge (key 2).\u0027"
+    },
+    {
       "name": "m01-complete",
       "pass": true,
       "detail": "First Threads"
@@ -479,6 +484,16 @@
       "name": "bridge-visible",
       "pass": true,
       "detail": "webs=2"
+    },
+    {
+      "name": "bridge-build-animation-starts",
+      "pass": true,
+      "detail": "active=True parts=58"
+    },
+    {
+      "name": "bridge-build-animation-finishes",
+      "pass": true,
+      "detail": "Planks finish appearing; collision was complete from the first frame"
     },
     {
       "name": "bridge-ramps-west-east",
@@ -568,12 +583,12 @@
     {
       "name": "nursery-progress-visible",
       "pass": true,
-      "detail": "A helper is hatching\u2026 40% \u00B7 1.8s left"
+      "detail": "A helper is hatching\u2026 47% \u00B7 1.6s left"
     },
     {
       "name": "nursery-progress-advances",
       "pass": true,
-      "detail": "value=1.20"
+      "detail": "value=1.40"
     },
     {
       "name": "nursery-pending-count",
@@ -583,7 +598,7 @@
     {
       "name": "nursery-neutral-hatching-text",
       "pass": true,
-      "detail": "A helper is hatching\u2026 40% \u00B7 1.8s left"
+      "detail": "A helper is hatching\u2026 47% \u00B7 1.6s left"
     },
     {
       "name": "nursery-refreshes-after-hatch",
@@ -868,32 +883,32 @@
     {
       "name": "player-walks-bank-onto-bridge-one",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=5.4"
+      "detail": "reached=True end=Vec3 { X = 1.9996455907821655, Y = 0.42760711908340454, Z = 5.959555149078369, LengthSquared = 39.697727911931864, Length = 6.300613296492006, HorizontalLength = 6.286086227824199, IsFinite = True } seconds=5.6"
     },
     {
       "name": "player-walks-bridge-one-to-island-a",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True }"
+      "detail": "end=Vec3 { X = 1.9996455907821655, Y = 0.42760711908340454, Z = 5.959555149078369, LengthSquared = 39.697727911931864, Length = 6.300613296492006, HorizontalLength = 6.286086227824199, IsFinite = True }"
     },
     {
       "name": "player-walks-island-a-onto-bridge-two",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -2.653087615966797, Y = 0.4634961485862732, Z = 2.1378610134124756, LengthSquared = 11.824152290419708, Length = 3.438626512202177, HorizontalLength = 3.4072457514340524, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -2.653080463409424, Y = 0.4635019898414612, Z = 2.137805223464966, LengthSquared = 11.82388121338585, Length = 3.438587095506794, HorizontalLength = 3.4072051770914613, IsFinite = True }"
     },
     {
       "name": "clever-crossing-earned-by-arrival",
       "pass": true,
-      "detail": "bridges=2 position=Vec3 { X = -2.653087615966797, Y = 0.4634961485862732, Z = 2.1378610134124756, LengthSquared = 11.824152290419708, Length = 3.438626512202177, HorizontalLength = 3.4072457514340524, IsFinite = True }"
+      "detail": "bridges=2 position=Vec3 { X = -2.653080463409424, Y = 0.4635019898414612, Z = 2.137805223464966, LengthSquared = 11.82388121338585, Length = 3.438587095506794, HorizontalLength = 3.4072051770914613, IsFinite = True }"
     },
     {
       "name": "player-walks-bridge-two-back-to-island-a",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.6959114074707031, Y = 0.48523223400115967, Z = 5.925416946411133, LengthSquared = 38.22213181171925, Length = 6.182405018414698, HorizontalLength = 6.1633336345524485, IsFinite = True } seconds=3.4"
+      "detail": "end=Vec3 { X = 1.695874810218811, Y = 0.4852209687232971, Z = 5.92538595199585, LengthSquared = 38.22162944053322, Length = 6.182364389174519, HorizontalLength = 6.163293766489185, IsFinite = True } seconds=3.2"
     },
     {
       "name": "player-walks-bridge-one-back-to-bank",
       "pass": true,
-      "detail": "end=Vec3 { X = 8.62128734588623, Y = 0.0008278507157228887, Z = 8.262158393859863, LengthSquared = 142.58985751090384, Length = 11.94109951013322, HorizontalLength = 11.941099481436668, IsFinite = True } seconds=2.8"
+      "detail": "end=Vec3 { X = 8.621152877807617, Y = 0.000830845907330513, Z = 8.262085914611816, LengthSquared = 142.58634129326245, Length = 11.940952277488694, HorizontalLength = 11.94095224858376, IsFinite = True } seconds=2.7"
     },
     {
       "name": "player-stops-and-resumes-at-deck-joint",
@@ -909,6 +924,11 @@
       "name": "reed-capture-web-built",
       "pass": true,
       "detail": "Capture web across the reed stems"
+    },
+    {
+      "name": "player-collection-names-species",
+      "pass": true,
+      "detail": "You collected a fly \u00B7 \u002B2 food"
     },
     {
       "name": "reedwater-insects-collected",
@@ -928,12 +948,12 @@
     {
       "name": "player-walks-island-b-onto-bridge-three",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -8.85933780670166, Y = -2.6921043172478676E-06, Z = -1.988784670829773, LengthSquared = 82.44313084018812, Length = 9.079819978402002, HorizontalLength = 9.079819978401602, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -8.859029769897461, Y = 0.0001004217192530632, Z = -1.988564133644104, LengthSquared = 82.4367957876297, Length = 9.079471118277192, HorizontalLength = 9.079471117721846, IsFinite = True }"
     },
     {
       "name": "player-walks-bridge-three-back-to-island-b",
       "pass": true,
-      "detail": "end=Vec3 { X = -3.071676015853882, Y = 0.5315511226654053, Z = 2.1269118785858154, LengthSquared = 14.241494281648272, Length = 3.773790439551231, HorizontalLength = 3.736167513059528, IsFinite = True } seconds=6.3"
+      "detail": "end=Vec3 { X = -3.0714285373687744, Y = 0.5314395427703857, Z = 2.1272029876708984, LengthSquared = 14.241093798539282, Length = 3.773737378056306, HorizontalLength = 3.7361297904274267, IsFinite = True } seconds=6.5"
     },
     {
       "name": "reedwater-bridge-modular-planks",
@@ -981,6 +1001,26 @@
       "detail": "Worker crossed a real bridge edge"
     },
     {
+      "name": "worker-attributed-collection",
+      "pass": true,
+      "detail": "Worker collection names the helper"
+    },
+    {
+      "name": "far-bank-delivery-feedback",
+      "pass": true,
+      "detail": "Far-bank delivery is announced"
+    },
+    {
+      "name": "dragonfly-named-correctly",
+      "pass": true,
+      "detail": "Collection toast names the dragonfly"
+    },
+    {
+      "name": "worker-activity-glow",
+      "pass": true,
+      "detail": "A working helper is visibly marked"
+    },
+    {
       "name": "r03-complete",
       "pass": true,
       "detail": "The Far Bank"
@@ -989,6 +1029,16 @@
       "name": "reedwater-completion-feedback",
       "pass": true,
       "detail": "Completion acknowledgement without ending free play"
+    },
+    {
+      "name": "far-bank-trail-visible",
+      "pass": true,
+      "detail": "Optional reed trail appears after R03"
+    },
+    {
+      "name": "far-bank-return-shortcut",
+      "pass": true,
+      "detail": "player=(10.2, 1.8455088E-05, 6.8)"
     },
     {
       "name": "reedwater-save",
@@ -1038,7 +1088,7 @@
     {
       "name": "reload-reedwater-bridge-walk",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=7.5"
+      "detail": "end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=6.8"
     },
     {
       "name": "reload-reedwater-bridge-modular-planks",
@@ -1098,7 +1148,7 @@
     {
       "name": "reenter-supply-not-regranted",
       "pass": true,
-      "detail": "claimed=reedwater_bank food=3 silk=11"
+      "detail": "claimed=reedwater_bank food=5 silk=13"
     },
     {
       "name": "critical-bridge-present",
@@ -1128,32 +1178,32 @@
     {
       "name": "toast-visible-100",
       "pass": true,
-      "detail": "Clever Crossing earned. Keep exploring or use the trail to return."
+      "detail": "A fly is caught! Walk close and press E."
     },
     {
       "name": "toast-inside-viewport-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 116)"
+      "detail": "(934, 273.6), (330, 87)"
     },
     {
       "name": "toast-avoids-mission-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 116) vs (820, 18), (440, 145)"
+      "detail": "(934, 273.6), (330, 87) vs (820, 18), (440, 145)"
     },
     {
       "name": "toast-avoids-actions-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 116) vs (22, 82), (196, 177)"
+      "detail": "(934, 273.6), (330, 87) vs (22, 82), (196, 177)"
     },
     {
       "name": "toast-avoids-toolbar-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 116) vs (0, 584), (1280, 62)"
+      "detail": "(934, 273.6), (330, 87) vs (0, 584), (1280, 62)"
     },
     {
       "name": "toast-avoids-status-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 116) vs (0, 550), (1280, 27)"
+      "detail": "(934, 273.6), (330, 87) vs (0, 550), (1280, 27)"
     },
     {
       "name": "toast-avoids-camera-centre-100",
@@ -1188,32 +1238,32 @@
     {
       "name": "toast-visible-125",
       "pass": true,
-      "detail": "\u002B2 food"
+      "detail": "Clever Crossing earned. Keep exploring or use the trail to return."
     },
     {
       "name": "toast-inside-viewport-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58)"
+      "detail": "(678, 218.88), (330, 116)"
     },
     {
       "name": "toast-avoids-mission-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (564, 18), (440, 145)"
+      "detail": "(678, 218.88), (330, 116) vs (564, 18), (440, 145)"
     },
     {
       "name": "toast-avoids-actions-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (22, 82), (196, 177)"
+      "detail": "(678, 218.88), (330, 116) vs (22, 82), (196, 177)"
     },
     {
       "name": "toast-avoids-toolbar-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (0, 440), (1024, 62)"
+      "detail": "(678, 218.88), (330, 116) vs (0, 440), (1024, 62)"
     },
     {
       "name": "toast-avoids-status-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (0, 406), (1024, 27)"
+      "detail": "(678, 218.88), (330, 116) vs (0, 406), (1024, 27)"
     },
     {
       "name": "toast-avoids-camera-centre-125",
@@ -1324,6 +1374,11 @@
       "name": "bridge-reverse-collision",
       "pass": true,
       "detail": "shapes=1"
+    },
+    {
+      "name": "bridge-animation-respects-reduced-motion",
+      "pass": true,
+      "detail": "Reduced motion skips the grow-in effect"
     },
     {
       "name": "bridge-reverse-modular-planks",
@@ -1453,7 +1508,7 @@
     {
       "name": "new-garden-cancel",
       "pass": true,
-      "detail": "save=53 archive=33"
+      "detail": "save=53 archive=32"
     },
     {
       "name": "new-garden-confirm-archives-previous",

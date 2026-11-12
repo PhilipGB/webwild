@@ -28,6 +28,7 @@ public sealed class WorkerState
     public double PatrolCooldown { get; set; } = 6;
     public int CollectCount { get; set; }
     public int RepairCount { get; set; }
+    public int BridgeCrossings { get; set; }
     public bool IsMoving => Activity is WorkerActivity.Collecting or WorkerActivity.Repairing or WorkerActivity.Patrolling;
     public string DisplayState => Activity switch
     {

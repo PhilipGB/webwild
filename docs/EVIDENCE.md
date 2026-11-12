@@ -544,6 +544,17 @@ $ xvfb-run -a -s "-screen 0 1280x720x24" \
   and 236/236 runtime checks headless and rendered.
 - Windows archive: built; runtime **NOT VERIFIED** (no Windows host).
 
+### Delivery record
+
+- PR: https://github.com/PhilipGB/webwild/pull/13
+- Exact PR-head CI:
+  https://github.com/PhilipGB/webwild/actions/runs/43213927486
+- Merge commit: `2ef1b8d66592d4f698ecd73f075f1b8ce39f092c`
+- Final merged-main CI:
+  https://github.com/PhilipGB/webwild/actions/runs/43214216887
+- Release: https://github.com/PhilipGB/webwild/releases/tag/v0.2.0
+- Repository visibility checked before and after: **PRIVATE**.
+
 ## Honest non-results
 
 - Child playtest: **NOT VERIFIED** (`docs/PLAYTEST_NOTES.md`).

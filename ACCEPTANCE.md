@@ -136,4 +136,4 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Linux export | **PASS** — exported, launched, scene 51/51 and probe 236/236 headless and rendered |
 | Windows release | **PARTIAL** — export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no child playtest |
-| Milestone status | v0.2.0 P2 modular bridge/reliability pass verified for release; Windows runtime and child playtesting remain documented limitations |
+| Milestone status | **RELEASED as v0.2.0** on verified `main`; Linux archive re-downloaded and rerun. Windows runtime and child playtesting remain documented limitations |

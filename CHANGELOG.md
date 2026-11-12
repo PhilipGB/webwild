@@ -1,4 +1,4 @@
-## Webwild v0.2.0 P2 — modular silk bridges, reliability and release polish
+## Webwild v0.2.0 — modular silk bridges, reliability and release polish
 
 Final technical hardening and presentation pass after the two-region Reedwater
 Bank implementation. The v0.2.0 release itself is described at the end of this
@@ -59,6 +59,10 @@ section once its gates are complete.
   export built; Windows runtime remains **NOT VERIFIED**.
 - New real screenshots include modular bridge close-ups, damaged bridge, and
   100/125/150% toast layouts.
+- Released as annotated tag `v0.2.0` on verified `main`; Linux and Windows x64
+  archives and `SHA256SUMS` are attached to the GitHub release. Windows runtime,
+  real-compositor full-screen and supervised child playtesting remain
+  **NOT VERIFIED**.
 
 # Changelog
 

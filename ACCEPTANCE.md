@@ -215,9 +215,9 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 
 | Area | Result |
 |---|---|
-| Automated gameplay acceptance | **PASS** — 246/246 runtime checks, 106/106 unit tests, 55/55 scene contracts |
-| Rendered practical inspection | **PASS** — 44 screenshots and full flow |
-| Linux export | **PASS** — exported, launched, scene 55/55 and probe 246/246 headless and rendered |
-| Windows release | **PARTIAL** — export PASS, runtime **NOT VERIFIED** |
-| Child usability | **NOT VERIFIED** — no child playtest |
-| Milestone status | v0.2.0 released; v0.2.1 shoreline fix merged but deliberately **not released**. Windows runtime and child playtesting remain documented limitations |
+| Automated gameplay acceptance | **PASS** — 305/305 headless and 306/306 rendered runtime checks; 124/124 unit tests; 55/55 scene contracts |
+| Rendered practical inspection | **PASS** — v0.2.2 screenshots plus a fresh real-input six-mission playthrough with 0 failures in 447 s |
+| Linux export | **PASS** — exported, launched, scene 55/55 and probe 305/305 headless, 306/306 rendered |
+| Windows release | **PARTIAL** — PE32+ export PASS, runtime **NOT VERIFIED** |
+| Child usability | **NOT VERIFIED** — no supervised child playtest |
+| Milestone status | v0.2.2 reliability hardening merged to `main`; v0.2.0 remains the published release. v0.2.1 and v0.2.2 are deliberately **not released**. Windows runtime and child playtesting remain documented limitations |

@@ -106,6 +106,8 @@
   save/quit/continue) completed without probes, teleports or simulation calls.
 - `dotnet test`: 124/124; scene contract 55/55; headless 305/305 and rendered
   306/306 runtime checks.
+- Exported Linux: scene 55/55, headless 305/305 and rendered 306/306.
+- Exported Windows: PE32+ produced, runtime not launched (no Windows host).
 
 ## Not performed
 

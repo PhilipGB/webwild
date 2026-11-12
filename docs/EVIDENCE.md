@@ -29,7 +29,7 @@ an inspected screenshot.
 | P8 | https://github.com/PhilipGB/webwild/pull/8 | `2ef10d7` |
 | v0.1.1 hardening | https://github.com/PhilipGB/webwild/pull/9 | `b1587b1` |
 | v0.1.2 review hardening | https://github.com/PhilipGB/webwild/pull/10 | `de26fc3` |
-| v0.2.0 P0 scene-first world | https://github.com/PhilipGB/webwild/pull/11 | `fc57b97`, `87c2fb3` |
+| v0.2.0 P0 scene-first world | https://github.com/PhilipGB/webwild/pull/11 | `7af6e48` |
 
 All eight PRs had green **Build and pure tests** and **Godot .NET import and
 startup** checks before merge.
@@ -214,7 +214,13 @@ See `docs/EXPORTS.md`.
 ## v0.2.0 P0 — scene-first world
 
 - PR: https://github.com/PhilipGB/webwild/pull/11
-- Implementation commits: `fc57b97` (scene architecture) and `87c2fb3` (contract tests)
+- Implementation commits: `fc57b97` (scene architecture), `87c2fb3`
+  (contract tests) and `9c9b970` (documentation/evidence)
+- Merge commit on `main`: `7af6e48`
+- Exact-head PR CI: https://github.com/PhilipGB/webwild/actions/runs/43135905492
+  — both checks green on `9c9b970`
+- Merged `main` CI: https://github.com/PhilipGB/webwild/actions/runs/43136134224
+  — success on `7af6e48`
 - Branch: `feat/v0.2.0-p0-scene-world`
 - No v0.2.0 release is published; this is the first development milestone.
 - Persistent world moved from `scripts/world/GardenScenery.cs` into:

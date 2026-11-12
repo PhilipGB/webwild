@@ -1,3 +1,53 @@
+## Webwild v0.2.1 — Reedwater shoreline correction (unreleased)
+
+Fixes the visible water-over-grass defect in Reedwater Bank without changing
+gameplay, missions, bridge geometry, economy or save schema.
+
+### Geometry
+
+- Replaced the 24 × 20 m `PlaneMesh` pond surface with a static authored
+  `ArrayMesh` (`art/meshes/reedwater_water_surface.tres`) whose wavy,
+  superellipse-like outline follows the open water between the banks and around
+  the islands. It is 13.33 × 20.41 m in bounds and tucks slightly under the
+  opaque banks so there is no seam.
+- Added a continuous mossy shore shelf
+  (`art/meshes/reedwater_shore_shelf.tres`) between the water edge and the banks.
+  It gives the shoreline a wet, irregular rim and prevents exposed gaps.
+- Replaced the oversized pond bed with `art/meshes/reedwater_pond_bed.tres`.
+  It sits at Y −1.45 under the water and shelf, so transparent water has a dark
+  bed instead of showing the world background.
+- Lowered the water top to Y −0.03, just below the bank top at Y 0. The bank
+  remains opaque and the water cannot render over grass. This is combined with
+  the reshaped mesh and shelf; lowering alone was not used as the fix.
+- Removed the two long `ShoreMossWest`/`ShoreMossEast` boxes that previously
+  crossed the waterline. The shelf now provides the shoreline trim.
+- Preserved the existing water colour, emission and low-poly aesthetic.
+
+### Water hazards
+
+- Kept four authored `Area3D` water volumes and the existing recovery rule.
+- Refitted the shallow pond volume and three tall jump-guard channels to the new
+  shoreline. The volumes stay inside the water footprint and the tall guards
+  remain in the channels between landmasses so island standing/jumping stays
+  safe.
+- Verified safe bank and island points, hazardous open-water points, direct
+  water recovery, bridge traversal and the no-bridge rejection through runtime
+  physics queries.
+
+### Verification
+
+- 106/106 pure .NET tests.
+- 55/55 scene checks, adding authored-surface, water-below-banks,
+  water-versus-bank-bounds and hazard-inside-shoreline checks.
+- 246/246 headless and rendered runtime checks, adding shoreline dry/wet,
+  island, open-water, recovery and shoreline screenshot checks.
+- Exported Linux scene/runtime probes rerun headless and rendered.
+- New real screenshots: `22d-start-shoreline`, `22e-far-shoreline`,
+  `22f-island-edges` and `22g-low-angle-shoreline`; `21`, `22b`–`22c`, `23`–`24`
+  and the other runtime captures were regenerated.
+- Windows x64 export rebuilt; Windows runtime remains **NOT VERIFIED**.
+- No v0.2.1 release is published.
+
 ## Webwild v0.2.0 — modular silk bridges, reliability and release polish
 
 Final technical hardening and presentation pass after the two-region Reedwater

@@ -53,10 +53,28 @@
   checksum-matched, extracted and rerun.
 - Windows x64 export was produced and verified as PE32+.
 
+## Integration performed in Webwild v0.2.1
+
+- Replaced the 24 × 20 m translucent pond plane with a static authored
+  shoreline surface, mossy shelf and pond bed. Scene validation computes actual
+  mesh AABBs and proves the water is below the bank tops, stays within the bank
+  span (with a small hidden underlap) and is surrounded by the shelf.
+- Refitted the four water hazard volumes to the new shoreline. Scene validation
+  proves every hazard AABB lies inside the authored water outline.
+- Runtime physics queries prove both banks and both islands are safe, three
+  open-water points are hazardous, direct water entry recovers to the safe bank,
+  bridge traversal still works and no-bridge crossing is rejected.
+- Inspected real rendered screenshots from source and exported Linux: arrival,
+  elevated overview, start shore, far shore, island edges, low angle and bridges.
+  No turquoise overlays, rectangular water edges across grass, shoreline gaps or
+  sorting artefacts were observed.
+- `dotnet test`: 106/106; scene contract 55/55; headless, rendered and exported
+  Linux runtime probes 246/246.
+
 ## Not performed
 
-- Windows runtime: no Windows host was available. The Windows export was built
-  but not launched.
+- Windows runtime: no Windows host was available. The v0.2.1 Windows export was
+  rebuilt as PE32+ but not launched.
 - A supervised child playtest of the new region and bridges was not performed.
 - Actual desktop full-screen presentation on a real compositor was not visually
   tested.

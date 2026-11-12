@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T11:58:24.3900481Z",
+  "generatedUtc": "2026-11-12T14:02:41.9091416Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
-  "passes": 236,
+  "passes": 246,
   "failures": 0,
   "checks": [
     {
@@ -256,6 +256,26 @@
       "detail": "water areas=4"
     },
     {
+      "name": "scene-rw-water-surface-authored",
+      "pass": true,
+      "detail": "water=res://art/meshes/reedwater_water_surface.tres; shelf=res://art/meshes/reedwater_shore_shelf.tres; bed=res://art/meshes/reedwater_pond_bed.tres"
+    },
+    {
+      "name": "scene-rw-water-below-banks",
+      "pass": true,
+      "detail": "waterTop=-0.030 bankTop=0.000 shelfTop=-0.080 bedTop=-1.450"
+    },
+    {
+      "name": "scene-rw-water-shore-bounds",
+      "pass": true,
+      "detail": "waterX=-7.13..6.20 banksX=-7.00..6.00 shelfX=-7.54..6.61 shelfZ=-9.40..11.73"
+    },
+    {
+      "name": "scene-rw-water-hazard-within-shoreline",
+      "pass": true,
+      "detail": "hazards=4 (-6.9..5.9,-8.8..10.8) (3.0..5.7,-8.7..10.7) (-1.8..-0.1,-8.7..10.7) (-6.7..-5.0,-8.7..10.7)"
+    },
+    {
       "name": "scene-rw-solid-collision-contract",
       "pass": true,
       "detail": "bodies=21"
@@ -268,7 +288,7 @@
     {
       "name": "scene-rw-model-resources",
       "pass": true,
-      "detail": "models=66 meshes=397 "
+      "detail": "models=66 meshes=396 "
     },
     {
       "name": "scene-rw-insect-routes",
@@ -348,17 +368,17 @@
     {
       "name": "pause-freezes-airborne",
       "pass": true,
-      "detail": "start=0.20 paused=0.20"
+      "detail": "start=0.37 paused=0.37"
     },
     {
       "name": "pause-resumes-physics",
       "pass": true,
-      "detail": "resumed=0.00 paused=0.20"
+      "detail": "resumed=0.00 paused=0.37"
     },
     {
       "name": "climb-stem",
       "pass": true,
-      "detail": "height=3.92"
+      "detail": "height=3.80"
     },
     {
       "name": "build-tool-open",
@@ -603,7 +623,7 @@
     {
       "name": "reload-world-scene-authored",
       "pass": true,
-      "detail": "51/51 scene checks after load"
+      "detail": "55/55 scene checks after load"
     },
     {
       "name": "settings-persist",
@@ -686,9 +706,39 @@
       "detail": "insects=3"
     },
     {
+      "name": "shoreline-start-bank-dry",
+      "pass": true,
+      "detail": "water=False hazard=False"
+    },
+    {
+      "name": "shoreline-far-bank-dry",
+      "pass": true,
+      "detail": "water=False hazard=False"
+    },
+    {
+      "name": "shoreline-island-a-safe",
+      "pass": true,
+      "detail": "pos=Vec3 { X = 1.4, Y = 0.55, Z = 5.6, LengthSquared = 33.622499999999995, Length = 5.798491183057882, HorizontalLength = 5.772347875864724, IsFinite = True } hazard=False"
+    },
+    {
+      "name": "shoreline-island-b-safe",
+      "pass": true,
+      "detail": "pos=Vec3 { X = -3, Y = 0.55, Z = 1.8, LengthSquared = 12.5425, Length = 3.5415392133929564, HorizontalLength = 3.4985711369071804, IsFinite = True } hazard=False"
+    },
+    {
+      "name": "shoreline-open-water-is-hazardous",
+      "pass": true,
+      "detail": "Vec3 { X = 4.2, Y = -0.3, Z = 8.5, LengthSquared = 89.98, Length = 9.485778829384543, HorizontalLength = 9.481033698917011, IsFinite = True }:True Vec3 { X = -2.5, Y = -0.3, Z = -4, LengthSquared = 22.34, Length = 4.726520919238589, HorizontalLength = 4.716990566028302, IsFinite = True }:True Vec3 { X = -6.2, Y = -0.3, Z = 5, LengthSquared = 63.53000000000001, Length = 7.9705708703956715, HorizontalLength = 7.964923100695951, IsFinite = True }:True"
+    },
+    {
+      "name": "shoreline-water-recovery",
+      "pass": true,
+      "detail": "player=(7, 1.8455088E-05, 8.5) safe=(7, 0.55, 8.5)"
+    },
+    {
       "name": "water-blocks-without-bridge",
       "pass": true,
-      "detail": "x=6.05 inWater=True"
+      "detail": "x=6.05 inWater=False"
     },
     {
       "name": "pond-route-blocked-before-bridges",
@@ -1128,7 +1178,7 @@
     {
       "name": "bridge-removal-blocks-crossing",
       "pass": true,
-      "detail": "x=-5.02"
+      "detail": "x=-5.01"
     },
     {
       "name": "bridge-zaxis-built",

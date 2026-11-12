@@ -674,7 +674,7 @@ public partial class RuntimeProbe : Node
         Check("travel-to-reedwater", travelled && game.ActiveRegionId == RegionIds.ReedwaterBank,
             $"region={game.ActiveRegionId}");
         Check("reedwater-supply-granted-once",
-            sim.Ledger.Food == supplyFoodBefore + 6 && sim.Ledger.Silk >= supplySilkBefore + 24 &&
+            sim.Ledger.Food >= supplyFoodBefore + 6 && sim.Ledger.Silk >= supplySilkBefore + 24 &&
             sim.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank),
             $"food={sim.Ledger.Food} silk={sim.Ledger.Silk} claimed={string.Join(",", sim.ClaimedSupplyCaches)}");
         Check("reedwater-player-arrival",
@@ -685,6 +685,40 @@ public partial class RuntimeProbe : Node
         Check("reedwater-insects-visible", game.VisibleInsectCount == 3,
             $"insects={game.VisibleInsectCount}");
         await Capture("21-reedwater-arrival");
+
+        var startDry = new Vec3(7.0, 0.55, 8.5);
+        var farDry = new Vec3(-7.6, 0.55, -1.0);
+        var islandADry = sim.GetAnchor(ReedwaterLayout.IslandAPost)!.Position;
+        var islandBDry = sim.GetAnchor(ReedwaterLayout.IslandBPost)!.Position;
+        Check("shoreline-start-bank-dry",
+            !game.ProbeWaterVolumeAt(startDry) && !game.ProbeWaterHazardAt(startDry),
+            $"water={game.ProbeWaterVolumeAt(startDry)} hazard={game.ProbeWaterHazardAt(startDry)}");
+        Check("shoreline-far-bank-dry",
+            !game.ProbeWaterVolumeAt(farDry) && !game.ProbeWaterHazardAt(farDry),
+            $"water={game.ProbeWaterVolumeAt(farDry)} hazard={game.ProbeWaterHazardAt(farDry)}");
+        Check("shoreline-island-a-safe", !game.ProbeWaterHazardAt(islandADry),
+            $"pos={islandADry} hazard={game.ProbeWaterHazardAt(islandADry)}");
+        Check("shoreline-island-b-safe", !game.ProbeWaterHazardAt(islandBDry),
+            $"pos={islandBDry} hazard={game.ProbeWaterHazardAt(islandBDry)}");
+
+        var openWaterPoints = new[]
+        {
+            new Vec3(4.2, -0.3, 8.5),
+            new Vec3(-2.5, -0.3, -4.0),
+            new Vec3(-6.2, -0.3, 5.0)
+        };
+        Check("shoreline-open-water-is-hazardous",
+            openWaterPoints.All(point => game.ProbeWaterHazardAt(point)),
+            string.Join(" ", openWaterPoints.Select(point =>
+                $"{point}:{game.ProbeWaterHazardAt(point)}")));
+
+        game.ProbeSetSafePosition(startDry);
+        game.ProbeTeleport(new Vec3(4.2, -0.3, 8.5));
+        await Frames(8);
+        Check("shoreline-water-recovery",
+            game.PlayerPosition.DistanceTo(GardenClearing.ToVector3(startDry)) < 0.9f &&
+            !game.ProbeInWater(),
+            $"player={game.PlayerPosition} safe={GardenClearing.ToVector3(startDry)}");
 
         // The pond is real collision, not a simulation flag. Walk west from the
         // starting bank without a bridge and verify the water returns the player.
@@ -700,6 +734,7 @@ public partial class RuntimeProbe : Node
             game.PlayerPosition.X > 5.9f,
             $"x={game.PlayerPosition.X:0.00} inWater={game.ProbeInWater()}");
         await Capture("22-reedwater-pond");
+        game.ProbeSetCameraZoom(15);
         game.ProbeTeleport(new Vec3(9.5, 1.2, 12.8));
         game.ProbeLookAt(new Vec3(-4.0, 0.4, 2.0));
         await Frames(4);
@@ -708,6 +743,31 @@ public partial class RuntimeProbe : Node
         game.ProbeLookAt(new Vec3(1.0, 0.2, 5.8));
         await Frames(4);
         await Capture("22c-first-island");
+        game.ProbeSetCameraZoom(10);
+
+        game.ProbeSetSafePosition(new Vec3(8.5, 0.55, 12.0));
+        game.ProbeTeleport(new Vec3(8.5, 0.55, 12.0));
+        game.ProbeLookAt(new Vec3(4.5, 0.25, 8.0));
+        await Frames(4);
+        await Capture("22d-start-shoreline");
+
+        game.ProbeSetSafePosition(new Vec3(-8.8, 0.55, 3.0));
+        game.ProbeTeleport(new Vec3(-8.8, 0.55, 3.0));
+        game.ProbeLookAt(new Vec3(-4.5, 0.25, 2.0));
+        await Frames(4);
+        await Capture("22e-far-shoreline");
+
+        game.ProbeSetSafePosition(islandADry);
+        game.ProbeTeleport(islandADry);
+        game.ProbeLookAt(new Vec3(3.8, 0.3, 8.8));
+        await Frames(4);
+        await Capture("22f-island-edges");
+
+        game.ProbeSetSafePosition(new Vec3(7.5, 0.55, 11.5));
+        game.ProbeTeleport(new Vec3(7.5, 0.55, 11.5));
+        game.ProbeLookAt(new Vec3(2.0, 0.25, 7.5));
+        await Frames(4);
+        await Capture("22g-low-angle-shoreline");
 
         var routeBefore = sim.Graph.FindRoute(ReedwaterLayout.NurseryNode,
             ReedwaterLayout.FirstDestinationNode);

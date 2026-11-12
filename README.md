@@ -8,7 +8,8 @@ catch flying insects, build silk bridges, hatch helper spiders, weather a gust o
 wind and complete three short story goals.
 
 This repository is the first-playable vertical slice and the released v0.2.0
-build: two regions, scene-authored worlds, modular silk-and-bark bridges and
+build, plus the merged v0.2.1 Reedwater shoreline correction (not separately
+released): two regions, scene-authored worlds, modular silk-and-bark bridges and
 release-hardened saves. The deterministic game rules live
 in `src/Core` with no `Godot.*` dependency. Both regions are authored in reusable
 Godot `.tscn` scenes; C# adapts those rules to 3D presentation, physics, input and
@@ -57,9 +58,9 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 The probe writes `artifacts/runtime_probe.json` and real PNGs in
 `artifacts/screenshots/` when run from the project. Final verified result:
-**236 passed, 0 failed**. The scene contract validation passes **51/51** across
-both regions, including the eleven modular bridge parts. The exported Linux build
-is re-tested for this milestone.
+**246 passed, 0 failed**. The scene contract validation passes **55/55** across
+both regions, including the authored shoreline and modular bridge parts. The
+exported Linux build is re-tested for this milestone.
 
 ## How to play
 
@@ -92,6 +93,10 @@ silk bridges.
   Reedwater Bank adds a shallow pond, mossy islands, reed beds, a colony outpost
   and a far bank. Both regions use editable `.tscn` scenes for environment,
   terrain, paths, flora, boundaries, landmarks, collision and water volumes.
+- Reedwater's pond surface is a static authored shoreline mesh with a mossy shore
+  shelf and matching bed, not an oversized rectangle. It sits just below the
+  grass and is shaped around the banks, islands and channels, so translucent
+  water cannot render over dry ground.
 - Three new sequential Reedwater objectives (`R01`–`R03`), an optional
   `Clever Crossing` mastery badge, three authored insect routes including a
   dragonfly, and an explicit one-time outpost supply cache.
@@ -143,6 +148,7 @@ silk bridges.
 - `art/models/bridge/` — eleven supplied original modular bridge GLBs and wrappers
 - `scripts/` and other `scenes/` — Godot presentation, input, physics and UI
 - `art/models/` — supplied original low-poly GLB starter assets (see `ATTRIBUTION.md`)
+- `art/meshes/` — authored static Reedwater water, shore-shelf and pond-bed meshes
 - `art/audio/` — original synthesised WAV files
 - `tests/Webwild.Core.Tests/` — pure deterministic xUnit suite
 - `data/` — tuning, missions and scenario definitions
@@ -158,7 +164,7 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The Linux export was launched, rendered and passed the 236/236 runtime probe. The
+The Linux export was launched, rendered and passed the 246/246 runtime probe. The
 Windows export built successfully as a PE32+ x86-64 executable, but **Windows
 runtime verification is NOT VERIFIED** because no Windows host was available.
 See `docs/EXPORTS.md` for checksums and exact commands.

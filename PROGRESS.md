@@ -38,13 +38,14 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 | v0.2.0 P0 | Scene-first world: reusable environment, terrain, landmark, flora and boundary scenes; anchor/marker coordinate contract; procedural builder removed | DONE (no release yet) | PR [#11](https://github.com/PhilipGB/webwild/pull/11); `CHANGELOG.md`; `docs/SCENE_AUTHORING.md`; `SceneAuthoringTests`; 24 scene checks; runtime `scene-*`; screenshots 01–19 |
 | v0.2.0 P1 | Reedwater Bank second region: pond, islands, reeds, water collision, travel, three regional objectives, dragonflies, worker crossing, schema-v2 migration | DONE (no release yet) | PR [#12](https://github.com/PhilipGB/webwild/pull/12); `docs/EVIDENCE.md#v020-p1`; `RegionTests`, `SaveMigrationTests`, `SceneAuthoringTests`; 47 scene checks; 168 runtime checks; screenshots 20–29 |
 | v0.2.0 P2 | Modular bridge art, durable supply-cache claim, non-obstructing toast lane, release polish | RELEASED as v0.2.0 (Windows runtime NOT VERIFIED) | PR [#13](https://github.com/PhilipGB/webwild/pull/13); `docs/EVIDENCE.md#v020-p2`; `BridgeLayoutTests`, `RegionTests`, P1 save fixtures; 51 scene checks; 236 runtime checks; screenshots 09b–09c, 16a, 23b |
+| v0.2.1 | Reedwater shoreline: authored water/shelf/bed meshes, refitted water hazards, shoreline screenshots and checks | DONE, merged PR (not released; Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#v021`; 55 scene checks; 246 runtime checks; screenshots 22d–22g |
 
 ## Verification summary
 
 - `dotnet test`: **106 passed, 0 failed, 0 skipped**.
-- Scene contract validation: **51 passed, 0 failed** across both regions.
-- Headless runtime probe: **236 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **236 passed, 0 failed**; 36 real PNGs.
+- Scene contract validation: **55 passed, 0 failed** across both regions.
+- Headless runtime probe: **246 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **246 passed, 0 failed**; 44 real PNGs.
 - Exported Linux build, headless probe: **re-run for this milestone**.
 - Exported Linux build, rendered Xvfb probe: **re-run for this milestone**.
 - Linux x64 export: built successfully and launched.

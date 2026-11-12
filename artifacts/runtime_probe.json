@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-11T17:53:32.0258757Z",
+  "generatedUtc": "2026-11-12T00:51:47.3520381Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
-  "passes": 66,
+  "passes": 80,
   "failures": 0,
   "checks": [
     {
@@ -93,12 +93,12 @@
     {
       "name": "pause-freezes-airborne",
       "pass": true,
-      "detail": "start=0.37 paused=0.37"
+      "detail": "start=0.20 paused=0.20"
     },
     {
       "name": "pause-resumes-physics",
       "pass": true,
-      "detail": "resumed=0.00 paused=0.37"
+      "detail": "resumed=0.00 paused=0.20"
     },
     {
       "name": "climb-stem",
@@ -161,9 +161,19 @@
       "detail": "webs=2"
     },
     {
+      "name": "bridge-ramps-west-east",
+      "pass": true,
+      "detail": "rampX=-4.40,4.40"
+    },
+    {
+      "name": "bridge-walkway-collision",
+      "pass": true,
+      "detail": "shapes=9"
+    },
+    {
       "name": "bridge-enables-player-crossing",
       "pass": true,
-      "detail": "x=11.19"
+      "detail": "x=11.23"
     },
     {
       "name": "hatch-started",
@@ -334,6 +344,66 @@
       "name": "quit-to-menu",
       "pass": true,
       "detail": "Save and quit returns to title"
+    },
+    {
+      "name": "edge-game-started",
+      "pass": true,
+      "detail": "Fresh garden for bridge regressions"
+    },
+    {
+      "name": "bridge-reverse-built",
+      "pass": true,
+      "detail": "East-first bridge selection accepted"
+    },
+    {
+      "name": "bridge-reverse-ramps",
+      "pass": true,
+      "detail": "rampX=4.40,-4.40"
+    },
+    {
+      "name": "bridge-reverse-collision",
+      "pass": true,
+      "detail": "shapes=9"
+    },
+    {
+      "name": "bridge-reverse-enables-crossing",
+      "pass": true,
+      "detail": "x=11.23"
+    },
+    {
+      "name": "bridge-removal-clears-collision",
+      "pass": true,
+      "detail": "Dismantled bridge view owns no collision"
+    },
+    {
+      "name": "bridge-removal-removes-web",
+      "pass": true,
+      "detail": "Dismantled bridge left the simulation"
+    },
+    {
+      "name": "bridge-removal-blocks-crossing",
+      "pass": true,
+      "detail": "x=-5.02"
+    },
+    {
+      "name": "bridge-zaxis-built",
+      "pass": true,
+      "detail": "Predominantly Z-axis bridge accepted"
+    },
+    {
+      "name": "bridge-zaxis-ramps",
+      "pass": true,
+      "detail": "ramps=(-9.5,-2.6) (-9.5,2.8)"
+    },
+    {
+      "name": "bridge-zaxis-collision",
+      "pass": true,
+      "detail": "shapes=9"
+    },
+    {
+      "name": "bridge-regression-quit",
+      "pass": true,
+      "detail": "Fresh bridge-regression garden leaves cleanly"
     }
   ]
 }

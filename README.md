@@ -25,7 +25,7 @@ dotnet build -warnaserror
 dotnet test
 ```
 
-Final verified result: **51 passed, 0 failed, 0 skipped**.
+Final verified result: **65 passed, 0 failed, 0 skipped**.
 
 ## Run from source
 
@@ -53,7 +53,7 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 The probe writes `artifacts/runtime_probe.json` and real PNGs in
 `artifacts/screenshots/` when run from the project. Final verified result:
-**66 passed, 0 failed**. The exported Linux build is re-tested for this release.
+**80 passed, 0 failed**. The exported Linux build is re-tested for this release.
 
 ## How to play
 
@@ -81,6 +81,8 @@ webs and is never required for victory.
 - Player walk/jump/assisted climb, orbit camera, collision-safe spring arm.
 - Twelve typed anchor sockets, capture-web and bridge previews, validation,
   costs, cancellation, dismantling and walkable bridge ramps/deck collision.
+- Bridge approach ramps follow the real span and authored bank points, so they
+  stay on solid ground for either anchor selection order and for Z-axis spans.
 - Four authored insect routes with swept-segment capture, exactly-once rewards
   and respawns.
 - Nursery hatching up to five spiders, named autonomous workers that collect,
@@ -92,8 +94,9 @@ webs and is never required for victory.
 - Telegraph warning, deterministic exposed/sheltered wind damage, repair or
   sheltered alternative, visible wind leaves and audio feedback.
 - Title/new game/continue, pause, help, colony, settings, save and quit flows.
-- Versioned JSON save with bounded histories, validation, atomic write, healthy
-  backup recovery, save-failed quit confirmation and explicit failure messages.
+- Versioned JSON save with bounded, order-preserving histories, validation,
+  atomic write, healthy backup recovery, save-failed quit confirmation and
+  explicit failure messages. Failed settings writes clean up their temp file.
 - Accessibility: large labelled controls, 100/125/150% UI scale, reduced motion,
   gentle-weather mode, volume controls, camera sensitivity and persisted settings.
 - Original synthesised WAV music/SFX; all gameplay information also appears
@@ -119,7 +122,7 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The Linux export was launched, rendered and passed the 66/66 runtime probe. The
+The Linux export was launched, rendered and passed the 80/80 runtime probe. The
 Windows export built successfully as a PE32+ x86-64 executable, but **Windows
 runtime verification is NOT VERIFIED** because no Windows host was available.
 See `docs/EXPORTS.md` for checksums and exact commands.

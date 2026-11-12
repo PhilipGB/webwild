@@ -15,6 +15,10 @@ public partial class WebVisual : Node3D
     private StaticBody3D? _bridgeBody;
     private Vector3 _center;
     private int _lastDurability = -1;
+    private readonly List<Vector3> _rampGroundPoints = new();
+
+    public IReadOnlyList<Vector3> RampGroundPoints => _rampGroundPoints;
+    public int WalkwayCollisionShapeCount => _bridgeBody?.GetChildCount() ?? 0;
 
     public void Configure(WebState state, Vector3 a, Vector3 b)
     {
@@ -123,13 +127,26 @@ public partial class WebVisual : Node3D
             previous = next;
         }
 
-        // Walkable approaches connect the bridge anchors to the ground on both
-        // banks. Without these, the bridge would be an unreachable floating deck.
-        var leftGround = new Vector3(aLocal.X - 1.2f, -_center.Y, aLocal.Z);
-        var rightGround = new Vector3(bLocal.X + 1.2f, -_center.Y, bLocal.Z);
+        // Walkable approaches connect the bridge anchors to solid ground on both
+        // banks. The shared core helper uses authored bank points for the ravine
+        // posts, so this is correct whichever anchor the player selected first.
+        var approach = BridgeGeometry.ComputeApproachPoints(
+            ToCoreVec3(a),
+            ToCoreVec3(b),
+            WorldLayout.BridgeGroundPointFor(_state.AnchorA),
+            WorldLayout.BridgeGroundPointFor(_state.AnchorB));
+        var leftGround = ToVector3(approach.A) - _center;
+        var rightGround = ToVector3(approach.B) - _center;
+        _rampGroundPoints.Clear();
+        _rampGroundPoints.Add(ToVector3(approach.A));
+        _rampGroundPoints.Add(ToVector3(approach.B));
         AddWalkwaySegment(leftGround, aLocal);
         AddWalkwaySegment(bLocal, rightGround);
     }
+
+    private static Vec3 ToCoreVec3(Vector3 v) => new(v.X, v.Y, v.Z);
+
+    private static Vector3 ToVector3(Vec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
 
     private void AddWalkwaySegment(Vector3 from, Vector3 to)
     {

@@ -1,5 +1,43 @@
 # Changelog
 
+## Webwild v0.1.2 — review-hardening release
+
+Fixes the three outstanding findings from the independent v0.1.1 review.
+
+### Bridge approaches
+
+- Bridge approach ramps now use the actual span and authored bank points rather
+  than fixed X offsets. A bridge built East → West places both ramps on solid
+  ground, and a predominantly Z-axis bridge gets ramps along Z.
+- The shared geometry lives in `Webwild.Core.BridgeGeometry` and is covered by
+  deterministic tests plus runtime checks for reversed order, Z-axis spans,
+  physical crossing and removal of collision when a bridge is dismantled.
+
+### Save/load history order
+
+- Issued-event, ledger and mission seen-event histories now serialise their
+  ordered retention queues instead of membership sets. After save/load, eviction
+  continues to remove the oldest keys first.
+- Restore skips blank and duplicate entries and keeps set and queue membership
+  consistent. The save schema is unchanged, so existing v0.1.0/v0.1.1 saves still
+  load.
+- Added long-history round-trip tests that serialise, deserialise, reload, add
+  more events, and compare exact order plus resources, missions and workers.
+
+### Settings temporary files
+
+- `SettingsService.Save()` now tracks its temporary filename outside the `try`
+  block and deletes it on any failure, without masking the original error.
+- Added injected-failure tests for partial writes, backup copy failures, main
+  file replacement failures, successful retries and cleanup-failure reporting.
+
+### Verification
+
+- 65 pure tests passed.
+- 80/80 headless and rendered runtime checks passed.
+- Linux export rebuilt and re-tested; Windows export rebuilt. Windows runtime
+  remains **NOT VERIFIED**.
+
 ## Webwild v0.1.1 — hardening release
 
 Fixes from the independent v0.1.0 code review.

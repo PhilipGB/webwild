@@ -16,7 +16,8 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 [#6](https://github.com/PhilipGB/webwild/pull/6),
 [#7](https://github.com/PhilipGB/webwild/pull/7),
 [#8](https://github.com/PhilipGB/webwild/pull/8) and
-[#9](https://github.com/PhilipGB/webwild/pull/9) (v0.1.1 hardening).
+[#9](https://github.com/PhilipGB/webwild/pull/9) (v0.1.1 hardening) and
+[#10](https://github.com/PhilipGB/webwild/pull/10) (v0.1.2 review hardening).
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -28,16 +29,17 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 | P5 | Three missions, mastery challenge, hints, victory and replay | DONE | `docs/EVIDENCE.md#p5`; `MissionFlowTests`; runtime checks `m01-complete`, `m03-complete`, `victory`, `continue-loads` |
 | P6 | Wind forecast/damage/repair, settings, accessibility, polish | DONE | `docs/EVIDENCE.md#p6`; `WindTests`; checks `wind-completed`, `web-restored`, `ui-scale-125/150`, `low-threat-applies` |
 | P7 | Versioned save, validation, atomic writes, backup recovery | DONE | `docs/EVIDENCE.md#p7`; `SaveTests`; checks `save-succeeds`, `save-loads`, `reload-*`, `quit-to-menu` |
-| P8 | Runtime playthrough, screenshots, exports, acceptance, release tag | DONE (Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#p8`; `docs/EXPORTS.md`; 66/66 rendered probe; 17 real screenshots |
+| P8 | Runtime playthrough, screenshots, exports, acceptance, release tag | DONE (Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#p8`; `docs/EXPORTS.md`; 80/80 rendered probe; 19 real screenshots |
 | v0.1.1 | Independent-review hardening: bounded save history, safe failed-save quit, real ravine/bridge traversal, silk food cost, difficulty reset, pause physics, settings retry | DONE | `CHANGELOG.md`; `HardeningTests`; runtime checks `pause-freezes-airborne`, `ravine-blocks-without-bridge`, `bridge-enables-player-crossing`, `failed-save-keeps-session`, `settings-save-error-visible`, `low-threat-restores` |
+| v0.1.2 | Review hardening: order-independent bridge ramps, order-preserving save histories, settings temp-file cleanup | DONE | `CHANGELOG.md`; `BridgeGeometryTests`, `HistoryOrderTests`, settings failure tests; runtime checks `bridge-reverse-*`, `bridge-zaxis-*`, `bridge-removal-*` |
 
 ## Verification summary
 
-- `dotnet test`: **51 passed, 0 failed, 0 skipped**.
-- Headless runtime probe: **66 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **66 passed, 0 failed**; 17 real PNGs.
-- Exported Linux build, headless probe: **66 passed, 0 failed**.
-- Exported Linux build, rendered Xvfb probe: **66 passed, 0 failed**.
+- `dotnet test`: **65 passed, 0 failed, 0 skipped**.
+- Headless runtime probe: **80 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **80 passed, 0 failed**; 19 real PNGs.
+- Exported Linux build, headless probe: **80 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb probe: **80 passed, 0 failed**.
 - Linux x64 release export: built successfully and launched.
 - Windows x64 release export: built successfully.
 - Windows runtime: **NOT VERIFIED** — no Windows host available.

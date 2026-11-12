@@ -1,6 +1,6 @@
 # Evidence index
 
-All evidence was produced on the build host for v0.1.1. Commands are copy-pasteable from the
+All evidence was produced on the build host for v0.1.2. Commands are copy-pasteable from the
 repository root unless a working directory is shown. No PASS in this file is
 inferred from source alone: every result comes from a command, a runtime check or
 an inspected screenshot.
@@ -10,8 +10,8 @@ an inspected screenshot.
 - `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
 - Godot .NET export templates 4.7.2 installed
 - GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
-- Final merged implementation commit: `b1587b1`
-- Release tag: `v0.1.1` (created after the final green checks; see the final report for the tag SHA)
+- Final merged implementation commit: `__RELEASE_COMMIT__`
+- Release tag: `v0.1.2` (created after the final green checks; see the final report for the tag SHA)
 
 ## Pull requests
 
@@ -26,6 +26,7 @@ an inspected screenshot.
 | P7 | https://github.com/PhilipGB/webwild/pull/7 | `5c4e83b` |
 | P8 | https://github.com/PhilipGB/webwild/pull/8 | `2ef10d7` |
 | v0.1.1 hardening | https://github.com/PhilipGB/webwild/pull/9 | `b1587b1` |
+| v0.1.2 review hardening | https://github.com/PhilipGB/webwild/pull/10 | `__RELEASE_COMMIT__` |
 
 All eight PRs had green **Build and pure tests** and **Godot .NET import and
 startup** checks before merge.
@@ -33,7 +34,7 @@ startup** checks before merge.
 ## P0 — Toolchain and repository
 
 - `dotnet build -warnaserror` → success, 0 warnings, 0 errors
-- `dotnet test` → final result 51 passed, 0 failed, 0 skipped
+- `dotnet test` → final result 65 passed, 0 failed, 0 skipped
 - `godot --headless --path . --editor --quit` → exit 0, GLBs/audio/SVG imported
 - `gh repo view --json nameWithOwner,url,visibility` →
   `{"nameWithOwner":"PhilipGB/webwild","visibility":"PRIVATE"}`
@@ -111,14 +112,14 @@ startup** checks before merge.
 
 ```text
 $ dotnet test
-Passed! - Failed: 0, Passed: 51, Skipped: 0, Total: 51
+Passed! - Failed: 0, Passed: 65, Skipped: 0, Total: 65
 
 $ xvfb-run -a -s "-screen 0 1280x720x24" \
     godot --path . --resolution 1280x720 -- --runtime-probe
-[PROBE] SUMMARY passes=66 failures=0
+[PROBE] SUMMARY passes=80 failures=0
 ```
 
-`artifacts/runtime_probe.json` contains all 66 named checks. The 17 inspected
+`artifacts/runtime_probe.json` contains all 80 named checks. The 19 inspected
 screenshots are in `artifacts/screenshots/`.
 
 ### Exported Linux build
@@ -128,12 +129,12 @@ $ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_6
 exit 0
 
 $ cd exports/linux && ./Webwild.x86_64 --headless -- --runtime-probe
-[PROBE] SUMMARY passes=66 failures=0
+[PROBE] SUMMARY passes=80 failures=0
 exit 0
 
 $ cd exports/linux && xvfb-run -a -s "-screen 0 1280x720x24" \
     ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
-[PROBE] SUMMARY passes=66 failures=0
+[PROBE] SUMMARY passes=80 failures=0
 exit 0
 ```
 
@@ -178,6 +179,32 @@ See `docs/EXPORTS.md`.
   - `Settings_FailingWrite_IsReported`
 - Repository visibility rechecked with `gh repo view` → `PRIVATE`.
 - Exported Linux v0.1.1 package was launched and passed the 66/66 probe.
+
+## v0.1.2 review hardening
+
+- `dotnet test` → **65 passed, 0 failed, 0 skipped**.
+- Headless runtime probe → **80 passed, 0 failed**.
+- Rendered Xvfb runtime probe → **80 passed, 0 failed**, 19 screenshots.
+- Exported Linux build, headless → **80 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb → **80 passed, 0 failed**.
+- New runtime checks:
+  - `bridge-ramps-west-east`, `bridge-walkway-collision`
+  - `bridge-reverse-built`, `bridge-reverse-ramps`, `bridge-reverse-collision`
+  - `bridge-reverse-enables-crossing`
+  - `bridge-removal-clears-collision`, `bridge-removal-removes-web`,
+    `bridge-removal-blocks-crossing`
+  - `bridge-zaxis-built`, `bridge-zaxis-ramps`, `bridge-zaxis-collision`
+  - `bridge-regression-quit`
+- New deterministic tests:
+  - `BridgeGeometryTests` (ravine both orders, Z-axis, authored bank point,
+    coincident-anchor safety)
+  - `HistoryOrderTests.OrderedHistories_SurviveSerialisedSaveReload_AndContinueEvictingOldestFirst`
+  - `HistoryOrderTests.LegacyUnorderedHistory_LoadsAndDeduplicatesWithoutDiverging`
+  - `HistoryOrderTests.OversizedLegacyHistory_TrimsFromTheFrontAndKeepsNewestKeys`
+  - `WorkerAndMissionTests.ReversedBridgeSelection_StillConnectsTheWorkerRoute`
+  - Settings partial-write, copy-failure, move-failure, retry and cleanup-failure
+    tests in `SaveTests`
+- Repository visibility remains `PRIVATE`.
 
 ## Honest non-results
 

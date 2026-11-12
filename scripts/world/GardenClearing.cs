@@ -1154,6 +1154,17 @@ public partial class GardenClearing : Node3D
 
     public void ProbeDismantleNearest() => TryDismantleNearest();
 
+    public IReadOnlyList<Vec3> ProbeBridgeRampGroundPoints(string webId)
+    {
+        if (!_webViews.TryGetValue(webId, out var view)) return Array.Empty<Vec3>();
+        return view.RampGroundPoints
+            .Select(v => new Vec3(v.X, v.Y, v.Z))
+            .ToList();
+    }
+
+    public int ProbeBridgeWalkwayShapeCount(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.WalkwayCollisionShapeCount : 0;
+
     public void ProbeQuitToMenu() => SaveAndQuit();
 
     public bool ProbeTitleVisible => false;

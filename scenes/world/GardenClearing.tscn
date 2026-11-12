@@ -1,6 +1,74 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/GardenClearing.cs" id="1_clearing"]
+[ext_resource type="PackedScene" path="res://scenes/world/GardenWorld.tscn" id="2_world"]
+[ext_resource type="PackedScene" path="res://scenes/building/webs/AnchorSocket.tscn" id="3_anchor"]
+[ext_resource type="PackedScene" path="res://scenes/actors/spider/SpiderPlayer.tscn" id="4_player"]
 
 [node name="GardenClearing" type="Node3D"]
 script = ExtResource("1_clearing")
+
+[node name="World" parent="." instance=ExtResource("2_world")]
+
+[node name="Anchors" type="Node3D" parent="."]
+
+[node name="Anchor_home_leaf" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(-13.5, 1, 6.5)
+AnchorId = "home_leaf"
+
+[node name="Anchor_twig_west_a" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(-9.5, 1.25, -1.4)
+AnchorId = "twig_west_a"
+
+[node name="Anchor_twig_west_b" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(-9.5, 1.25, 1.6)
+AnchorId = "twig_west_b"
+
+[node name="Anchor_gap_west" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(-3, 0.55, 1.2)
+AnchorId = "gap_west"
+
+[node name="Anchor_gap_east" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(3, 0.55, 1.2)
+AnchorId = "gap_east"
+
+[node name="Anchor_flower_lane_a" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(4.4, 1.35, -6.2)
+AnchorId = "flower_lane_a"
+
+[node name="Anchor_flower_lane_b" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(6.2, 1.35, -6.2)
+AnchorId = "flower_lane_b"
+
+[node name="Anchor_wind_edge_a" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(9.5, 1.35, -8)
+AnchorId = "wind_edge_a"
+
+[node name="Anchor_wind_edge_b" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(13.5, 1.35, -8)
+AnchorId = "wind_edge_b"
+
+[node name="Anchor_log_shelter_a" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(9.8, 1, -3)
+AnchorId = "log_shelter_a"
+
+[node name="Anchor_log_shelter_b" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(13.2, 1, -3)
+AnchorId = "log_shelter_b"
+
+[node name="Anchor_stem_overlook" parent="Anchors" instance=ExtResource("3_anchor")]
+position = Vector3(-5, 4.55, 9)
+AnchorId = "stem_overlook"
+
+[node name="Player" parent="." instance=ExtResource("4_player")]
+position = Vector3(-13.5, 0.45, 8.5)
+
+[node name="Webs" type="Node3D" parent="."]
+
+[node name="Insects" type="Node3D" parent="."]
+
+[node name="Workers" type="Node3D" parent="."]
+
+[node name="WebPreview" type="Node3D" parent="."]
+
+[node name="UI" type="Node" parent="."]

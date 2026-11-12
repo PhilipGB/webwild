@@ -1,0 +1,156 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/terrain/fallen_log.glb" id="1_fallenlogmodel"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/moss_rock.glb" id="3_logrock"]
+[ext_resource type="PackedScene" path="res://art/models/flora/moss_patch.glb" id="4_logmoss"]
+
+[node name="FallenLog" type="Node3D"]
+position = Vector3(11.5, 0, -1.2)
+
+[node name="FallenLogModel" parent="." instance=ExtResource("1_fallenlogmodel")]
+position = Vector3(0, 0.05, 0)
+rotation_degrees = Vector3(0, 8, 0)
+scale = Vector3(2.0925, 1.55, 2.0925)
+
+[node name="world" parent="FallenLogModel" index="0"]
+
+[node name="Trunk" parent="FallenLogModel/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_0_0" parent="FallenLogModel/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_0_1" parent="FallenLogModel/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_0_2" parent="FallenLogModel/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_0_3" parent="FallenLogModel/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_0_4" parent="FallenLogModel/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_1_0" parent="FallenLogModel/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_1_1" parent="FallenLogModel/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_1_2" parent="FallenLogModel/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_1_3" parent="FallenLogModel/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_1_4" parent="FallenLogModel/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_2_0" parent="FallenLogModel/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_2_1" parent="FallenLogModel/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_2_2" parent="FallenLogModel/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_2_3" parent="FallenLogModel/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_2_4" parent="FallenLogModel/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_3_0" parent="FallenLogModel/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_3_1" parent="FallenLogModel/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_3_2" parent="FallenLogModel/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_3_3" parent="FallenLogModel/world" index="19"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_3_4" parent="FallenLogModel/world" index="20"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_4_0" parent="FallenLogModel/world" index="21"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_4_1" parent="FallenLogModel/world" index="22"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_4_2" parent="FallenLogModel/world" index="23"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_4_3" parent="FallenLogModel/world" index="24"]
+material_override = ExtResource("2_vcol")
+
+[node name="Bark_4_4" parent="FallenLogModel/world" index="25"]
+material_override = ExtResource("2_vcol")
+
+[node name="End_-145" parent="FallenLogModel/world" index="26"]
+material_override = ExtResource("2_vcol")
+
+[node name="End_145" parent="FallenLogModel/world" index="27"]
+material_override = ExtResource("2_vcol")
+
+[node name="LogRock" parent="." instance=ExtResource("3_logrock")]
+position = Vector3(-3.1, 0.02, -0.9)
+rotation_degrees = Vector3(0, 3, 0)
+scale = Vector3(1.2, 1.2, 1.2)
+
+[node name="world" parent="LogRock" index="0"]
+
+[node name="Stone" parent="LogRock/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_0" parent="LogRock/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_1" parent="LogRock/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_2" parent="LogRock/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="LogMoss" parent="." instance=ExtResource("4_logmoss")]
+position = Vector3(-1.5, 0.03, -1.9)
+rotation_degrees = Vector3(0, 20, 0)
+scale = Vector3(1, 1, 1)
+
+[node name="world" parent="LogMoss" index="0"]
+
+[node name="Moss_0" parent="LogMoss/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_1" parent="LogMoss/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_2" parent="LogMoss/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_3" parent="LogMoss/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_4" parent="LogMoss/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_5" parent="LogMoss/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_6" parent="LogMoss/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_7" parent="LogMoss/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Anchor_log_shelter_a" type="Marker3D" parent="."]
+position = Vector3(-1.7, 1, -1.8)
+
+[node name="Anchor_log_shelter_b" type="Marker3D" parent="."]
+position = Vector3(1.7, 1, -1.8)

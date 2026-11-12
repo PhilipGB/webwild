@@ -1,0 +1,1323 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/flora/clover_tall.glb" id="1_clover0"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/flora/clover_patch.glb" id="3_clover1"]
+[ext_resource type="PackedScene" path="res://art/models/flora/grass_tuft.glb" id="4_tuft0"]
+[ext_resource type="PackedScene" path="res://art/models/flora/fern.glb" id="5_tuft1"]
+[ext_resource type="PackedScene" path="res://art/models/flora/mushroom.glb" id="6_mushroom0"]
+[ext_resource type="PackedScene" path="res://art/models/flora/mushroom_blue.glb" id="7_mushroom1"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/moss_rock.glb" id="8_featurerock0"]
+[ext_resource type="PackedScene" path="res://art/models/flora/sunflower.glb" id="9_florafeature0"]
+[ext_resource type="PackedScene" path="res://art/models/flora/bush_berries.glb" id="10_florafeature2"]
+[ext_resource type="PackedScene" path="res://art/models/flora/bush.glb" id="11_florafeature3"]
+
+[node name="GardenFlora" type="Node3D"]
+
+[node name="Clover0" parent="." instance=ExtResource("1_clover0")]
+position = Vector3(-14.8, 0, 2.5)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.65, 0.65, 0.65)
+
+[node name="world" parent="Clover0" index="0"]
+
+[node name="Stem" parent="Clover0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover0/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover0/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover0/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover1" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(-12.4, 0, -2.8)
+rotation_degrees = Vector3(0, 29, 0)
+scale = Vector3(0.73, 0.73, 0.73)
+
+[node name="world" parent="Clover1" index="0"]
+
+[node name="Stem" parent="Clover1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover1/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover1/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover1/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover2" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(-10.8, 0, 5.8)
+rotation_degrees = Vector3(0, 58, 0)
+scale = Vector3(0.81, 0.81, 0.81)
+
+[node name="world" parent="Clover2" index="0"]
+
+[node name="Stem" parent="Clover2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover2/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover2/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover2/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover3" parent="." instance=ExtResource("1_clover0")]
+position = Vector3(-7.2, 0, 5.4)
+rotation_degrees = Vector3(0, 87, 0)
+scale = Vector3(0.89, 0.89, 0.89)
+
+[node name="world" parent="Clover3" index="0"]
+
+[node name="Stem" parent="Clover3/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover3/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover3/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover3/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover4" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(-6.4, 0, -4.8)
+rotation_degrees = Vector3(0, 116, 0)
+scale = Vector3(0.65, 0.65, 0.65)
+
+[node name="world" parent="Clover4" index="0"]
+
+[node name="Stem" parent="Clover4/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover4/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover4/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover4/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover5" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(-4.6, 0, 5.4)
+rotation_degrees = Vector3(0, 145, 0)
+scale = Vector3(0.73, 0.73, 0.73)
+
+[node name="world" parent="Clover5" index="0"]
+
+[node name="Stem" parent="Clover5/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover5/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover5/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover5/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover6" parent="." instance=ExtResource("1_clover0")]
+position = Vector3(-5.4, 0, 7.6)
+rotation_degrees = Vector3(0, 174, 0)
+scale = Vector3(0.81, 0.81, 0.81)
+
+[node name="world" parent="Clover6" index="0"]
+
+[node name="Stem" parent="Clover6/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover6/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover6/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover6/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover7" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(5.2, 0, 8.9)
+rotation_degrees = Vector3(0, 203, 0)
+scale = Vector3(0.89, 0.89, 0.89)
+
+[node name="world" parent="Clover7" index="0"]
+
+[node name="Stem" parent="Clover7/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover7/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover7/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover7/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover8" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(8.8, 0, 7.4)
+rotation_degrees = Vector3(0, 232, 0)
+scale = Vector3(0.65, 0.65, 0.65)
+
+[node name="world" parent="Clover8" index="0"]
+
+[node name="Stem" parent="Clover8/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover8/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover8/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover8/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover9" parent="." instance=ExtResource("1_clover0")]
+position = Vector3(14.6, 0, 8)
+rotation_degrees = Vector3(0, 261, 0)
+scale = Vector3(0.73, 0.73, 0.73)
+
+[node name="world" parent="Clover9" index="0"]
+
+[node name="Stem" parent="Clover9/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover9/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover9/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover9/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover10" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(15.1, 0, -5.2)
+rotation_degrees = Vector3(0, 290, 0)
+scale = Vector3(0.81, 0.81, 0.81)
+
+[node name="world" parent="Clover10" index="0"]
+
+[node name="Stem" parent="Clover10/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover10/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover10/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover10/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover11" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(5.8, 0, -11.1)
+rotation_degrees = Vector3(0, 319, 0)
+scale = Vector3(0.89, 0.89, 0.89)
+
+[node name="world" parent="Clover11" index="0"]
+
+[node name="Stem" parent="Clover11/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover11/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover11/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover11/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover12" parent="." instance=ExtResource("1_clover0")]
+position = Vector3(-4.8, 0, -10.4)
+rotation_degrees = Vector3(0, 348, 0)
+scale = Vector3(0.65, 0.65, 0.65)
+
+[node name="world" parent="Clover12" index="0"]
+
+[node name="Stem" parent="Clover12/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover12/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover12/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover12/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover13" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(-15.2, 0, -6.2)
+rotation_degrees = Vector3(0, 377, 0)
+scale = Vector3(0.73, 0.73, 0.73)
+
+[node name="world" parent="Clover13" index="0"]
+
+[node name="Stem" parent="Clover13/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover13/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover13/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover13/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Clover14" parent="." instance=ExtResource("3_clover1")]
+position = Vector3(16.2, 0, 0.8)
+rotation_degrees = Vector3(0, 406, 0)
+scale = Vector3(0.81, 0.81, 0.81)
+
+[node name="world" parent="Clover14" index="0"]
+
+[node name="Stem" parent="Clover14/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_0" parent="Clover14/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Clover14/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="Clover14/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft0" parent="." instance=ExtResource("4_tuft0")]
+position = Vector3(-16.8, 0, 4.2)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="world" parent="Tuft0" index="0"]
+
+[node name="Blade_0" parent="Tuft0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Tuft0/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Tuft0/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Tuft0/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Tuft0/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Tuft0/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Tuft0/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Tuft0/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft1" parent="." instance=ExtResource("5_tuft1")]
+position = Vector3(-16.2, 0, -2.6)
+rotation_degrees = Vector3(0, 41, 0)
+scale = Vector3(0.87, 0.87, 0.87)
+
+[node name="world" parent="Tuft1" index="0"]
+
+[node name="Core" parent="Tuft1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Tuft1/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Tuft1/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Tuft1/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Tuft1/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Tuft1/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Tuft1/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Tuft1/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Tuft1/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Tuft1/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Tuft1/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Tuft1/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Tuft1/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Tuft1/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Tuft1/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Tuft1/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Tuft1/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Tuft1/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Tuft1/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft2" parent="." instance=ExtResource("4_tuft0")]
+position = Vector3(-12.8, 0, 11.4)
+rotation_degrees = Vector3(0, 82, 0)
+scale = Vector3(0.99, 0.99, 0.99)
+
+[node name="world" parent="Tuft2" index="0"]
+
+[node name="Blade_0" parent="Tuft2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Tuft2/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Tuft2/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Tuft2/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Tuft2/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Tuft2/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Tuft2/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Tuft2/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft3" parent="." instance=ExtResource("5_tuft1")]
+position = Vector3(-5.5, 0, 11)
+rotation_degrees = Vector3(0, 123, 0)
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="world" parent="Tuft3" index="0"]
+
+[node name="Core" parent="Tuft3/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Tuft3/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Tuft3/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Tuft3/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Tuft3/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Tuft3/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Tuft3/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Tuft3/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Tuft3/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Tuft3/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Tuft3/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Tuft3/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Tuft3/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Tuft3/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Tuft3/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Tuft3/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Tuft3/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Tuft3/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Tuft3/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft4" parent="." instance=ExtResource("4_tuft0")]
+position = Vector3(-5.4, 0, 11.8)
+rotation_degrees = Vector3(0, 164, 0)
+scale = Vector3(0.87, 0.87, 0.87)
+
+[node name="world" parent="Tuft4" index="0"]
+
+[node name="Blade_0" parent="Tuft4/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Tuft4/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Tuft4/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Tuft4/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Tuft4/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Tuft4/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Tuft4/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Tuft4/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft5" parent="." instance=ExtResource("5_tuft1")]
+position = Vector3(9.8, 0, 11.1)
+rotation_degrees = Vector3(0, 205, 0)
+scale = Vector3(0.99, 0.99, 0.99)
+
+[node name="world" parent="Tuft5" index="0"]
+
+[node name="Core" parent="Tuft5/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Tuft5/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Tuft5/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Tuft5/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Tuft5/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Tuft5/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Tuft5/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Tuft5/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Tuft5/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Tuft5/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Tuft5/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Tuft5/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Tuft5/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Tuft5/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Tuft5/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Tuft5/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Tuft5/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Tuft5/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Tuft5/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft6" parent="." instance=ExtResource("4_tuft0")]
+position = Vector3(15, 0, 1.2)
+rotation_degrees = Vector3(0, 246, 0)
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="world" parent="Tuft6" index="0"]
+
+[node name="Blade_0" parent="Tuft6/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Tuft6/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Tuft6/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Tuft6/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Tuft6/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Tuft6/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Tuft6/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Tuft6/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft7" parent="." instance=ExtResource("5_tuft1")]
+position = Vector3(16.9, 0, -3.6)
+rotation_degrees = Vector3(0, 287, 0)
+scale = Vector3(0.87, 0.87, 0.87)
+
+[node name="world" parent="Tuft7" index="0"]
+
+[node name="Core" parent="Tuft7/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Tuft7/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Tuft7/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Tuft7/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Tuft7/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Tuft7/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Tuft7/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Tuft7/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Tuft7/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Tuft7/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Tuft7/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Tuft7/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Tuft7/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Tuft7/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Tuft7/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Tuft7/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Tuft7/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Tuft7/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Tuft7/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft8" parent="." instance=ExtResource("4_tuft0")]
+position = Vector3(12.5, 0, -12)
+rotation_degrees = Vector3(0, 328, 0)
+scale = Vector3(0.99, 0.99, 0.99)
+
+[node name="world" parent="Tuft8" index="0"]
+
+[node name="Blade_0" parent="Tuft8/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Tuft8/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Tuft8/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Tuft8/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Tuft8/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Tuft8/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Tuft8/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Tuft8/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft9" parent="." instance=ExtResource("5_tuft1")]
+position = Vector3(-4.4, 0, -12.3)
+rotation_degrees = Vector3(0, 369, 0)
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="world" parent="Tuft9" index="0"]
+
+[node name="Core" parent="Tuft9/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Tuft9/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Tuft9/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Tuft9/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Tuft9/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Tuft9/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Tuft9/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Tuft9/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Tuft9/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Tuft9/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Tuft9/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Tuft9/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Tuft9/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Tuft9/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Tuft9/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Tuft9/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Tuft9/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Tuft9/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Tuft9/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft10" parent="." instance=ExtResource("4_tuft0")]
+position = Vector3(-8.4, 0, -11.6)
+rotation_degrees = Vector3(0, 410, 0)
+scale = Vector3(0.87, 0.87, 0.87)
+
+[node name="world" parent="Tuft10" index="0"]
+
+[node name="Blade_0" parent="Tuft10/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Tuft10/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Tuft10/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Tuft10/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Tuft10/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Tuft10/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Tuft10/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Tuft10/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Tuft11" parent="." instance=ExtResource("5_tuft1")]
+position = Vector3(-16.1, 0, -10.2)
+rotation_degrees = Vector3(0, 451, 0)
+scale = Vector3(0.99, 0.99, 0.99)
+
+[node name="world" parent="Tuft11" index="0"]
+
+[node name="Core" parent="Tuft11/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Tuft11/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Tuft11/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Tuft11/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Tuft11/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Tuft11/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Tuft11/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Tuft11/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Tuft11/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Tuft11/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Tuft11/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Tuft11/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Tuft11/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Tuft11/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Tuft11/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Tuft11/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Tuft11/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Tuft11/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Tuft11/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Mushroom0" parent="." instance=ExtResource("6_mushroom0")]
+position = Vector3(-12, 0, -6.4)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="world" parent="Mushroom0" index="0"]
+
+[node name="Stem" parent="Mushroom0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Cap" parent="Mushroom0/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_0" parent="Mushroom0/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_1" parent="Mushroom0/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_2" parent="Mushroom0/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_3" parent="Mushroom0/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_4" parent="Mushroom0/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Mushroom1" parent="." instance=ExtResource("7_mushroom1")]
+position = Vector3(-11.1, 0, -6.8)
+rotation_degrees = Vector3(0, 72, 0)
+scale = Vector3(0.67, 0.67, 0.67)
+
+[node name="world" parent="Mushroom1" index="0"]
+
+[node name="Stem" parent="Mushroom1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Cap" parent="Mushroom1/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_0" parent="Mushroom1/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_1" parent="Mushroom1/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_2" parent="Mushroom1/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_3" parent="Mushroom1/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_4" parent="Mushroom1/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Mushroom2" parent="." instance=ExtResource("6_mushroom0")]
+position = Vector3(6.7, 0, 6.4)
+rotation_degrees = Vector3(0, 276, 0)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="world" parent="Mushroom2" index="0"]
+
+[node name="Stem" parent="Mushroom2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Cap" parent="Mushroom2/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_0" parent="Mushroom2/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_1" parent="Mushroom2/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_2" parent="Mushroom2/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_3" parent="Mushroom2/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_4" parent="Mushroom2/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Mushroom3" parent="." instance=ExtResource("7_mushroom1")]
+position = Vector3(7.3, 0, 6.9)
+rotation_degrees = Vector3(0, 12, 0)
+scale = Vector3(0.67, 0.67, 0.67)
+
+[node name="world" parent="Mushroom3" index="0"]
+
+[node name="Stem" parent="Mushroom3/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Cap" parent="Mushroom3/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_0" parent="Mushroom3/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_1" parent="Mushroom3/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_2" parent="Mushroom3/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_3" parent="Mushroom3/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_4" parent="Mushroom3/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Mushroom4" parent="." instance=ExtResource("6_mushroom0")]
+position = Vector3(14.2, 0, -8.7)
+rotation_degrees = Vector3(0, 138, 0)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="world" parent="Mushroom4" index="0"]
+
+[node name="Stem" parent="Mushroom4/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Cap" parent="Mushroom4/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_0" parent="Mushroom4/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_1" parent="Mushroom4/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_2" parent="Mushroom4/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_3" parent="Mushroom4/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_4" parent="Mushroom4/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Mushroom5" parent="." instance=ExtResource("7_mushroom1")]
+position = Vector3(-7.7, 0, 9.6)
+rotation_degrees = Vector3(0, 42, 0)
+scale = Vector3(0.67, 0.67, 0.67)
+
+[node name="world" parent="Mushroom5" index="0"]
+
+[node name="Stem" parent="Mushroom5/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Cap" parent="Mushroom5/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_0" parent="Mushroom5/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_1" parent="Mushroom5/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_2" parent="Mushroom5/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_3" parent="Mushroom5/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Dot_4" parent="Mushroom5/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="FeatureRock0" parent="." instance=ExtResource("8_featurerock0")]
+position = Vector3(-15.4, 0.02, 0.2)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="FeatureRock0" index="0"]
+
+[node name="Stone" parent="FeatureRock0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_0" parent="FeatureRock0/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_1" parent="FeatureRock0/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_2" parent="FeatureRock0/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="FeatureRock1" parent="." instance=ExtResource("8_featurerock0")]
+position = Vector3(4.9, 0.02, -2.8)
+rotation_degrees = Vector3(0, 63, 0)
+scale = Vector3(1.05, 1.05, 1.05)
+
+[node name="world" parent="FeatureRock1" index="0"]
+
+[node name="Stone" parent="FeatureRock1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_0" parent="FeatureRock1/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_1" parent="FeatureRock1/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_2" parent="FeatureRock1/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="FeatureRock2" parent="." instance=ExtResource("8_featurerock0")]
+position = Vector3(13.9, 0.02, 10)
+rotation_degrees = Vector3(0, 126, 0)
+scale = Vector3(1.2, 1.2, 1.2)
+
+[node name="world" parent="FeatureRock2" index="0"]
+
+[node name="Stone" parent="FeatureRock2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_0" parent="FeatureRock2/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_1" parent="FeatureRock2/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_2" parent="FeatureRock2/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="FloraFeature0" parent="." instance=ExtResource("9_florafeature0")]
+position = Vector3(-15.7, 0, 10.6)
+rotation_degrees = Vector3(0, 10, 0)
+scale = Vector3(1, 1, 1)
+
+[node name="world" parent="FloraFeature0" index="0"]
+
+[node name="Stalk" parent="FloraFeature0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="FloraFeature0/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="FloraFeature0/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="FloraFeature0/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="FloraFeature0/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="FloraFeature0/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="FloraFeature0/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="FloraFeature0/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="FloraFeature0/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="FloraFeature0/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="FloraFeature0/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="FloraFeature0/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="FloraFeature0/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="FloraFeature0/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="FloraFeature1" parent="." instance=ExtResource("9_florafeature0")]
+position = Vector3(16.5, 0, 10.2)
+rotation_degrees = Vector3(0, -14, 0)
+scale = Vector3(0.95, 0.95, 0.95)
+
+[node name="world" parent="FloraFeature1" index="0"]
+
+[node name="Stalk" parent="FloraFeature1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="FloraFeature1/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="FloraFeature1/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="FloraFeature1/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="FloraFeature1/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="FloraFeature1/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="FloraFeature1/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="FloraFeature1/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="FloraFeature1/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="FloraFeature1/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="FloraFeature1/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="FloraFeature1/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="FloraFeature1/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="FloraFeature1/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="FloraFeature2" parent="." instance=ExtResource("10_florafeature2")]
+position = Vector3(-4.9, 0, -9.3)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.8, 0.8, 0.8)
+
+[node name="world" parent="FloraFeature2" index="0"]
+
+[node name="Foliage_0" parent="FloraFeature2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="FloraFeature2/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="FloraFeature2/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="FloraFeature2/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="FloraFeature2/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="FloraFeature2/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="FloraFeature2/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="FloraFeature3" parent="." instance=ExtResource("11_florafeature3")]
+position = Vector3(8.2, 0, -11)
+rotation_degrees = Vector3(0, 32, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="FloraFeature3" index="0"]
+
+[node name="Foliage_0" parent="FloraFeature3/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="FloraFeature3/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="FloraFeature3/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="FloraFeature3/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="FloraFeature4" parent="." instance=ExtResource("5_tuft1")]
+position = Vector3(-16.4, 0, -5)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+
+[node name="world" parent="FloraFeature4" index="0"]
+
+[node name="Core" parent="FloraFeature4/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="FloraFeature4/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="FloraFeature4/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="FloraFeature4/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="FloraFeature4/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="FloraFeature4/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="FloraFeature4/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="FloraFeature4/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="FloraFeature4/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="FloraFeature4/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="FloraFeature4/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="FloraFeature4/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="FloraFeature4/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="FloraFeature4/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="FloraFeature4/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="FloraFeature4/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="FloraFeature4/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="FloraFeature4/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="FloraFeature4/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="FloraFeature5" parent="." instance=ExtResource("11_florafeature3")]
+position = Vector3(16.6, 0, 4.7)
+rotation_degrees = Vector3(0, -20, 0)
+scale = Vector3(0.85, 0.85, 0.85)
+
+[node name="world" parent="FloraFeature5" index="0"]
+
+[node name="Foliage_0" parent="FloraFeature5/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="FloraFeature5/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="FloraFeature5/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="FloraFeature5/world" index="3"]
+material_override = ExtResource("2_vcol")

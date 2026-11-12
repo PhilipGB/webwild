@@ -1,0 +1,276 @@
+[gd_scene load_steps=23 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/terrain/flat_stone.glb" id="1_pathstone0"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1_soil_0"]
+albedo_color = Color(0.541176, 0.384314, 0.266667, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_2_soil_0"]
+size = Vector3(0.95, 0.018, 2.755993)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3_soil_1"]
+albedo_color = Color(0.427451, 0.290196, 0.203922, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_4_soil_1"]
+size = Vector3(0.95, 0.018, 2.582381)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5_soil_2"]
+albedo_color = Color(0.541176, 0.384314, 0.266667, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_6_soil_2"]
+size = Vector3(0.95, 0.018, 2.443171)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7_soil_3"]
+albedo_color = Color(0.427451, 0.290196, 0.203922, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_8_soil_3"]
+size = Vector3(0.95, 0.018, 2.584524)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_9_soil_4"]
+albedo_color = Color(0.541176, 0.384314, 0.266667, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_10_soil_4"]
+size = Vector3(0.95, 0.018, 2.459072)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_11_soil_5"]
+albedo_color = Color(0.427451, 0.290196, 0.203922, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_12_soil_5"]
+size = Vector3(0.95, 0.018, 1.466553)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_13_soil_7"]
+albedo_color = Color(0.427451, 0.290196, 0.203922, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_14_soil_7"]
+size = Vector3(0.95, 0.018, 1.664214)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_15_soil_8"]
+albedo_color = Color(0.541176, 0.384314, 0.266667, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_16_soil_8"]
+size = Vector3(0.95, 0.018, 3.023085)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_17_soil_9"]
+albedo_color = Color(0.427451, 0.290196, 0.203922, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_18_soil_9"]
+size = Vector3(0.95, 0.018, 2.820992)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_19_soil_10"]
+albedo_color = Color(0.541176, 0.384314, 0.266667, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_20_soil_10"]
+size = Vector3(0.95, 0.018, 2.259975)
+
+[node name="GardenPaths" type="Node3D"]
+
+[node name="PathStone0" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(-13, 0.035, 7.4)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.588, 0.42, 0.42)
+
+[node name="world" parent="PathStone0" index="0"]
+
+[node name="Stone" parent="PathStone0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone1" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(-11.8, 0.035, 5.2)
+rotation_degrees = Vector3(0, 37, 0)
+scale = Vector3(0.658, 0.47, 0.47)
+
+[node name="world" parent="PathStone1" index="0"]
+
+[node name="Stone" parent="PathStone1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone2" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(-10.6, 0.035, 3.2)
+rotation_degrees = Vector3(0, 74, 0)
+scale = Vector3(0.728, 0.52, 0.52)
+
+[node name="world" parent="PathStone2" index="0"]
+
+[node name="Stone" parent="PathStone2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone3" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(-9.7, 0.035, 1.2)
+rotation_degrees = Vector3(0, 111, 0)
+scale = Vector3(0.588, 0.42, 0.42)
+
+[node name="world" parent="PathStone3" index="0"]
+
+[node name="Stone" parent="PathStone3/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone4" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(-7.4, 0.035, 0.8)
+rotation_degrees = Vector3(0, 148, 0)
+scale = Vector3(0.658, 0.47, 0.47)
+
+[node name="world" parent="PathStone4" index="0"]
+
+[node name="Stone" parent="PathStone4/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone5" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(-5.2, 0.035, 1)
+rotation_degrees = Vector3(0, 185, 0)
+scale = Vector3(0.728, 0.52, 0.52)
+
+[node name="world" parent="PathStone5" index="0"]
+
+[node name="Stone" parent="PathStone5/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone6" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(-4, 0.035, 1.2)
+rotation_degrees = Vector3(0, 222, 0)
+scale = Vector3(0.588, 0.42, 0.42)
+
+[node name="world" parent="PathStone6" index="0"]
+
+[node name="Stone" parent="PathStone6/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone7" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(4, 0.035, 1.2)
+rotation_degrees = Vector3(0, 259, 0)
+scale = Vector3(0.658, 0.47, 0.47)
+
+[node name="world" parent="PathStone7" index="0"]
+
+[node name="Stone" parent="PathStone7/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone8" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(5, 0.035, 2.2)
+rotation_degrees = Vector3(0, 296, 0)
+scale = Vector3(0.728, 0.52, 0.52)
+
+[node name="world" parent="PathStone8" index="0"]
+
+[node name="Stone" parent="PathStone8/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone9" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(7.5, 0.035, 3.4)
+rotation_degrees = Vector3(0, 333, 0)
+scale = Vector3(0.588, 0.42, 0.42)
+
+[node name="world" parent="PathStone9" index="0"]
+
+[node name="Stone" parent="PathStone9/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone10" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(10, 0.035, 4)
+rotation_degrees = Vector3(0, 370, 0)
+scale = Vector3(0.658, 0.47, 0.47)
+
+[node name="world" parent="PathStone10" index="0"]
+
+[node name="Stone" parent="PathStone10/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathStone11" parent="." instance=ExtResource("1_pathstone0")]
+position = Vector3(12, 0.035, 4.2)
+rotation_degrees = Vector3(0, 407, 0)
+scale = Vector3(0.728, 0.52, 0.52)
+
+[node name="world" parent="PathStone11" index="0"]
+
+[node name="Stone" parent="PathStone11/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="PathSoil0" type="MeshInstance3D" parent="."]
+position = Vector3(-12.4, 0.018, 6.3)
+rotation_degrees = Vector3(0, -28.61046, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_2_soil_0")
+material_override = SubResource("StandardMaterial3D_1_soil_0")
+
+[node name="PathSoil1" type="MeshInstance3D" parent="."]
+position = Vector3(-11.2, 0.018, 4.2)
+rotation_degrees = Vector3(0, -30.963757, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_4_soil_1")
+material_override = SubResource("StandardMaterial3D_3_soil_1")
+
+[node name="PathSoil2" type="MeshInstance3D" parent="."]
+position = Vector3(-10.15, 0.018, 2.2)
+rotation_degrees = Vector3(0, -24.227745, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_6_soil_2")
+material_override = SubResource("StandardMaterial3D_5_soil_2")
+
+[node name="PathSoil3" type="MeshInstance3D" parent="."]
+position = Vector3(-8.55, 0.018, 1)
+rotation_degrees = Vector3(0, -80.134193, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_8_soil_3")
+material_override = SubResource("StandardMaterial3D_7_soil_3")
+
+[node name="PathSoil4" type="MeshInstance3D" parent="."]
+position = Vector3(-6.3, 0.018, 0.9)
+rotation_degrees = Vector3(0, -95.194429, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_10_soil_4")
+material_override = SubResource("StandardMaterial3D_9_soil_4")
+
+[node name="PathSoil5" type="MeshInstance3D" parent="."]
+position = Vector3(-4.6, 0.018, 1.1)
+rotation_degrees = Vector3(0, -99.462322, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_12_soil_5")
+material_override = SubResource("StandardMaterial3D_11_soil_5")
+
+[node name="PathSoil7" type="MeshInstance3D" parent="."]
+position = Vector3(4.5, 0.018, 1.7)
+rotation_degrees = Vector3(0, -135, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_14_soil_7")
+material_override = SubResource("StandardMaterial3D_13_soil_7")
+
+[node name="PathSoil8" type="MeshInstance3D" parent="."]
+position = Vector3(6.25, 0.018, 2.8)
+rotation_degrees = Vector3(0, -115.641006, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_16_soil_8")
+material_override = SubResource("StandardMaterial3D_15_soil_8")
+
+[node name="PathSoil9" type="MeshInstance3D" parent="."]
+position = Vector3(8.75, 0.018, 3.7)
+rotation_degrees = Vector3(0, -103.495733, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_18_soil_9")
+material_override = SubResource("StandardMaterial3D_17_soil_9")
+
+[node name="PathSoil10" type="MeshInstance3D" parent="."]
+position = Vector3(11, 0.018, 4.1)
+rotation_degrees = Vector3(0, -95.710593, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_20_soil_10")
+material_override = SubResource("StandardMaterial3D_19_soil_10")

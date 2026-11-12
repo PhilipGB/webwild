@@ -1,6 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/building/AnchorNode.cs" id="1_script"]
+[ext_resource type="PackedScene" path="res://art/models/colony/web_anchor_ring.glb" id="2_ring"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="3_vcol"]
 
 [sub_resource type="SphereShape3D" id="Sphere_anchor"]
 radius = 0.75
@@ -13,3 +15,52 @@ script = ExtResource("1_script")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("Sphere_anchor")
+
+[node name="MarkerRing" parent="." instance=ExtResource("2_ring")]
+position = Vector3(0, -0.12, 0)
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(0.28, 0.28, 0.28)
+
+[node name="world" parent="MarkerRing" index="0"]
+
+[node name="Post" parent="MarkerRing/world" index="0"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_0" parent="MarkerRing/world" index="1"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_1" parent="MarkerRing/world" index="2"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_2" parent="MarkerRing/world" index="3"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_3" parent="MarkerRing/world" index="4"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_4" parent="MarkerRing/world" index="5"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_5" parent="MarkerRing/world" index="6"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_6" parent="MarkerRing/world" index="7"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_7" parent="MarkerRing/world" index="8"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_8" parent="MarkerRing/world" index="9"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_9" parent="MarkerRing/world" index="10"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_10" parent="MarkerRing/world" index="11"]
+material_override = ExtResource("3_vcol")
+
+[node name="Ring_11" parent="MarkerRing/world" index="12"]
+material_override = ExtResource("3_vcol")
+
+[node name="Socket_socket" parent="MarkerRing/world" index="13"]
+material_override = ExtResource("3_vcol")

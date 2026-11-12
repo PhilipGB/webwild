@@ -1,0 +1,28 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/HomeLeaf.tscn" id="1_homeleaf"]
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/TwinTwigs.tscn" id="2_twintwigs"]
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/PebbleGap.tscn" id="3_pebblegap"]
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/FlowerLane.tscn" id="4_flowerlane"]
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/LeafNursery.tscn" id="5_leafnursery"]
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/ClimbableStem.tscn" id="6_climbablestem"]
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/FallenLog.tscn" id="7_fallenlog"]
+[ext_resource type="PackedScene" path="res://scenes/world/landmarks/WindEdge.tscn" id="8_windedge"]
+
+[node name="GardenLandmarks" type="Node3D"]
+
+[node name="HomeLeaf" parent="." instance=ExtResource("1_homeleaf")]
+
+[node name="TwinTwigs" parent="." instance=ExtResource("2_twintwigs")]
+
+[node name="PebbleGap" parent="." instance=ExtResource("3_pebblegap")]
+
+[node name="FlowerLane" parent="." instance=ExtResource("4_flowerlane")]
+
+[node name="LeafNursery" parent="." instance=ExtResource("5_leafnursery")]
+
+[node name="ClimbableStem" parent="." instance=ExtResource("6_climbablestem")]
+
+[node name="FallenLog" parent="." instance=ExtResource("7_fallenlog")]
+
+[node name="WindEdge" parent="." instance=ExtResource("8_windedge")]

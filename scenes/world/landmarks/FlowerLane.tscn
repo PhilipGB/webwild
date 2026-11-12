@@ -1,0 +1,135 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/flora/flower_pink.glb" id="1_flowerpink"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/flora/flower_purple.glb" id="3_flowerpurple"]
+[ext_resource type="PackedScene" path="res://art/models/flora/daisy.glb" id="4_flowermiddle"]
+
+[node name="FlowerLane" type="Node3D"]
+position = Vector3(5.3, 0, -6.2)
+
+[node name="FlowerPink" parent="." instance=ExtResource("1_flowerpink")]
+position = Vector3(-0.9, 0, 0)
+rotation_degrees = Vector3(0, 12, 0)
+scale = Vector3(1.5, 1.5, 1.5)
+
+[node name="world" parent="FlowerPink" index="0"]
+
+[node name="Stalk" parent="FlowerPink/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="FlowerPink/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="FlowerPink/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="FlowerPink/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="FlowerPink/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="FlowerPink/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="FlowerPink/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="FlowerPink/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="FlowerPink/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="FlowerPink/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="FlowerPink/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="FlowerPurple" parent="." instance=ExtResource("3_flowerpurple")]
+position = Vector3(0.9, 0, 0)
+rotation_degrees = Vector3(0, -14, 0)
+scale = Vector3(1.5, 1.5, 1.5)
+
+[node name="world" parent="FlowerPurple" index="0"]
+
+[node name="Stalk" parent="FlowerPurple/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="FlowerPurple/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="FlowerPurple/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="FlowerPurple/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="FlowerPurple/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="FlowerPurple/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="FlowerPurple/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="FlowerPurple/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="FlowerPurple/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="FlowerPurple/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="FlowerPurple/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="FlowerMiddle" parent="." instance=ExtResource("4_flowermiddle")]
+position = Vector3(0, 0, 1.1)
+rotation_degrees = Vector3(0, 70, 0)
+scale = Vector3(1.15, 1.15, 1.15)
+
+[node name="world" parent="FlowerMiddle" index="0"]
+
+[node name="Stalk" parent="FlowerMiddle/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="FlowerMiddle/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="FlowerMiddle/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="FlowerMiddle/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="FlowerMiddle/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="FlowerMiddle/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="FlowerMiddle/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="FlowerMiddle/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="FlowerMiddle/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="FlowerMiddle/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="FlowerMiddle/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Anchor_flower_lane_a" type="Marker3D" parent="."]
+position = Vector3(-0.9, 1.35, 0)
+
+[node name="Anchor_flower_lane_b" type="Marker3D" parent="."]
+position = Vector3(0.9, 1.35, 0)

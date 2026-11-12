@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/GardenWorld.tscn" id="1_world"]
+
+[node name="TitleBackdrop" type="Node3D"]
+
+[node name="World" parent="." instance=ExtResource("1_world")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(-2.5, 8.2, 18.5)
+current = true
+fov = 46.0
+near = 0.1
+far = 120.0

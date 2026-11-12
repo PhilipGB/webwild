@@ -671,6 +671,16 @@ d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
 - Supervised child playtest: **NOT VERIFIED**.
 - v0.2.1 is deliberately **not released**; the merged PR delivers the fix.
 
+### Delivery record
+
+- PR: https://github.com/PhilipGB/webwild/pull/16
+- Exact PR-head CI:
+  https://github.com/PhilipGB/webwild/actions/runs/43233359617
+- Merge commit: `09262b73d0e24c0462646fd5795d721d9ade923b`
+- Merged-main CI:
+  https://github.com/PhilipGB/webwild/actions/runs/43233689541
+- Repository visibility checked: **PRIVATE**.
+
 ## Honest non-results
 
 - Child playtest: **NOT VERIFIED** (`docs/PLAYTEST_NOTES.md`).

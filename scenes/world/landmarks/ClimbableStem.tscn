@@ -1,0 +1,138 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/flora/sapling.glb" id="1_climbsapling"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/flora/broad_leaf.glb" id="3_climbleaf0"]
+[ext_resource type="PackedScene" path="res://art/models/flora/leaf_platform.glb" id="4_overlookleaf"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1_stem"]
+albedo_color = Color(0.368627, 0.556863, 0.270588, 1)
+roughness = 0.92
+metallic = 0.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_2_stem"]
+top_radius = 0.11
+bottom_radius = 0.18
+height = 4.6
+radial_segments = 10
+
+[node name="ClimbableStem" type="Node3D"]
+position = Vector3(-5, 0, 9)
+
+[node name="ClimbSapling" parent="." instance=ExtResource("1_climbsapling")]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 22, 0)
+scale = Vector3(1.5, 1.5, 1.5)
+
+[node name="world" parent="ClimbSapling" index="0"]
+
+[node name="Trunk" parent="ClimbSapling/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_0" parent="ClimbSapling/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="ClimbSapling/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="ClimbSapling/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="ClimbSapling/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="ClimbStem" type="MeshInstance3D" parent="."]
+position = Vector3(0, 2.3, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_2_stem")
+material_override = SubResource("StandardMaterial3D_1_stem")
+
+[node name="ClimbLeaf0" parent="." instance=ExtResource("3_climbleaf0")]
+position = Vector3(0.36, 1.1, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="world" parent="ClimbLeaf0" index="0"]
+
+[node name="Blade" parent="ClimbLeaf0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Vein" parent="ClimbLeaf0/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Stem" parent="ClimbLeaf0/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="ClimbLeaf1" parent="." instance=ExtResource("3_climbleaf0")]
+position = Vector3(-0.36, 2, 0)
+rotation_degrees = Vector3(0, 70, 0)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="world" parent="ClimbLeaf1" index="0"]
+
+[node name="Blade" parent="ClimbLeaf1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Vein" parent="ClimbLeaf1/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Stem" parent="ClimbLeaf1/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="ClimbLeaf2" parent="." instance=ExtResource("3_climbleaf0")]
+position = Vector3(0.36, 2.9, 0)
+rotation_degrees = Vector3(0, 140, 0)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="world" parent="ClimbLeaf2" index="0"]
+
+[node name="Blade" parent="ClimbLeaf2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Vein" parent="ClimbLeaf2/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Stem" parent="ClimbLeaf2/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="ClimbLeaf3" parent="." instance=ExtResource("3_climbleaf0")]
+position = Vector3(-0.36, 3.8, 0)
+rotation_degrees = Vector3(0, 210, 0)
+scale = Vector3(0.62, 0.62, 0.62)
+
+[node name="world" parent="ClimbLeaf3" index="0"]
+
+[node name="Blade" parent="ClimbLeaf3/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Vein" parent="ClimbLeaf3/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Stem" parent="ClimbLeaf3/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="OverlookLeaf" parent="." instance=ExtResource("4_overlookleaf")]
+position = Vector3(0, 4.25, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.85, 0.85, 0.85)
+
+[node name="world" parent="OverlookLeaf" index="0"]
+
+[node name="Blade" parent="OverlookLeaf/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Vein" parent="OverlookLeaf/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Stem" parent="OverlookLeaf/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Anchor_stem_overlook" type="Marker3D" parent="."]
+position = Vector3(0, 4.55, 0)
+
+[node name="ClimbBase" type="Marker3D" parent="."]
+position = Vector3(0, 0, 0)
+
+[node name="ClimbTop" type="Marker3D" parent="."]
+position = Vector3(0, 4.4, 0)

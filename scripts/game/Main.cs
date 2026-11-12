@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Godot;
 using Webwild.Core;
 
@@ -25,20 +26,28 @@ public partial class Main : Node3D
     private Button _continueButton = null!;
     private GardenClearing? _game;
     private bool _probeMode;
+    private bool _sceneValidate;
     private float _orbit;
     private double _messageTime;
 
     public override void _Ready()
     {
-        _probeMode = OS.GetCmdlineUserArgs().Any(a => a is "--runtime-probe" or "--probe");
+        var args = OS.GetCmdlineUserArgs();
+        _probeMode = args.Any(a => a is "--runtime-probe" or "--probe");
+        _sceneValidate = args.Any(a => a == "--scene-validate");
+        if (_sceneValidate)
+        {
+            RunSceneValidation();
+            return;
+        }
+
         _settingsService = GameData.CreateSettingsService();
         Settings = _settingsService.Load();
         Saves = GameData.CreateSaveService();
         GameData.ApplyUiScale(Settings);
         GameData.ApplyFullscreen(Settings);
 
-        _backdrop = GardenScenery.Build(this, titleBackdrop: true);
-        _titleCamera = GardenScenery.CreateTitleCamera(this);
+        BuildTitleBackdrop();
         BuildTitleUi();
         BuildSettings();
 
@@ -52,6 +61,60 @@ public partial class Main : Node3D
         {
             RefreshContinue();
         }
+    }
+
+    private void BuildTitleBackdrop()
+    {
+        var scene = GD.Load<PackedScene>("res://scenes/boot/TitleBackdrop.tscn")
+            ?? throw new InvalidOperationException("TitleBackdrop.tscn is missing.");
+        _backdrop = scene.Instantiate<Node3D>();
+        AddChild(_backdrop);
+        _titleCamera = _backdrop.GetNode<Camera3D>("Camera3D");
+    }
+
+    private void RunSceneValidation()
+    {
+        var packed = GD.Load<PackedScene>("res://scenes/world/GardenClearing.tscn");
+        GardenClearing? instance = null;
+        IReadOnlyList<SceneValidationCheck> checks;
+        if (packed is null)
+        {
+            checks = new[]
+            {
+                new SceneValidationCheck("scene-loads", false, "GardenClearing.tscn is missing")
+            };
+        }
+        else
+        {
+            instance = packed.Instantiate<GardenClearing>();
+            instance.ValidationOnly = true;
+            AddChild(instance);
+            checks = SceneContentValidator.Validate(instance);
+        }
+
+        var passes = checks.Count(check => check.Pass);
+        var failures = checks.Count - passes;
+        var directory = GameData.ArtifactsPath;
+        Directory.CreateDirectory(directory);
+        var report = new
+        {
+            generatedUtc = DateTime.UtcNow,
+            engine = Engine.GetVersionInfo().ToString(),
+            renderer = DisplayServer.GetName(),
+            passes,
+            failures,
+            checks = checks.Select(check => new { name = check.Name, pass = check.Pass, detail = check.Detail })
+        };
+        var path = Path.Combine(directory, "scene_validation.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+
+        foreach (var check in checks)
+            GD.Print($"[SCENE] {(check.Pass ? "PASS" : "FAIL")} {check.Name}" +
+                     (string.IsNullOrWhiteSpace(check.Detail) ? "" : $" — {check.Detail}"));
+        GD.Print($"[SCENE] SUMMARY passes={passes} failures={failures} report={path}");
+
+        instance?.Free();
+        GetTree().Quit(failures == 0 ? 0 : 1);
     }
 
     private void BuildTitleUi()
@@ -290,7 +353,7 @@ public partial class Main : Node3D
             _game.QueueFree();
             _game = null;
         }
-        _backdrop = GardenScenery.Build(this, titleBackdrop: true);
+        BuildTitleBackdrop();
         _titleRoot.Visible = true;
         _titleCamera.Current = true;
         _orbit = 0;

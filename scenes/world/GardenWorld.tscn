@@ -1,0 +1,24 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/GardenWorld.cs" id="1_world_script"]
+[ext_resource type="PackedScene" path="res://scenes/world/GardenEnvironment.tscn" id="1_environment"]
+[ext_resource type="PackedScene" path="res://scenes/world/GardenTerrain.tscn" id="2_terrain"]
+[ext_resource type="PackedScene" path="res://scenes/world/GardenPaths.tscn" id="3_paths"]
+[ext_resource type="PackedScene" path="res://scenes/world/GardenLandmarks.tscn" id="4_landmarks"]
+[ext_resource type="PackedScene" path="res://scenes/world/GardenFlora.tscn" id="5_flora"]
+[ext_resource type="PackedScene" path="res://scenes/world/GardenBoundaries.tscn" id="6_boundaries"]
+
+[node name="GardenWorld" type="Node3D"]
+script = ExtResource("1_world_script")
+
+[node name="Environment" parent="." instance=ExtResource("1_environment")]
+
+[node name="Terrain" parent="." instance=ExtResource("2_terrain")]
+
+[node name="Paths" parent="." instance=ExtResource("3_paths")]
+
+[node name="Landmarks" parent="." instance=ExtResource("4_landmarks")]
+
+[node name="Flora" parent="." instance=ExtResource("5_flora")]
+
+[node name="Boundaries" parent="." instance=ExtResource("6_boundaries")]

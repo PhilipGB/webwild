@@ -5,6 +5,12 @@ namespace Webwild.Game;
 
 public partial class AnchorNode : Area3D
 {
+    /// <summary>
+    /// Stable gameplay id authored on the scene instance. It links this visual
+    /// socket to the engine-free anchor definition and is validated at startup.
+    /// </summary>
+    [Export] public string AnchorId { get; set; } = "";
+
     public AnchorDefinition Definition { get; private set; } = null!;
     public bool IsSelected { get; private set; }
     public bool IsHovered { get; private set; }
@@ -19,6 +25,9 @@ public partial class AnchorNode : Area3D
 
     public override void _Ready()
     {
+        // Exported builds can drop imported-child overrides from the authored
+        // socket scene; keep the ring palette identical to the editor.
+        ArtMaterials.ApplyToModelInstances(this);
         CollisionLayer = 4;
         CollisionMask = 0;
         Monitoring = false;
@@ -66,7 +75,9 @@ public partial class AnchorNode : Area3D
     public void Configure(AnchorDefinition definition)
     {
         Definition = definition;
-        Position = new Vector3((float)definition.Position.X, (float)definition.Position.Y, (float)definition.Position.Z);
+        // The authored scene transform is authoritative for presentation. The
+        // startup validator guarantees it still matches the simulation position,
+        // so a moved socket fails loudly instead of being silently snapped back.
         if (_label is not null) _label.Text = definition.Label;
     }
 

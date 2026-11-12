@@ -28,4 +28,22 @@ public static class ArtMaterials
             ApplyVertexColors(child);
         }
     }
+
+    /// <summary>
+    /// Apply the vertex-colour material to imported model instances only. The
+    /// authored scenes already carry editor-visible material overrides, but an
+    /// exported build can drop instance property overrides on imported children.
+    /// This narrow runtime pass keeps exported visuals identical without touching
+    /// authored primitive materials or constructing any geometry.
+    /// </summary>
+    public static void ApplyToModelInstances(Node root)
+    {
+        foreach (var child in root.GetChildren())
+        {
+            var scenePath = child.SceneFilePath ?? "";
+            if (scenePath.StartsWith("res://art/models/", StringComparison.Ordinal))
+                ApplyVertexColors(child);
+            ApplyToModelInstances(child);
+        }
+    }
 }

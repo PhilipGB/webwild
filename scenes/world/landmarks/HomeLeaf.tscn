@@ -1,0 +1,63 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/flora/leaf_platform.glb" id="1_homeleafmodel"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/colony/cache_leaf.glb" id="3_homecache"]
+[ext_resource type="PackedScene" path="res://art/models/colony/explore_marker.glb" id="4_spawnmarker"]
+
+[node name="HomeLeaf" type="Node3D"]
+position = Vector3(-13.6, 0, 7)
+
+[node name="HomeLeafModel" parent="." instance=ExtResource("1_homeleafmodel")]
+position = Vector3(0, 0.04, -0.3)
+rotation_degrees = Vector3(0, 18, 0)
+scale = Vector3(1.25, 1.25, 1.25)
+
+[node name="world" parent="HomeLeafModel" index="0"]
+
+[node name="Blade" parent="HomeLeafModel/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Vein" parent="HomeLeafModel/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Stem" parent="HomeLeafModel/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="HomeCache" parent="." instance=ExtResource("3_homecache")]
+position = Vector3(-1.6, 0.02, 1.2)
+rotation_degrees = Vector3(0, -35, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="HomeCache" index="0"]
+
+[node name="Cradle" parent="HomeCache/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Resource_0" parent="HomeCache/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Resource_1" parent="HomeCache/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Resource_2" parent="HomeCache/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="SpawnMarker" parent="." instance=ExtResource("4_spawnmarker")]
+position = Vector3(1.3, 0.05, 0.7)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="world" parent="SpawnMarker" index="0"]
+
+[node name="Post" parent="SpawnMarker/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Badge" parent="SpawnMarker/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Socket_socket" parent="SpawnMarker/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Anchor_home_leaf" type="Marker3D" parent="."]
+position = Vector3(0.1, 1, -0.5)

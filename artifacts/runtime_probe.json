@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T00:51:47.3520381Z",
+  "generatedUtc": "2026-11-12T01:35:49.1346205Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
-  "passes": 80,
+  "passes": 105,
   "failures": 0,
   "checks": [
     {
@@ -24,6 +24,126 @@
       "name": "title-hidden",
       "pass": true,
       "detail": "Title hidden in garden"
+    },
+    {
+      "name": "scene-clearing-scene",
+      "pass": true,
+      "detail": "scene=res://scenes/world/GardenClearing.tscn"
+    },
+    {
+      "name": "scene-world-scene-authored",
+      "pass": true,
+      "detail": "scene=res://scenes/world/GardenWorld.tscn"
+    },
+    {
+      "name": "scene-world-group-instances",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "scene-landmark-scenes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "scene-anchor-count",
+      "pass": true,
+      "detail": "scene=12 simulation=12"
+    },
+    {
+      "name": "scene-anchor-ids-unique",
+      "pass": true,
+      "detail": "home_leaf,twig_west_a,twig_west_b,gap_west,gap_east,flower_lane_a,flower_lane_b,wind_edge_a,wind_edge_b,log_shelter_a,log_shelter_b,stem_overlook"
+    },
+    {
+      "name": "scene-anchor-transforms-match-simulation",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "scene-landmark-anchor-markers",
+      "pass": true,
+      "detail": "12 markers; "
+    },
+    {
+      "name": "scene-nursery-marker",
+      "pass": true,
+      "detail": "LeafNursery/NurseryPoint=(12, 0.1, 4)"
+    },
+    {
+      "name": "scene-climb-markers",
+      "pass": true,
+      "detail": "ClimbableStem/ClimbBase=(-5, 0, 9); ClimbableStem/ClimbTop=(-5, 4.4, 9)"
+    },
+    {
+      "name": "scene-bridge-bank-markers",
+      "pass": true,
+      "detail": "PebbleGap/BridgeGroundWest=(-4.4, 0, 1.2); PebbleGap/BridgeGroundEast=(4.4, 0, 1.2)"
+    },
+    {
+      "name": "scene-ravine-geometry",
+      "pass": true,
+      "detail": "westEdge=-3.00 eastEdge=3.00"
+    },
+    {
+      "name": "scene-ground-collision-contract",
+      "pass": true,
+      "detail": "west L1/M0 east L1/M0"
+    },
+    {
+      "name": "scene-boundary-collision",
+      "pass": true,
+      "detail": "bodies=4"
+    },
+    {
+      "name": "scene-anchor-collision-contract",
+      "pass": true,
+      "detail": "anchors=12"
+    },
+    {
+      "name": "scene-anchor-marker-models",
+      "pass": true,
+      "detail": "visible socket rings authored in AnchorSocket.tscn"
+    },
+    {
+      "name": "scene-player-contract",
+      "pass": true,
+      "detail": "pos=(-13.5, 0.00027555972, 8.5) layer=2 mask=1"
+    },
+    {
+      "name": "scene-runtime-roots",
+      "pass": true,
+      "detail": "Webs, Insects, Workers, WebPreview and UI"
+    },
+    {
+      "name": "scene-environment-authored",
+      "pass": true,
+      "detail": "WorldEnvironment, shadowed Sun and NurseryFill"
+    },
+    {
+      "name": "scene-vertex-material-resource",
+      "pass": true,
+      "detail": "StandardMaterial3D"
+    },
+    {
+      "name": "scene-model-resources",
+      "pass": true,
+      "detail": "models=123 meshes=934 "
+    },
+    {
+      "name": "scene-model-material-coverage",
+      "pass": true,
+      "detail": "baked vertex-colour material on 123 model instances"
+    },
+    {
+      "name": "scene-no-procedural-builder",
+      "pass": true,
+      "detail": "GardenScenery type and file are gone"
+    },
+    {
+      "name": "scene-scene-loads",
+      "pass": true,
+      "detail": "GardenClearing and TitleBackdrop load"
     },
     {
       "name": "anchors-visible",
@@ -103,7 +223,7 @@
     {
       "name": "climb-stem",
       "pass": true,
-      "detail": "height=3.92"
+      "detail": "height=3.97"
     },
     {
       "name": "build-tool-open",
@@ -286,6 +406,11 @@
       "detail": "Player restored"
     },
     {
+      "name": "reload-world-scene-authored",
+      "pass": true,
+      "detail": "24/24 scene checks after load"
+    },
+    {
       "name": "settings-persist",
       "pass": true,
       "detail": "Accessibility values round-trip"
@@ -383,7 +508,7 @@
     {
       "name": "bridge-removal-blocks-crossing",
       "pass": true,
-      "detail": "x=-5.02"
+      "detail": "x=-5.01"
     },
     {
       "name": "bridge-zaxis-built",

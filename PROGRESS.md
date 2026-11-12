@@ -17,7 +17,8 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 [#7](https://github.com/PhilipGB/webwild/pull/7),
 [#8](https://github.com/PhilipGB/webwild/pull/8) and
 [#9](https://github.com/PhilipGB/webwild/pull/9) (v0.1.1 hardening) and
-[#10](https://github.com/PhilipGB/webwild/pull/10) (v0.1.2 review hardening).
+[#10](https://github.com/PhilipGB/webwild/pull/10) (v0.1.2 review hardening) and
+[#11](https://github.com/PhilipGB/webwild/pull/11) (v0.2.0 P0 scene-first world).
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -32,14 +33,16 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 | P8 | Runtime playthrough, screenshots, exports, acceptance, release tag | DONE (Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#p8`; `docs/EXPORTS.md`; 80/80 rendered probe; 19 real screenshots |
 | v0.1.1 | Independent-review hardening: bounded save history, safe failed-save quit, real ravine/bridge traversal, silk food cost, difficulty reset, pause physics, settings retry | DONE | `CHANGELOG.md`; `HardeningTests`; runtime checks `pause-freezes-airborne`, `ravine-blocks-without-bridge`, `bridge-enables-player-crossing`, `failed-save-keeps-session`, `settings-save-error-visible`, `low-threat-restores` |
 | v0.1.2 | Review hardening: order-independent bridge ramps, order-preserving save histories, settings temp-file cleanup | DONE | `CHANGELOG.md`; `BridgeGeometryTests`, `HistoryOrderTests`, settings failure tests; runtime checks `bridge-reverse-*`, `bridge-zaxis-*`, `bridge-removal-*` |
+| v0.2.0 P0 | Scene-first world: reusable environment, terrain, landmark, flora and boundary scenes; anchor/marker coordinate contract; procedural builder removed | DONE (no release yet) | PR [#11](https://github.com/PhilipGB/webwild/pull/11); `CHANGELOG.md`; `docs/SCENE_AUTHORING.md`; `SceneAuthoringTests`; 24 scene checks; runtime `scene-*`; screenshots 01–19 |
 
 ## Verification summary
 
-- `dotnet test`: **65 passed, 0 failed, 0 skipped**.
-- Headless runtime probe: **80 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **80 passed, 0 failed**; 19 real PNGs.
-- Exported Linux build, headless probe: **80 passed, 0 failed**.
-- Exported Linux build, rendered Xvfb probe: **80 passed, 0 failed**.
+- `dotnet test`: **71 passed, 0 failed, 0 skipped**.
+- Scene contract validation: **24 passed, 0 failed**.
+- Headless runtime probe: **105 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **105 passed, 0 failed**; 19 real PNGs.
+- Exported Linux build, headless probe: **105 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb probe: **105 passed, 0 failed**.
 - Linux x64 release export: built successfully and launched.
 - Windows x64 release export: built successfully.
 - Windows runtime: **NOT VERIFIED** — no Windows host available.
@@ -55,7 +58,8 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
   controls remain visible.
 - The game is a deliberately stylised 3D garden, not a photorealistic or
   biologically accurate simulation.
-- Persistent garden geometry is built in C# for v0.1.x; moving it into authored
-  `.tscn` scenes is planned for v0.2.0.
+- The persistent garden is now authored in `.tscn` scenes. Gameplay coordinates
+  remain in `WorldLayout` and are validated against the scene rather than
+  auto-synchronised by an editor plugin.
 - The repository was restored to private visibility during the v0.1.1 hardening
   pass.

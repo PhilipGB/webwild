@@ -34,6 +34,8 @@ public static class WorldLayout
 
     public static readonly Vec3 PlayerSpawn = new(-13.5, 0.45, 8.5);
     public static readonly Vec3 NurseryPosition = new(12.0, 0, 4.0);
+    /// <summary>Graph/navigation point for the nursery, matching its authored marker.</summary>
+    public static readonly Vec3 NurseryNodePosition = new(12.0, 0.1, 4.0);
     public static readonly Vec3 ClimbBase = new(-5.0, 0, 9.0);
     public static readonly Vec3 ClimbTop = new(-5.0, 4.4, 9.0);
     public const float RavineHalfWidth = 3.0f;
@@ -124,7 +126,7 @@ public static class WorldLayout
             .ToList();
         nodes.Add(new WorldNodeDefinition
         {
-            Id = NurseryNode, Position = new Vec3(12.0, 0.1, 4.0), Label = "Leaf nursery"
+            Id = NurseryNode, Position = NurseryNodePosition, Label = "Leaf nursery"
         });
         return nodes;
     }

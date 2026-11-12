@@ -1,0 +1,1423 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/flora/bush.glb" id="1_hedge0"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/flora/bush_berries.glb" id="3_hedge1"]
+[ext_resource type="PackedScene" path="res://art/models/flora/fern.glb" id="4_hedge2"]
+[ext_resource type="PackedScene" path="res://art/models/flora/tall_grass.glb" id="5_hedge3"]
+[ext_resource type="PackedScene" path="res://art/models/flora/sunflower.glb" id="6_hedge4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1_northhedgewall"]
+size = Vector3(38, 3.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2_southhedgewall"]
+size = Vector3(38, 3.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3_westhedgewall"]
+size = Vector3(0.8, 3.2, 28)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4_easthedgewall"]
+size = Vector3(0.8, 3.2, 28)
+
+[node name="GardenBoundaries" type="Node3D"]
+
+[node name="NorthHedgeWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 0, -13.45)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NorthHedgeWall"]
+shape = SubResource("BoxShape3D_1_northhedgewall")
+position = Vector3(0, 1.6, 0)
+
+[node name="SouthHedgeWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 0, 13.45)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SouthHedgeWall"]
+shape = SubResource("BoxShape3D_2_southhedgewall")
+position = Vector3(0, 1.6, 0)
+
+[node name="WestHedgeWall" type="StaticBody3D" parent="."]
+position = Vector3(-18.45, 0, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WestHedgeWall"]
+shape = SubResource("BoxShape3D_3_westhedgewall")
+position = Vector3(0, 1.6, 0)
+
+[node name="EastHedgeWall" type="StaticBody3D" parent="."]
+position = Vector3(18.45, 0, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EastHedgeWall"]
+shape = SubResource("BoxShape3D_4_easthedgewall")
+position = Vector3(0, 1.6, 0)
+
+[node name="Hedge0" parent="." instance=ExtResource("1_hedge0")]
+position = Vector3(-18, 0, -12.9)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge0" index="0"]
+
+[node name="Foliage_0" parent="Hedge0/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge0/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge0/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge0/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge1" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(-18, 0, 12.9)
+rotation_degrees = Vector3(0, 23, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge1" index="0"]
+
+[node name="Foliage_0" parent="Hedge1/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge1/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge1/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge1/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge1/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge1/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge1/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge2" parent="." instance=ExtResource("4_hedge2")]
+position = Vector3(-15, 0, -12.9)
+rotation_degrees = Vector3(0, 46, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge2" index="0"]
+
+[node name="Core" parent="Hedge2/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Hedge2/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Hedge2/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Hedge2/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Hedge2/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Hedge2/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Hedge2/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Hedge2/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Hedge2/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Hedge2/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Hedge2/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Hedge2/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Hedge2/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Hedge2/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Hedge2/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Hedge2/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Hedge2/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Hedge2/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Hedge2/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge3" parent="." instance=ExtResource("5_hedge3")]
+position = Vector3(-15, 0, 12.9)
+rotation_degrees = Vector3(0, 69, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge3" index="0"]
+
+[node name="Blade_0" parent="Hedge3/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Hedge3/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Hedge3/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Hedge3/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Hedge3/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Hedge3/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Hedge3/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Hedge3/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge4" parent="." instance=ExtResource("6_hedge4")]
+position = Vector3(-12, 0, -12.9)
+rotation_degrees = Vector3(0, 92, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge4" index="0"]
+
+[node name="Stalk" parent="Hedge4/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="Hedge4/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="Hedge4/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="Hedge4/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="Hedge4/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="Hedge4/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="Hedge4/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="Hedge4/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="Hedge4/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="Hedge4/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="Hedge4/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="Hedge4/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="Hedge4/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Hedge4/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge5" parent="." instance=ExtResource("1_hedge0")]
+position = Vector3(-12, 0, 12.9)
+rotation_degrees = Vector3(0, 115, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge5" index="0"]
+
+[node name="Foliage_0" parent="Hedge5/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge5/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge5/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge5/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge6" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(-9, 0, -12.9)
+rotation_degrees = Vector3(0, 138, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge6" index="0"]
+
+[node name="Foliage_0" parent="Hedge6/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge6/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge6/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge6/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge6/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge6/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge6/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge7" parent="." instance=ExtResource("4_hedge2")]
+position = Vector3(-9, 0, 12.9)
+rotation_degrees = Vector3(0, 161, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge7" index="0"]
+
+[node name="Core" parent="Hedge7/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Hedge7/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Hedge7/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Hedge7/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Hedge7/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Hedge7/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Hedge7/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Hedge7/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Hedge7/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Hedge7/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Hedge7/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Hedge7/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Hedge7/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Hedge7/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Hedge7/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Hedge7/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Hedge7/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Hedge7/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Hedge7/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge8" parent="." instance=ExtResource("5_hedge3")]
+position = Vector3(-6, 0, -12.9)
+rotation_degrees = Vector3(0, 184, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge8" index="0"]
+
+[node name="Blade_0" parent="Hedge8/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Hedge8/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Hedge8/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Hedge8/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Hedge8/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Hedge8/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Hedge8/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Hedge8/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge9" parent="." instance=ExtResource("6_hedge4")]
+position = Vector3(-6, 0, 12.9)
+rotation_degrees = Vector3(0, 207, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge9" index="0"]
+
+[node name="Stalk" parent="Hedge9/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="Hedge9/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="Hedge9/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="Hedge9/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="Hedge9/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="Hedge9/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="Hedge9/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="Hedge9/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="Hedge9/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="Hedge9/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="Hedge9/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="Hedge9/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="Hedge9/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Hedge9/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge16" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(6, 0, -12.9)
+rotation_degrees = Vector3(0, 368, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge16" index="0"]
+
+[node name="Foliage_0" parent="Hedge16/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge16/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge16/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge16/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge16/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge16/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge16/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge17" parent="." instance=ExtResource("4_hedge2")]
+position = Vector3(6, 0, 12.9)
+rotation_degrees = Vector3(0, 391, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge17" index="0"]
+
+[node name="Core" parent="Hedge17/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Hedge17/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Hedge17/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Hedge17/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Hedge17/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Hedge17/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Hedge17/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Hedge17/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Hedge17/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Hedge17/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Hedge17/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Hedge17/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Hedge17/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Hedge17/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Hedge17/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Hedge17/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Hedge17/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Hedge17/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Hedge17/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge18" parent="." instance=ExtResource("5_hedge3")]
+position = Vector3(9, 0, -12.9)
+rotation_degrees = Vector3(0, 414, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge18" index="0"]
+
+[node name="Blade_0" parent="Hedge18/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Hedge18/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Hedge18/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Hedge18/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Hedge18/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Hedge18/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Hedge18/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Hedge18/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge19" parent="." instance=ExtResource("6_hedge4")]
+position = Vector3(9, 0, 12.9)
+rotation_degrees = Vector3(0, 437, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge19" index="0"]
+
+[node name="Stalk" parent="Hedge19/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="Hedge19/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="Hedge19/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="Hedge19/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="Hedge19/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="Hedge19/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="Hedge19/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="Hedge19/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="Hedge19/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="Hedge19/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="Hedge19/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="Hedge19/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="Hedge19/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Hedge19/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge20" parent="." instance=ExtResource("1_hedge0")]
+position = Vector3(12, 0, -12.9)
+rotation_degrees = Vector3(0, 460, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge20" index="0"]
+
+[node name="Foliage_0" parent="Hedge20/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge20/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge20/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge20/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge21" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(12, 0, 12.9)
+rotation_degrees = Vector3(0, 483, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge21" index="0"]
+
+[node name="Foliage_0" parent="Hedge21/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge21/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge21/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge21/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge21/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge21/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge21/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge22" parent="." instance=ExtResource("4_hedge2")]
+position = Vector3(15, 0, -12.9)
+rotation_degrees = Vector3(0, 506, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge22" index="0"]
+
+[node name="Core" parent="Hedge22/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Hedge22/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Hedge22/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Hedge22/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Hedge22/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Hedge22/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Hedge22/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Hedge22/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Hedge22/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Hedge22/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Hedge22/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Hedge22/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Hedge22/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Hedge22/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Hedge22/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Hedge22/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Hedge22/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Hedge22/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Hedge22/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge23" parent="." instance=ExtResource("5_hedge3")]
+position = Vector3(15, 0, 12.9)
+rotation_degrees = Vector3(0, 529, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge23" index="0"]
+
+[node name="Blade_0" parent="Hedge23/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Hedge23/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Hedge23/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Hedge23/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Hedge23/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Hedge23/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Hedge23/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Hedge23/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge24" parent="." instance=ExtResource("6_hedge4")]
+position = Vector3(18, 0, -12.9)
+rotation_degrees = Vector3(0, 552, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge24" index="0"]
+
+[node name="Stalk" parent="Hedge24/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="Hedge24/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="Hedge24/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="Hedge24/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="Hedge24/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="Hedge24/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="Hedge24/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="Hedge24/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="Hedge24/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="Hedge24/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="Hedge24/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="Hedge24/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="Hedge24/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Hedge24/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge25" parent="." instance=ExtResource("1_hedge0")]
+position = Vector3(18, 0, 12.9)
+rotation_degrees = Vector3(0, 575, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge25" index="0"]
+
+[node name="Foliage_0" parent="Hedge25/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge25/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge25/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge25/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge26" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(-17.9, 0, -11)
+rotation_degrees = Vector3(0, 598, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge26" index="0"]
+
+[node name="Foliage_0" parent="Hedge26/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge26/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge26/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge26/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge26/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge26/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge26/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge27" parent="." instance=ExtResource("4_hedge2")]
+position = Vector3(17.9, 0, -11)
+rotation_degrees = Vector3(0, 621, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge27" index="0"]
+
+[node name="Core" parent="Hedge27/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Hedge27/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Hedge27/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Hedge27/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Hedge27/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Hedge27/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Hedge27/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Hedge27/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Hedge27/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Hedge27/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Hedge27/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Hedge27/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Hedge27/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Hedge27/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Hedge27/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Hedge27/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Hedge27/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Hedge27/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Hedge27/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge28" parent="." instance=ExtResource("5_hedge3")]
+position = Vector3(-17.9, 0, -8)
+rotation_degrees = Vector3(0, 644, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge28" index="0"]
+
+[node name="Blade_0" parent="Hedge28/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Hedge28/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Hedge28/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Hedge28/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Hedge28/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Hedge28/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Hedge28/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Hedge28/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge29" parent="." instance=ExtResource("6_hedge4")]
+position = Vector3(17.9, 0, -8)
+rotation_degrees = Vector3(0, 667, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge29" index="0"]
+
+[node name="Stalk" parent="Hedge29/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="Hedge29/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="Hedge29/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="Hedge29/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="Hedge29/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="Hedge29/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="Hedge29/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="Hedge29/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="Hedge29/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="Hedge29/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="Hedge29/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="Hedge29/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="Hedge29/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Hedge29/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge30" parent="." instance=ExtResource("1_hedge0")]
+position = Vector3(-17.9, 0, -5)
+rotation_degrees = Vector3(0, 690, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge30" index="0"]
+
+[node name="Foliage_0" parent="Hedge30/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge30/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge30/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge30/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge31" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(17.9, 0, -5)
+rotation_degrees = Vector3(0, 713, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge31" index="0"]
+
+[node name="Foliage_0" parent="Hedge31/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge31/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge31/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge31/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge31/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge31/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge31/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge32" parent="." instance=ExtResource("4_hedge2")]
+position = Vector3(-17.9, 0, -2)
+rotation_degrees = Vector3(0, 736, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge32" index="0"]
+
+[node name="Core" parent="Hedge32/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Hedge32/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Hedge32/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Hedge32/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Hedge32/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Hedge32/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Hedge32/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Hedge32/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Hedge32/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Hedge32/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Hedge32/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Hedge32/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Hedge32/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Hedge32/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Hedge32/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Hedge32/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Hedge32/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Hedge32/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Hedge32/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge33" parent="." instance=ExtResource("5_hedge3")]
+position = Vector3(17.9, 0, -2)
+rotation_degrees = Vector3(0, 759, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge33" index="0"]
+
+[node name="Blade_0" parent="Hedge33/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Hedge33/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Hedge33/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Hedge33/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Hedge33/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Hedge33/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Hedge33/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Hedge33/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge34" parent="." instance=ExtResource("6_hedge4")]
+position = Vector3(-17.9, 0, 1)
+rotation_degrees = Vector3(0, 782, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge34" index="0"]
+
+[node name="Stalk" parent="Hedge34/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="Hedge34/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="Hedge34/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="Hedge34/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="Hedge34/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="Hedge34/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="Hedge34/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="Hedge34/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="Hedge34/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="Hedge34/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="Hedge34/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="Hedge34/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="Hedge34/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Hedge34/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge35" parent="." instance=ExtResource("1_hedge0")]
+position = Vector3(17.9, 0, 1)
+rotation_degrees = Vector3(0, 805, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge35" index="0"]
+
+[node name="Foliage_0" parent="Hedge35/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge35/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge35/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge35/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge36" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(-17.9, 0, 4)
+rotation_degrees = Vector3(0, 828, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge36" index="0"]
+
+[node name="Foliage_0" parent="Hedge36/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge36/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge36/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge36/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge36/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge36/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge36/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge37" parent="." instance=ExtResource("4_hedge2")]
+position = Vector3(17.9, 0, 4)
+rotation_degrees = Vector3(0, 851, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge37" index="0"]
+
+[node name="Core" parent="Hedge37/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="Hedge37/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="Hedge37/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="Hedge37/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="Hedge37/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="Hedge37/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="Hedge37/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="Hedge37/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="Hedge37/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="Hedge37/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="Hedge37/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="Hedge37/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="Hedge37/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="Hedge37/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="Hedge37/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="Hedge37/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="Hedge37/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="Hedge37/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="Hedge37/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge38" parent="." instance=ExtResource("5_hedge3")]
+position = Vector3(-17.9, 0, 7)
+rotation_degrees = Vector3(0, 874, 0)
+scale = Vector3(0.84, 0.84, 0.84)
+
+[node name="world" parent="Hedge38" index="0"]
+
+[node name="Blade_0" parent="Hedge38/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="Hedge38/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="Hedge38/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="Hedge38/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="Hedge38/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="Hedge38/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="Hedge38/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="Hedge38/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge39" parent="." instance=ExtResource("6_hedge4")]
+position = Vector3(17.9, 0, 7)
+rotation_degrees = Vector3(0, 897, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="Hedge39" index="0"]
+
+[node name="Stalk" parent="Hedge39/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_0" parent="Hedge39/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_1" parent="Hedge39/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_2" parent="Hedge39/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_3" parent="Hedge39/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_4" parent="Hedge39/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_5" parent="Hedge39/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_6" parent="Hedge39/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_7" parent="Hedge39/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_8" parent="Hedge39/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Petal_9" parent="Hedge39/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pollen" parent="Hedge39/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="Hedge39/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="Hedge39/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge40" parent="." instance=ExtResource("1_hedge0")]
+position = Vector3(-17.9, 0, 10)
+rotation_degrees = Vector3(0, 920, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="Hedge40" index="0"]
+
+[node name="Foliage_0" parent="Hedge40/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge40/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge40/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge40/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Hedge41" parent="." instance=ExtResource("3_hedge1")]
+position = Vector3(17.9, 0, 10)
+rotation_degrees = Vector3(0, 943, 0)
+scale = Vector3(0.78, 0.78, 0.78)
+
+[node name="world" parent="Hedge41" index="0"]
+
+[node name="Foliage_0" parent="Hedge41/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="Hedge41/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="Hedge41/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="Hedge41/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_0" parent="Hedge41/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_1" parent="Hedge41/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Berry_2" parent="Hedge41/world" index="6"]
+material_override = ExtResource("2_vcol")

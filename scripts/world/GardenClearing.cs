@@ -57,6 +57,10 @@ public partial class GardenClearing : Node3D
     private bool _interiorBuilt;
     private string _lastContext = "";
 
+    /// <summary>Set by the scene-validation entry point so it can inspect the
+    /// instantiated tree without building gameplay UI or entities.</summary>
+    public bool ValidationOnly { get; set; }
+
     public void Configure(SettingsData settings, SaveService saves, bool probeMode = false)
     {
         Settings = settings;
@@ -67,6 +71,7 @@ public partial class GardenClearing : Node3D
 
     public override void _Ready()
     {
+        if (ValidationOnly) return;
         _saves ??= GameData.CreateSaveService();
         BuildInterior();
         GameData.ApplyUiScale(Settings);
@@ -78,49 +83,47 @@ public partial class GardenClearing : Node3D
         if (_interiorBuilt) return;
         _interiorBuilt = true;
 
-        GardenScenery.Build(this);
-        _anchorsRoot = new Node3D { Name = "Anchors" };
-        _websRoot = new Node3D { Name = "Webs" };
-        _insectsRoot = new Node3D { Name = "Insects" };
-        _workersRoot = new Node3D { Name = "Workers" };
-        _previewRoot = new Node3D { Name = "WebPreview" };
-        AddChild(_anchorsRoot);
-        AddChild(_websRoot);
-        AddChild(_insectsRoot);
-        AddChild(_workersRoot);
-        AddChild(_previewRoot);
+        // The persistent garden is authored in GardenWorld.tscn and the anchor
+        // sockets, player and runtime roots are authored in GardenClearing.tscn.
+        // Missing or drifted content is a startup error, never a procedural
+        // fallback that would hide an incomplete scene.
+        SceneContentValidator.ValidateOrThrow(this);
 
-        BuildAnchors();
+        _anchorsRoot = GetRequired<Node3D>("Anchors");
+        _websRoot = GetRequired<Node3D>("Webs");
+        _insectsRoot = GetRequired<Node3D>("Insects");
+        _workersRoot = GetRequired<Node3D>("Workers");
+        _previewRoot = GetRequired<Node3D>("WebPreview");
+
+        BindAnchors();
         BuildMarkers();
         BuildWind();
-        BuildPlayer();
+        BindPlayer();
         BuildInterface();
     }
 
-    private void BuildAnchors()
-    {
-        var scene = GD.Load<PackedScene>("res://scenes/building/webs/AnchorSocket.tscn");
-        foreach (var definition in WorldLayout.CreateAnchors())
-        {
-            AnchorNode node;
-            if (scene is not null)
-            {
-                node = scene.Instantiate<AnchorNode>();
-            }
-            else
-            {
-                node = new AnchorNode();
-            }
-            _anchorsRoot.AddChild(node);
-            node.Configure(definition);
-            _anchors[definition.Id] = node;
+    private T GetRequired<T>(string path) where T : Node =>
+        GetNodeOrNull<T>(path) ?? throw new InvalidOperationException(
+            $"GardenClearing.tscn is missing mandatory node '{path}' ({typeof(T).Name}).");
 
-            // A small silk ring makes the socket itself visible before build mode.
-            var ring = GardenScenery.Spawn(_anchorsRoot, "res://art/models/colony/web_anchor_ring.glb",
-                new Vector3((float)definition.Position.X, (float)definition.Position.Y - 0.12f, (float)definition.Position.Z),
-                0.28f, 0, $"Ring_{definition.Id}");
-            if (ring is not null) ring.RotationDegrees = new Vector3(90, 0, 0);
+    private void BindAnchors()
+    {
+        var definitions = WorldLayout.CreateAnchors().ToDictionary(definition => definition.Id, StringComparer.Ordinal);
+        foreach (var child in _anchorsRoot.GetChildren())
+        {
+            if (child is not AnchorNode node) continue;
+            if (string.IsNullOrWhiteSpace(node.AnchorId) || !definitions.TryGetValue(node.AnchorId, out var definition))
+                throw new InvalidOperationException(
+                    $"Anchor socket '{node.Name}' has unknown anchor_id '{node.AnchorId}'.");
+            if (_anchors.ContainsKey(node.AnchorId))
+                throw new InvalidOperationException($"Duplicate authored anchor socket '{node.AnchorId}'.");
+            node.Configure(definition);
+            _anchors[node.AnchorId] = node;
         }
+
+        if (_anchors.Count != definitions.Count)
+            throw new InvalidOperationException(
+                $"GardenClearing.tscn authors {_anchors.Count} anchor sockets but the simulation defines {definitions.Count}.");
     }
 
     private void BuildMarkers()
@@ -135,7 +138,7 @@ public partial class GardenClearing : Node3D
             OutlineSize = 9,
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = true,
-            Position = new Vector3(12.0f, 2.25f, 4.0f),
+            Position = ToVector3(WorldLayout.NurseryPosition) + new Vector3(0, 2.25f, 0),
             Visible = false
         };
         AddChild(_nurseryLabel);
@@ -186,19 +189,16 @@ public partial class GardenClearing : Node3D
         AddChild(_windParticles);
     }
 
-    private void BuildPlayer()
+    private void BindPlayer()
     {
-        var scene = GD.Load<PackedScene>("res://scenes/actors/spider/SpiderPlayer.tscn");
-        _player = scene?.Instantiate<SpiderPlayer>() ?? new SpiderPlayer();
-        AddChild(_player);
-        _player.GlobalPosition = ToVector3(WorldLayout.PlayerSpawn);
+        _player = GetRequired<SpiderPlayer>("Player");
         _player.InputEnabled = false;
     }
 
     private void BuildInterface()
     {
         _ui = new GameUI { Name = "GameUI" };
-        AddChild(_ui);
+        GetRequired<Node>("UI").AddChild(_ui);
         _ui.BuildToolRequested += tool => SetTool(tool);
         _ui.CancelRequested += ClearBuild;
         _ui.InteractRequested += TryInteract;
@@ -387,7 +387,7 @@ public partial class GardenClearing : Node3D
             view.UpdateView(delta, Settings.ReducedMotion, Vector3DistanceToPlayer(ToVector3(worker.Position), 4f));
         }
 
-        var nearbyNursery = Vector3DistanceToPlayer(new Vector3(12f, 0.4f, 4f), 3.2f);
+        var nearbyNursery = Vector3DistanceToPlayer(NurseryInteractionPoint, 3.2f);
         var nurseryStep = _sim.Missions.ActiveMissionId == "M02" && _sim.Workers.Count == 0;
         _nurseryLabel.Visible = nearbyNursery || nurseryStep;
         _climbLabel.Visible = _player.ClimbAvailable && !_player.IsClimbing;
@@ -434,7 +434,7 @@ public partial class GardenClearing : Node3D
         {
             text = _anchorA is null ? "Right-click or Esc cancels" : "Right-click cancels · green preview is safe";
         }
-        else if (Vector3DistanceToPlayer(new Vector3(12f, 0.4f, 4f), 3.2f))
+        else if (Vector3DistanceToPlayer(NurseryInteractionPoint, 3.2f))
         {
             text = "E · Leaf nursery — hatch a helper";
         }
@@ -822,7 +822,7 @@ public partial class GardenClearing : Node3D
     private void TryInteract()
     {
         if (_sim is null || _ui.BlocksWorldInput) return;
-        if (Vector3DistanceToPlayer(new Vector3(12f, 0.4f, 4f), 3.2f))
+        if (Vector3DistanceToPlayer(NurseryInteractionPoint, 3.2f))
         {
             _audio.Play("click");
             _ui.OpenNursery(_sim);
@@ -1036,6 +1036,9 @@ public partial class GardenClearing : Node3D
         }
     }
 
+    private static Vector3 NurseryInteractionPoint =>
+        ToVector3(WorldLayout.NurseryPosition) + new Vector3(0, 0.4f, 0);
+
     private bool Vector3DistanceToPlayer(Vector3 point, float radius)
     {
         if (_player is null) return false;
@@ -1164,6 +1167,9 @@ public partial class GardenClearing : Node3D
 
     public int ProbeBridgeWalkwayShapeCount(string webId) =>
         _webViews.TryGetValue(webId, out var view) ? view.WalkwayCollisionShapeCount : 0;
+
+    public IReadOnlyList<SceneValidationCheck> ProbeSceneValidation() =>
+        SceneContentValidator.Validate(this);
 
     public void ProbeQuitToMenu() => SaveAndQuit();
 

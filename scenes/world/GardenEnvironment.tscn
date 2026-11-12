@@ -1,0 +1,49 @@
+[gd_scene load_steps=4 format=3]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1_sky"]
+sky_top_color = Color(0.435294, 0.72549, 0.866667, 1)
+sky_horizon_color = Color(0.847059, 0.941176, 0.933333, 1)
+ground_horizon_color = Color(0.803922, 0.894118, 0.752941, 1)
+ground_bottom_color = Color(0.403922, 0.545098, 0.329412, 1)
+sun_angle_max = 24.0
+sun_curve = 0.12
+
+[sub_resource type="Sky" id="Sky_2_sky"]
+sky_material = SubResource("ProceduralSkyMaterial_1_sky")
+
+[sub_resource type="Environment" id="Environment_3_garden"]
+background_mode = 2
+sky = SubResource("Sky_2_sky")
+ambient_light_source = 3
+ambient_light_color = Color(1, 0.956863, 0.854902, 1)
+ambient_light_sky_contribution = 0.55
+ambient_light_energy = 0.45
+reflected_light_source = 2
+tonemap_mode = 2
+tonemap_exposure = 0.78
+fog_enabled = true
+fog_light_color = Color(0.866667, 0.937255, 0.894118, 1)
+fog_density = 0.0016
+fog_sky_affect = 0.25
+adjustment_enabled = true
+adjustment_saturation = 1.04
+adjustment_contrast = 1.01
+
+[node name="GardenEnvironment" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_3_garden")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+position = Vector3(0, 12, 0)
+rotation_degrees = Vector3(-52, -38, 0)
+light_color = Color(1, 0.941176, 0.803922, 1)
+light_energy = 0.9
+shadow_enabled = true
+directional_shadow_max_distance = 70.0
+
+[node name="NurseryFill" type="OmniLight3D" parent="."]
+position = Vector3(11, 3.2, 4)
+light_color = Color(1, 0.901961, 0.721569, 1)
+light_energy = 0.35
+omni_range = 9.0

@@ -1,0 +1,314 @@
+[gd_scene load_steps=28 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/terrain/pebble_cluster.glb" id="1_ravinestonesa"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/moss_rock.glb" id="3_ravinestonesb"]
+[ext_resource type="PackedScene" path="res://art/models/flora/reed.glb" id="4_ravinereeda"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1_grass"]
+albedo_color = Color(0.466667, 0.658824, 0.352941, 1)
+roughness = 0.95
+metallic = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2_grass_light"]
+albedo_color = Color(0.552941, 0.721569, 0.415686, 1)
+roughness = 0.96
+metallic = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3_grass_dark"]
+albedo_color = Color(0.431373, 0.615686, 0.32549, 1)
+roughness = 0.96
+metallic = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4_soil"]
+albedo_color = Color(0.541176, 0.384314, 0.266667, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5_soil_dark"]
+albedo_color = Color(0.427451, 0.290196, 0.203922, 1)
+roughness = 1
+metallic = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6_water"]
+albedo_color = Color(0.22, 0.62, 0.68, 0.62)
+transparency = 1
+roughness = 0.18
+metallic = 0.05
+emission_enabled = true
+emission = Color(0.368627, 0.784314, 0.760784, 1)
+emission_energy_multiplier = 0.15
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7_westmeadow"]
+size = Vector3(16, 0.6, 28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8_westmeadow"]
+size = Vector3(16, 0.6, 28)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_9_eastmeadow"]
+size = Vector3(16, 0.6, 28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_10_eastmeadow"]
+size = Vector3(16, 0.6, 28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_11_west_cliff"]
+size = Vector3(0.32, 3.1, 28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_12_east_cliff"]
+size = Vector3(0.32, 3.1, 28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_13_ravine_bed"]
+size = Vector3(5.7, 0.2, 28)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_14_ravine_stream"]
+size = Vector2(5.6, 28)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_15_patch_0"]
+top_radius = 2.1
+bottom_radius = 2.4
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_16_patch_1"]
+top_radius = 2.55
+bottom_radius = 2.85
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_17_patch_2"]
+top_radius = 3
+bottom_radius = 3.3
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_18_patch_3"]
+top_radius = 2.1
+bottom_radius = 2.4
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_19_patch_4"]
+top_radius = 2.55
+bottom_radius = 2.85
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_20_patch_5"]
+top_radius = 3
+bottom_radius = 3.3
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_21_patch_6"]
+top_radius = 2.1
+bottom_radius = 2.4
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_22_patch_7"]
+top_radius = 2.55
+bottom_radius = 2.85
+height = 0.025
+radial_segments = 16
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_23_patch_8"]
+top_radius = 3
+bottom_radius = 3.3
+height = 0.025
+radial_segments = 16
+
+[node name="GardenTerrain" type="Node3D"]
+
+[node name="WestMeadow" type="StaticBody3D" parent="."]
+position = Vector3(-11, -0.3, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WestMeadow"]
+shape = SubResource("BoxShape3D_7_westmeadow")
+
+[node name="WestMeadowTop" type="MeshInstance3D" parent="WestMeadow"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_8_westmeadow")
+material_override = SubResource("StandardMaterial3D_1_grass")
+
+[node name="EastMeadow" type="StaticBody3D" parent="."]
+position = Vector3(11, -0.3, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EastMeadow"]
+shape = SubResource("BoxShape3D_9_eastmeadow")
+
+[node name="EastMeadowTop" type="MeshInstance3D" parent="EastMeadow"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_10_eastmeadow")
+material_override = SubResource("StandardMaterial3D_1_grass")
+
+[node name="WestCliff" type="MeshInstance3D" parent="."]
+position = Vector3(-3, -1.55, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_11_west_cliff")
+material_override = SubResource("StandardMaterial3D_5_soil_dark")
+
+[node name="EastCliff" type="MeshInstance3D" parent="."]
+position = Vector3(3, -1.55, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_12_east_cliff")
+material_override = SubResource("StandardMaterial3D_5_soil_dark")
+
+[node name="RavineBed" type="MeshInstance3D" parent="."]
+position = Vector3(0, -3, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_13_ravine_bed")
+material_override = SubResource("StandardMaterial3D_4_soil")
+
+[node name="RavineStream" type="MeshInstance3D" parent="."]
+position = Vector3(0, -2.72, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("PlaneMesh_14_ravine_stream")
+material_override = SubResource("StandardMaterial3D_6_water")
+
+[node name="GrassPatch0" type="MeshInstance3D" parent="."]
+position = Vector3(-13, 0.012, 5)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_15_patch_0")
+material_override = SubResource("StandardMaterial3D_2_grass_light")
+
+[node name="GrassPatch1" type="MeshInstance3D" parent="."]
+position = Vector3(-8, 0.012, 8)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_16_patch_1")
+material_override = SubResource("StandardMaterial3D_3_grass_dark")
+
+[node name="GrassPatch2" type="MeshInstance3D" parent="."]
+position = Vector3(-4, 0.012, -4)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_17_patch_2")
+material_override = SubResource("StandardMaterial3D_2_grass_light")
+
+[node name="GrassPatch3" type="MeshInstance3D" parent="."]
+position = Vector3(5.4, 0.012, 6)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_18_patch_3")
+material_override = SubResource("StandardMaterial3D_3_grass_dark")
+
+[node name="GrassPatch4" type="MeshInstance3D" parent="."]
+position = Vector3(8, 0.012, 8)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_19_patch_4")
+material_override = SubResource("StandardMaterial3D_2_grass_light")
+
+[node name="GrassPatch5" type="MeshInstance3D" parent="."]
+position = Vector3(13, 0.012, -7)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_20_patch_5")
+material_override = SubResource("StandardMaterial3D_3_grass_dark")
+
+[node name="GrassPatch6" type="MeshInstance3D" parent="."]
+position = Vector3(5, 0.012, -10)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_21_patch_6")
+material_override = SubResource("StandardMaterial3D_2_grass_light")
+
+[node name="GrassPatch7" type="MeshInstance3D" parent="."]
+position = Vector3(-15, 0.012, -9)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_22_patch_7")
+material_override = SubResource("StandardMaterial3D_3_grass_dark")
+
+[node name="GrassPatch8" type="MeshInstance3D" parent="."]
+position = Vector3(15, 0.012, 6)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("CylinderMesh_23_patch_8")
+material_override = SubResource("StandardMaterial3D_2_grass_light")
+
+[node name="RavineStonesA" parent="." instance=ExtResource("1_ravinestonesa")]
+position = Vector3(0.4, -2.5, 4.2)
+rotation_degrees = Vector3(0, 18, 0)
+scale = Vector3(1.1, 1.1, 1.1)
+
+[node name="world" parent="RavineStonesA" index="0"]
+
+[node name="Pebble_0" parent="RavineStonesA/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pebble_1" parent="RavineStonesA/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pebble_2" parent="RavineStonesA/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="RavineStonesB" parent="." instance=ExtResource("3_ravinestonesb")]
+position = Vector3(-0.8, -2.55, -5)
+rotation_degrees = Vector3(0, 42, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="RavineStonesB" index="0"]
+
+[node name="Stone" parent="RavineStonesB/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_0" parent="RavineStonesB/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_1" parent="RavineStonesB/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_2" parent="RavineStonesB/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="RavineReedA" parent="." instance=ExtResource("4_ravinereeda")]
+position = Vector3(2.2, -2.7, 9.8)
+rotation_degrees = Vector3(0, 10, 0)
+scale = Vector3(1, 1, 1)
+
+[node name="world" parent="RavineReedA" index="0"]
+
+[node name="Stem" parent="RavineReedA/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="SeedHead" parent="RavineReedA/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="RavineReedA/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="RavineReedA/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="RavineReedB" parent="." instance=ExtResource("4_ravinereeda")]
+position = Vector3(-2.2, -2.7, -9.4)
+rotation_degrees = Vector3(0, -14, 0)
+scale = Vector3(1, 1, 1)
+
+[node name="world" parent="RavineReedB" index="0"]
+
+[node name="Stem" parent="RavineReedB/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="SeedHead" parent="RavineReedB/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_-1" parent="RavineReedB/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="RavineReedB/world" index="3"]
+material_override = ExtResource("2_vcol")

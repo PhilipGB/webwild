@@ -1,0 +1,56 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/terrain/pebble.glb" id="1_gapwestpebble"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/pebble_cluster.glb" id="3_gapdip"]
+
+[node name="PebbleGap" type="Node3D"]
+position = Vector3(0, 0, 1.2)
+
+[node name="GapWestPebble" parent="." instance=ExtResource("1_gapwestpebble")]
+position = Vector3(-3, 0.02, 0)
+rotation_degrees = Vector3(0, 24, 0)
+scale = Vector3(1.35, 1.35, 1.35)
+
+[node name="world" parent="GapWestPebble" index="0"]
+
+[node name="Stone" parent="GapWestPebble/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="GapEastPebble" parent="." instance=ExtResource("1_gapwestpebble")]
+position = Vector3(3, 0.02, 0)
+rotation_degrees = Vector3(0, -18, 0)
+scale = Vector3(1.35, 1.35, 1.35)
+
+[node name="world" parent="GapEastPebble" index="0"]
+
+[node name="Stone" parent="GapEastPebble/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="GapDip" parent="." instance=ExtResource("3_gapdip")]
+position = Vector3(0, -2.55, 0)
+rotation_degrees = Vector3(0, 6, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="GapDip" index="0"]
+
+[node name="Pebble_0" parent="GapDip/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pebble_1" parent="GapDip/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pebble_2" parent="GapDip/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Anchor_gap_west" type="Marker3D" parent="."]
+position = Vector3(-3, 0.55, 0)
+
+[node name="Anchor_gap_east" type="Marker3D" parent="."]
+position = Vector3(3, 0.55, 0)
+
+[node name="BridgeGroundWest" type="Marker3D" parent="."]
+position = Vector3(-4.4, 0, 0)
+
+[node name="BridgeGroundEast" type="Marker3D" parent="."]
+position = Vector3(4.4, 0, 0)

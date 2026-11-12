@@ -16,9 +16,9 @@ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
 - Runtime tested headlessly: **PASS**, 236/236 probe checks including Reedwater
   Bank, durable supply claim, modular bridge visuals and the toast lane.
 - Runtime tested rendered under Xvfb at 1280×720: **PASS**, 236/236 probe checks.
-- Published archive re-downloaded, SHA-256 matched, extracted and rerun:
-  **PASS**, 51/51 scene checks and 236/236 runtime checks both headless and
-  rendered.
+- Published GitHub release asset re-downloaded, SHA-256 matched, extracted and
+  rerun: **PASS**, 51/51 scene checks and 236/236 runtime checks both headless
+  and rendered.
 - SHA-256:
 
 ```text

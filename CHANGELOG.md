@@ -1,5 +1,44 @@
 # Changelog
 
+## Webwild v0.2.0 P0 — scene-first world (unreleased milestone)
+
+Converts the persistent garden from C#-constructed geometry into reusable,
+editor-authored Godot scenes. No gameplay, economy or save-schema changes; the
+v0.2.0 release itself is not published yet.
+
+### Authored world
+
+- Added `GardenWorld.tscn` with environment, terrain, paths, landmarks, flora and
+  boundary scenes. `GardenClearing.tscn` and `TitleBackdrop.tscn` both instance
+  the same world, so the menu backdrop cannot diverge from the game.
+- Added eight landmark scenes: Home Leaf, Twin Twigs, Pebble Gap, Flower Lane,
+  Leaf Nursery, Climbable Stem, Fallen Log and Wind Edge.
+- Moved ground, ravine, hedge collision, paths, flora, rocks and lighting into
+  `.tscn` files. Collision shapes are ordinary editable editor nodes.
+- Model instances reuse the existing `.glb` assets with a shared baked
+  vertex-colour material, so the garden looks the same in the editor and at
+  runtime.
+- Added `scenes/building/webs/AnchorSocket.tscn` ring visuals and an exported
+  `AnchorId`, and authored all 12 anchor sockets in `GardenClearing.tscn`.
+
+### Coordinate contract and validation
+
+- Added `SceneContentValidator` (23 checks) and `--scene-validate`. Startup
+  aborts with named failures if a mandatory scene, anchor, marker or collision
+  contract is missing or has drifted from `WorldLayout`.
+- Added landmark markers for all anchors, the nursery, climb base/top and bridge
+  bank points. Added `SceneAuthoringTests` to compare the committed `.tscn`
+  coordinates with the simulation.
+- Deleted `scripts/world/GardenScenery.cs`; there is no procedural fallback.
+
+### Verification
+
+- 71 pure tests passed.
+- Scene contract 24/24.
+- 105/105 headless and rendered runtime checks passed.
+- Linux export and published-package re-test are performed for the milestone;
+  Windows runtime remains **NOT VERIFIED**.
+
 ## Webwild v0.1.2 — review-hardening release
 
 Fixes the three outstanding findings from the independent v0.1.1 review.

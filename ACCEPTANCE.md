@@ -1,4 +1,4 @@
-# Acceptance — Webwild v0.1.2
+# Acceptance — Webwild v0.2.0 P0
 
 Every row is backed by observed evidence or marked **NOT VERIFIED**. The final
 implementation commit and exact commands are in `docs/EVIDENCE.md`.
@@ -32,21 +32,21 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Consistent input: click select, right-click/Esc cancel, E interact, Esc pause, Tab colony; modals block background | PASS | Runtime checks and `_UnhandledInput`/modal stop handling; `04-help.png`, `05-colony.png` |
 | Contrast, UI scale, reduced motion and volume settings function and persist | PASS (full-screen actual presentation NOT VERIFIED) | `settings-persist`, `ui-scale-applies` (1.25), `ui-scale-150-applies` (1.50), `low-threat-applies`, `low-threat-restores`, `settings-save-error-visible`; `16/17` screenshots. Full-screen toggle persists and calls Godot’s window mode, but no compositor test |
 | Sound and visuals communicate capture, damage, build and success even with audio muted | PASS | Visual toasts/status/icons and web colour changes in screenshots; audio buses and WAVs load (`audio-buses`) |
-| Cohesive authored detail; no prominent untextured placeholder; camera not clipping main quest | PASS (stylised) | Visual inspection of all 19 screenshots; SpringArm collision mask; procedural ground/path shapes are deliberate authored geometry, not unfinished cubes |
+| Cohesive authored detail; no prominent untextured placeholder; camera not clipping main quest | PASS (stylised) | Visual inspection of all 19 screenshots; SpringArm collision mask; ground, paths, flora and landmarks are authored `.tscn` content, not unfinished cubes |
 
 ## Engineering and delivery
 
 | Criterion | Status | Evidence |
 |---|---|---|
 | Godot 4.7.2 .NET + C# / net10.0; clean-checkout launch | PASS | `godot --version`; `godot --headless --path . --editor --quit`; imported and ran from source |
-| Pure deterministic tests for validation, capture, economy, workers, missions, wind, recovery, saves | PASS | `dotnet test`: **65 passed, 0 failed, 0 skipped** |
-| Godot headless import + C# startup + dedicated runtime acceptance smoke | PASS | Headless import exit 0; headless probe **80/80**; rendered probe **80/80** |
+| Pure deterministic tests for validation, capture, economy, workers, missions, wind, recovery, saves and scene contracts | PASS | `dotnet test`: **71 passed, 0 failed, 0 skipped** |
+| Godot headless import + C# startup + dedicated runtime acceptance smoke | PASS | Headless import exit 0; scene contract **24/24**; headless probe **105/105**; rendered probe **105/105** |
 | Versioned save, validation, atomic write, backup recovery, no false “Saved” | PASS | `SaveTests` roundtrip, corrupt main, invalid schema, failed write; runtime `save-succeeds`, `save-loads`, `reload-*` |
 | Private repo with source, assets/attribution, instructions, tests and evidence | PASS | `PhilipGB/webwild` private; README/ATTRIBUTION/evidence tracked |
-| P0–P8 recorded with commit/PR links and green checks | PASS | PRs [#1](https://github.com/PhilipGB/webwild/pull/1)–[#8](https://github.com/PhilipGB/webwild/pull/8) merged with green CI; merge commits in `docs/EVIDENCE.md` |
-| Linux x64 playable export produced and launched/tested | PASS | `exports/linux/Webwild.x86_64`; headless and rendered Xvfb probes both 80/80 |
+| P0–P8 and v0.1.x hardening recorded with commit/PR links and green checks | PASS | PRs [#1](https://github.com/PhilipGB/webwild/pull/1)–[#10](https://github.com/PhilipGB/webwild/pull/10) merged with green CI; merge commits in `docs/EVIDENCE.md` |
+| Linux x64 playable export produced and launched/tested | PASS | `exports/linux/Webwild.x86_64`; headless and rendered Xvfb probes both 105/105 |
 | Windows x64 export produced; runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | `exports/windows/Webwild.exe` PE32+ x86-64; no Windows host |
-| `v0.1.2` tagged only after acceptance and release checks | PASS | Tag created on the final evidenced `main` commit after green PR checks; Windows/child limits documented |
+| `v0.2.0` P0 merged only after exact-head checks pass | PASS | Dedicated branch, PR and green CI; no v0.2.0 release is published yet |
 | Screenshots show actual Godot game | PASS | 19 real PNGs in `artifacts/screenshots/`; runtime probe reports renderer X11 |
 
 ## v0.1.1 independent-review hardening
@@ -61,7 +61,7 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Pause did not fully freeze player physics | PASS | Runtime `pause-freezes-airborne`, `pause-resumes-physics`; `SpiderPlayer.PhysicsPaused` |
 | Settings persistence errors were silent | PASS | `SettingsService` failing-write test; runtime `settings-save-error-visible`; persistent retry affordance |
 | Repository visibility differed from the private-release claim | PASS | `gh repo view` now reports `PRIVATE`; corrected during v0.1.1 (PR [#9](https://github.com/PhilipGB/webwild/pull/9)) |
-| Persistent garden geometry is constructed in C# rather than authored `.tscn` | ACKNOWLEDGED | Documented in `README.md` and `CHANGELOG.md`; scene-first level refactor planned for v0.2.0, not a v0.1.x functional blocker |
+| Persistent garden geometry is constructed in C# rather than authored `.tscn` | RESOLVED in v0.2.0 P0 | Garden geometry moved to `scenes/world/**/*.tscn`; `GardenScenery.cs` removed and guarded by validation |
 
 ## v0.1.2 independent-review hardening
 
@@ -71,13 +71,28 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Save/load lost the chronological order of bounded idempotency histories | PASS | Ordered queues are serialised instead of sets; `HistoryOrderTests` round-trip, continue evicting oldest-first and verify resources, missions and workers; legacy unordered saves still load |
 | Failed settings saves left orphaned temporary files | PASS | `SettingsService.Save` tracks and removes its temp file on every failure without masking the original error; injected partial-write, copy, move, retry and cleanup-failure tests |
 
+## v0.2.0 P0 — scene-first world
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Persistent garden is authored in reusable `.tscn` scenes | PASS | `scenes/world/GardenWorld.tscn` instances environment, terrain, paths, landmarks, flora and boundaries; 123 model instances and 934 meshes resolve |
+| Opening `GardenClearing.tscn` displays the assembled garden | PASS | Scene instantiates through `--scene-validate`; gameplay and rendered probes load the same authored scene; `02-garden.png` matches v0.1.2 |
+| Scenery, lighting and collision are editable in the Godot editor | PASS | Authored `WorldEnvironment`, lights, `StaticBody3D`/`CollisionShape3D` and model instances in `scenes/world/**`; documented in `docs/SCENE_AUTHORING.md` |
+| Anchor ids and coordinates cannot silently drift from the simulation | PASS | `SceneContentValidator` and `SceneAuthoringTests` compare 12 authored sockets against `WorldLayout`; deliberate drift produces `anchor-transforms-match-simulation` and non-zero exit |
+| Nursery, climb and bridge-bank markers align with gameplay | PASS | `nursery-marker`, `climb-markers`, `bridge-bank-markers`, `NurseryClimbAndBridgeMarkers_MatchSimulationCoordinates` |
+| Landmarks are grouped and reusable | PASS | Eight named landmark scenes instanced once each under `GardenLandmarks.tscn`; unique-instance and scene-path checks |
+| Procedural garden builder is gone | PASS | `scripts/world/GardenScenery.cs` deleted; validator and pure test reject its return |
+| v0.1.2 gameplay and saves remain intact | PASS | `reload-*`, `bridge-reverse-*`, `bridge-zaxis-*`, mission flow, unit suites; save schema unchanged |
+| Dev can move a decorative prop and reopen without C# | PASS | Temporary edit moved `HomeCache` from global x −15.2 to −14.85, reopened, then reverted; see `docs/EVIDENCE.md` |
+| Moving an anchor without updating gameplay data fails clearly | PASS | Temporary anchor drift produced two named validation failures and exit 1, then reverted to 24/24 |
+
 ## Sign-off
 
 | Area | Result |
 |---|---|
-| Automated gameplay acceptance | **PASS** — 80/80 runtime checks, 65/65 unit tests |
+| Automated gameplay acceptance | **PASS** — 105/105 runtime checks, 71/71 unit tests, 24/24 scene contracts |
 | Rendered practical inspection | **PASS** — 19 screenshots and full flow |
-| Linux release | **PASS** — exported, launched, probe 80/80 |
+| Linux export | **PASS** — exported, launched, probe 105/105 |
 | Windows release | **PARTIAL** — export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no child playtest |
-| Release tag | `v0.1.2` created after the review-hardening evidence commit; Windows/child limitations are documented and are not gameplay blockers |
+| Milestone status | v0.2.0 P0 scene foundation merged; no v0.2.0 release published yet. Windows runtime and child playtesting remain documented limitations |

@@ -7,9 +7,10 @@ Webwild is an original, offline 3D game built with **Godot 4.7.2 .NET**, **C#** 
 catch flying insects, build silk bridges, hatch helper spiders, weather a gust of
 wind and complete three short story goals.
 
-This repository is the first-playable vertical slice (P0–P8). The deterministic
-game rules live in `src/Core` with no `Godot.*` dependency; Godot scenes and
-scripts adapt those rules to 3D presentation, physics, input and UI.
+This repository is the first-playable vertical slice plus the v0.2.0 P0
+scene-authoring foundation. The deterministic game rules live in `src/Core` with
+no `Godot.*` dependency. The persistent garden is authored in reusable Godot
+`.tscn` scenes; C# adapts those rules to 3D presentation, physics, input and UI.
 
 ## Requirements
 
@@ -25,7 +26,7 @@ dotnet build -warnaserror
 dotnet test
 ```
 
-Final verified result: **65 passed, 0 failed, 0 skipped**.
+Final verified result: **71 passed, 0 failed, 0 skipped**.
 
 ## Run from source
 
@@ -40,8 +41,9 @@ If `godot` points at the non-.NET build, call the actual .NET executable, e.g.
 ## Runtime checks
 
 ```bash
-godot --headless --path . --editor --quit     # import and C# build
-godot --headless --path . -- --runtime-probe  # headless runtime acceptance
+godot --headless --path . --editor --quit       # import and C# build
+godot --headless --path . -- --scene-validate   # authored scene contract
+godot --headless --path . -- --runtime-probe    # headless runtime acceptance
 ```
 
 For rendered acceptance and real screenshots:
@@ -53,7 +55,8 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 The probe writes `artifacts/runtime_probe.json` and real PNGs in
 `artifacts/screenshots/` when run from the project. Final verified result:
-**80 passed, 0 failed**. The exported Linux build is re-tested for this release.
+**105 passed, 0 failed**. The scene contract validation passes **24/24**. The
+exported Linux build is re-tested for this milestone.
 
 ## How to play
 
@@ -75,9 +78,13 @@ webs and is never required for victory.
 
 ## Implemented scope
 
-- One authored 38 × 28 garden clearing split by a real ravine, with layered
-  flora, rocks, log, nursery, flower lane, pebble bridge crossing, windy edge and
-  a tall climbable stem.
+- One 38 × 28 garden clearing split by a real ravine, authored as reusable
+  `.tscn` scenes: environment, terrain, paths, flora, boundaries and eight named
+  landmarks. Scenery, lighting and collision are editable in the Godot editor
+  without C# changes.
+- Twelve authored anchor sockets whose transforms are validated against the
+  engine-free simulation on every startup, plus landmark markers for the
+  nursery, climb, bridge banks and all anchors.
 - Player walk/jump/assisted climb, orbit camera, collision-safe spring arm.
 - Twelve typed anchor sockets, capture-web and bridge previews, validation,
   costs, cancellation, dismantling and walkable bridge ramps/deck collision.
@@ -105,7 +112,8 @@ webs and is never required for victory.
 ## Repository layout
 
 - `src/Core/` — deterministic rules, simulation, validation, missions and saves
-- `scripts/` and `scenes/` — Godot presentation, input, physics and UI
+- `scenes/world/` — authored garden environment, terrain, landmarks and gameplay composition
+- `scripts/` and other `scenes/` — Godot presentation, input, physics and UI
 - `art/models/` — supplied original low-poly GLB starter assets (see `ATTRIBUTION.md`)
 - `art/audio/` — original synthesised WAV files
 - `tests/Webwild.Core.Tests/` — pure deterministic xUnit suite
@@ -122,7 +130,7 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The Linux export was launched, rendered and passed the 80/80 runtime probe. The
+The Linux export was launched, rendered and passed the 105/105 runtime probe. The
 Windows export built successfully as a PE32+ x86-64 executable, but **Windows
 runtime verification is NOT VERIFIED** because no Windows host was available.
 See `docs/EXPORTS.md` for checksums and exact commands.
@@ -135,9 +143,11 @@ See `docs/EXPORTS.md` for checksums and exact commands.
 - `docs/PLAYTEST_NOTES.md` — child playtest is explicitly **NOT VERIFIED**.
 - Windows startup, child playtests and actual full-screen mode on a desktop
   compositor remain unverified.
-- Persistent garden geometry is constructed in `GardenScenery.cs` for v0.1.x;
-  moving it into authored `.tscn` scenes is planned for v0.2.0. Runtime webs,
-  bridges, insects and workers stay dynamic.
+- The persistent garden is authored in `scenes/world/**/*.tscn`. Runtime webs,
+  bridges, insects, workers, wind effects and UI remain dynamic.
+- `docs/SCENE_AUTHORING.md` documents the coordinate contract and editing
+  workflow. Moving a landmark or anchor without updating its gameplay marker
+  fails validation by design.
 
 ## Safety and scope
 

@@ -1,6 +1,7 @@
 # Evidence index
 
-All evidence was produced on the build host for v0.1.2. Commands are copy-pasteable from the
+All evidence was produced on the build host for the current v0.2.0 P0 milestone;
+the v0.1.x sections below are historical. Commands are copy-pasteable from the
 repository root unless a working directory is shown. No PASS in this file is
 inferred from source alone: every result comes from a command, a runtime check or
 an inspected screenshot.
@@ -10,8 +11,9 @@ an inspected screenshot.
 - `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
 - Godot .NET export templates 4.7.2 installed
 - GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
-- Final merged implementation commit: `de26fc3`
-- Release tag: `v0.1.2` (created after the final green checks; see the final report for the tag SHA)
+- Current milestone base: `v0.1.2` at `1ee3208`
+- Current milestone commit and PR: recorded in the v0.2.0 P0 section below
+- Latest published release: `v0.1.2` (no v0.2.0 release is published yet)
 
 ## Pull requests
 
@@ -27,6 +29,7 @@ an inspected screenshot.
 | P8 | https://github.com/PhilipGB/webwild/pull/8 | `2ef10d7` |
 | v0.1.1 hardening | https://github.com/PhilipGB/webwild/pull/9 | `b1587b1` |
 | v0.1.2 review hardening | https://github.com/PhilipGB/webwild/pull/10 | `de26fc3` |
+| v0.2.0 P0 scene-first world | https://github.com/PhilipGB/webwild/pull/11 | `fc57b97`, `87c2fb3` |
 
 All eight PRs had green **Build and pure tests** and **Godot .NET import and
 startup** checks before merge.
@@ -207,6 +210,128 @@ See `docs/EXPORTS.md`.
 - Exact-head PR CI: https://github.com/PhilipGB/webwild/actions/runs/43130691851 —
   **Build and pure tests** and **Godot .NET import and startup** both green.
 - Repository visibility remains `PRIVATE`.
+
+## v0.2.0 P0 — scene-first world
+
+- PR: https://github.com/PhilipGB/webwild/pull/11
+- Implementation commits: `fc57b97` (scene architecture) and `87c2fb3` (contract tests)
+- Branch: `feat/v0.2.0-p0-scene-world`
+- No v0.2.0 release is published; this is the first development milestone.
+- Persistent world moved from `scripts/world/GardenScenery.cs` into:
+  - `scenes/world/GardenWorld.tscn`
+  - `GardenEnvironment.tscn`, `GardenTerrain.tscn`, `GardenPaths.tscn`,
+    `GardenLandmarks.tscn`, `GardenFlora.tscn`, `GardenBoundaries.tscn`
+  - eight `scenes/world/landmarks/*.tscn` scenes
+  - `GardenClearing.tscn` and `TitleBackdrop.tscn` share the same world
+- `GardenScenery.cs` and its `.uid` were deleted. There is no procedural
+  fallback; startup validation fails loudly instead.
+- The scene contract is documented in `docs/SCENE_AUTHORING.md`.
+
+### Commands and results
+
+```text
+$ dotnet build -warnaserror
+0 warnings, 0 errors
+
+$ dotnet test
+Passed! - Failed: 0, Passed: 71, Skipped: 0, Total: 71
+
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=24 failures=0
+
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=105 failures=0
+```
+
+Rendered source verification:
+
+```text
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=105 failures=0
+```
+
+Exported Linux verification:
+
+```text
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=24 failures=0
+
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=105 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=105 failures=0
+```
+
+The exported build needed a narrow runtime vertex-colour material pass because
+Godot omits imported-child instance overrides when packing. It applies materials
+only to nodes whose `SceneFilePath` is under `res://art/models/`; it constructs
+no geometry. Source and exported screenshots confirm identical palettes.
+
+### Scene content counts
+
+- 8 landmark scene instances, each exactly once.
+- 12 `AnchorSocket.tscn` instances with unique `AnchorId` values.
+- 123 imported model instances and 934 meshes resolve at runtime.
+- 6 world collision shapes (2 ground bodies + 4 hedge walls) and 12 anchor
+  spheres, all with validated layers/masks.
+- 24 scene-contract checks, including anchor/marker/coordinate agreement,
+  nursery/climb/bridge markers, ravine width, environment, player spawn, model
+  resources and absence of the procedural builder.
+
+### Editor usability evidence
+
+Baseline scene inspection before any edit:
+
+```text
+[EDIT] HomeCache local=(-1.6, 0.02, 1.2) global=(-15.200001, 0.02, 8.2)
+[EDIT] HomeLeaf scene=res://scenes/world/landmarks/HomeLeaf.tscn
+[EDIT] WestMeadow global=(-11, -0.3, 0) layer=1 mask=0
+[EDIT] collision_shapes=6 nodes=1226
+```
+
+A temporary text edit to `HomeLeaf.tscn` (the same change the editor scene view
+performs on save) moved `HomeCache` to local x `-1.25`. Re-opening the world
+reported the new persisted transform without any C# change:
+
+```text
+[EDIT] HomeCache local=(-1.25, 0.02, 1.2) global=(-14.85, 0.02, 8.2)
+```
+
+The edit was reverted and the original transform returned. This demonstrates
+editable decorative objects, inspector-visible collision, reusable scene
+instances and persisted scene ownership.
+
+A temporary anchor drift moved `Anchor_twig_west_a` from x `-9.5` to `-9` in
+`GardenClearing.tscn`. Scene validation failed with the exact expected/actual
+coordinates and a non-zero exit:
+
+```text
+[SCENE] FAIL anchor-transforms-match-simulation — twig_west_a=(-9, 1.25, -1.4) expected (-9.5, 1.25, -1.4)
+[SCENE] FAIL landmark-anchor-markers — 12 markers; twig_west_a marker/socket mismatch
+[SCENE] SUMMARY passes=22 failures=2
+exit 1
+```
+
+After restoring the authored position, validation returned to 24/24 and exit 0.
+
+### Visual comparison
+
+- 19 rendered screenshots were regenerated from the migrated scene.
+- `02-garden.png` and `09-bridge-crossing.png` match v0.1.2 scene composition and
+  palette; `01-title.png` differs only in the version label.
+- `18-bridge-reversed.png` and `19-bridge-z-axis.png` retain the v0.1.2 bridge
+  evidence.
+
+### Remaining limits
+
+- Gameplay coordinates remain in `WorldLayout` and are validated against the
+  authored scene; there is no editor auto-sync plugin.
+- Windows runtime, supervised child playtesting and real full-screen desktop
+  presentation remain **NOT VERIFIED**.
+- The second garden region and v0.2.0 release remain future work.
 
 ## Honest non-results
 

@@ -765,7 +765,15 @@ public partial class GardenClearing : Node3D
         var a = _sim.GetAnchor(_anchorA);
         var b = _sim.GetAnchor(_hoverAnchor.Definition.Id);
         if (a is null || b is null) return;
-        _preview = WebVisual.CreatePreview(_tool.Value, ToVector3(a.Position), ToVector3(b.Position), result.IsValid);
+        var approach = BridgeGeometry.ComputeApproachPoints(
+            a.Position, b.Position, a.BridgeGroundPoint, b.BridgeGroundPoint);
+        _preview = WebVisual.CreatePreview(
+            _tool.Value,
+            ToVector3(a.Position),
+            ToVector3(b.Position),
+            result.IsValid,
+            ToVector3(approach.A),
+            ToVector3(approach.B));
         _previewRoot.AddChild(_preview);
         _ui.SetStatus(result.IsValid
             ? $"Click to build · {result.SilkCost} silk"
@@ -1587,6 +1595,36 @@ public partial class GardenClearing : Node3D
 
     public int ProbeBridgeWalkwayShapeCount(string webId) =>
         _webViews.TryGetValue(webId, out var view) ? view.WalkwayCollisionShapeCount : 0;
+
+    public string ProbeBridgeVisualSignature(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.ProbeBridgeVisualSignature : "none";
+
+    public int ProbeBridgePlankCount(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.ProbeBridgePlankCount : 0;
+
+    public int ProbeBridgeDetailCount(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.ProbeBridgeDetailCount : 0;
+
+    public int ProbeBridgeRailTriangles(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.ProbeBridgeRailTriangles : 0;
+
+    public int ProbeBridgeDamageOverlayCount(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.ProbeBridgeDamageOverlayCount : 0;
+
+    public int ProbeBridgeUnstyledMeshCount(string webId) =>
+        _webViews.TryGetValue(webId, out var view) ? view.ProbeBridgeUnstyledMeshCount : -1;
+
+    public bool ProbeBridgeUsesAllPlankVariants(string webId) =>
+        _webViews.TryGetValue(webId, out var view) && view.ProbeBridgeUsesAllPlankVariants;
+
+    public bool ProbeToastVisible => _ui.ProbeToastVisible;
+    public string ProbeToastText => _ui.ProbeToastText;
+    public Rect2 ProbeToastRect => _ui.ProbeToastRect;
+    public Rect2 ProbeMissionRect => _ui.ProbeMissionRect;
+    public Rect2 ProbeActionColumnRect => _ui.ProbeActionColumnRect;
+    public Rect2 ProbeToolbarRect => _ui.ProbeToolbarRect;
+    public Rect2 ProbeStatusRect => _ui.ProbeStatusRect;
+    public void ProbeShowToast(string text) => _ui.ShowToast(text, UiKit.TealDark, 3.5f);
 
     public IReadOnlyList<SceneValidationCheck> ProbeSceneValidation()
     {

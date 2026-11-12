@@ -1,0 +1,14 @@
+{
+  "pack": "Webwild v0.2.0 P2 hybrid modular bridge asset and OpenCode handoff",
+  "glb_model_count": 11,
+  "prop_scene_wrapper_count": 11,
+  "gallery_scene_count": 1,
+  "static_gltf2_header_mesh_color_checks": "passed",
+  "scene_resource_name_checks": "passed",
+  "sha256_checks": "passed",
+  "visual_preview": "rendered from generated original meshes",
+  "godot_editor_import": "NOT RUN \u2014 Godot binary unavailable in authoring environment",
+  "godot_runtime_build": "NOT RUN \u2014 integration remains for coding agent",
+  "current_project_revision_target": "698be2c48c2bf41699fba1ab278a1f2fbfea08a7",
+  "notes": "GLB reference demo intentionally is not a runtime substitute; wrappers are visual-only and rely on existing Webwild material resource."
+}

@@ -35,13 +35,14 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 | v0.1.2 | Review hardening: order-independent bridge ramps, order-preserving save histories, settings temp-file cleanup | DONE | `CHANGELOG.md`; `BridgeGeometryTests`, `HistoryOrderTests`, settings failure tests; runtime checks `bridge-reverse-*`, `bridge-zaxis-*`, `bridge-removal-*` |
 | v0.2.0 P0 | Scene-first world: reusable environment, terrain, landmark, flora and boundary scenes; anchor/marker coordinate contract; procedural builder removed | DONE (no release yet) | PR [#11](https://github.com/PhilipGB/webwild/pull/11); `CHANGELOG.md`; `docs/SCENE_AUTHORING.md`; `SceneAuthoringTests`; 24 scene checks; runtime `scene-*`; screenshots 01–19 |
 | v0.2.0 P1 | Reedwater Bank second region: pond, islands, reeds, water collision, travel, three regional objectives, dragonflies, worker crossing, schema-v2 migration | DONE (no release yet) | PR [#12](https://github.com/PhilipGB/webwild/pull/12); `docs/EVIDENCE.md#v020-p1`; `RegionTests`, `SaveMigrationTests`, `SceneAuthoringTests`; 47 scene checks; 168 runtime checks; screenshots 20–29 |
+| v0.2.0 P2 | Modular bridge art, durable supply-cache claim, non-obstructing toast lane, release polish | DONE (Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#v020-p2`; `BridgeLayoutTests`, `RegionTests`, P1 save fixtures; 51 scene checks; 236 runtime checks; screenshots 09b–09c, 16a, 23b |
 
 ## Verification summary
 
-- `dotnet test`: **93 passed, 0 failed, 0 skipped**.
-- Scene contract validation: **47 passed, 0 failed** across both regions.
-- Headless runtime probe: **168 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **168 passed, 0 failed**; 29+ real PNGs.
+- `dotnet test`: **106 passed, 0 failed, 0 skipped**.
+- Scene contract validation: **51 passed, 0 failed** across both regions.
+- Headless runtime probe: **236 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **236 passed, 0 failed**; 36 real PNGs.
 - Exported Linux build, headless probe: **re-run for this milestone**.
 - Exported Linux build, rendered Xvfb probe: **re-run for this milestone**.
 - Linux x64 export: built successfully and launched.
@@ -55,8 +56,6 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 - Windows export has not been started on Windows.
 - Actual full-screen mode on a desktop compositor was not visually tested;
   the setting persists and the window mode is applied through Godot.
-- The 150% UI scale toast can briefly overlap the action column; permanent
-  controls remain visible.
 - The game is a deliberately stylised 3D garden, not a photorealistic or
   biologically accurate simulation.
 - Both regions are authored in `.tscn` scenes. Gameplay coordinates remain in

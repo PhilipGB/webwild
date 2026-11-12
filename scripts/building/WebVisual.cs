@@ -13,12 +13,20 @@ public partial class WebVisual : Node3D
     private StandardMaterial3D _material = null!;
     private Label3D _repairLabel = null!;
     private StaticBody3D? _bridgeBody;
+    private BridgeVisualAssembler? _bridgeVisual;
     private Vector3 _center;
     private int _lastDurability = -1;
     private readonly List<Vector3> _rampGroundPoints = new();
 
     public IReadOnlyList<Vector3> RampGroundPoints => _rampGroundPoints;
     public int WalkwayCollisionShapeCount => _bridgeBody?.GetChildCount() ?? 0;
+    public string ProbeBridgeVisualSignature => _bridgeVisual?.ProbeSignature ?? "none";
+    public int ProbeBridgePlankCount => _bridgeVisual?.PlankCount ?? 0;
+    public int ProbeBridgeDetailCount => _bridgeVisual?.DetailCount ?? 0;
+    public int ProbeBridgeRailTriangles => _bridgeVisual?.RailTriangleCount ?? 0;
+    public int ProbeBridgeDamageOverlayCount => _bridgeVisual?.DamageOverlayCount ?? 0;
+    public int ProbeBridgeUnstyledMeshCount => _bridgeVisual?.UnstyledMeshCount ?? -1;
+    public bool ProbeBridgeUsesAllPlankVariants => _bridgeVisual?.HasAllPlankVariants == true;
 
     public void Configure(WebState state, Vector3 a, Vector3 b)
     {
@@ -27,11 +35,11 @@ public partial class WebVisual : Node3D
         _state = state;
         _center = (a + b) * 0.5f;
         Position = _center;
-        var color = Type == WebType.Capture ? UiKit.Dew : UiKit.Gold;
-        _material = WebMeshFactory.SilkMaterial(color);
 
         if (Type == WebType.Capture)
         {
+            var color = UiKit.Dew;
+            _material = WebMeshFactory.SilkMaterial(color);
             var dir = (b - a).Normalized();
             var normal = dir.Cross(Vector3.Up).Normalized();
             if (normal.LengthSquared() < 0.01f) normal = Vector3.Back;
@@ -49,10 +57,21 @@ public partial class WebVisual : Node3D
         }
         else
         {
-            var mesh = WebMeshFactory.BuildBridge(a, b, color);
-            _mesh = new MeshInstance3D { Mesh = mesh, MaterialOverride = _material, Name = "BridgeSilk" };
-            AddChild(_mesh);
-            BuildBridgeCollision(a, b);
+            var approach = BridgeGeometry.ComputeApproachPoints(
+                ToCoreVec3(a),
+                ToCoreVec3(b),
+                RegionCatalog.FindAnchor(state.AnchorA)?.BridgeGroundPoint,
+                RegionCatalog.FindAnchor(state.AnchorB)?.BridgeGroundPoint);
+            var groundA = ToVector3(approach.A);
+            var groundB = ToVector3(approach.B);
+            _bridgeVisual = new BridgeVisualAssembler { Name = "ModularBridge" };
+            AddChild(_bridgeVisual);
+            _bridgeVisual.Configure(
+                state.Id, a - _center, b - _center,
+                groundA - _center, groundB - _center,
+                BridgeVisualMode.Constructed,
+                state.MaxDurability <= 0 ? 1f : (float)state.Durability / state.MaxDurability);
+            BuildBridgeCollision(a, b, approach);
         }
 
         _repairLabel = new Label3D
@@ -97,12 +116,11 @@ public partial class WebVisual : Node3D
         }
     }
 
-    private void BuildBridgeCollision(Vector3 a, Vector3 b)
+    private void BuildBridgeCollision(
+        Vector3 a, Vector3 b, BridgeGeometry.ApproachPoints approach)
     {
         var aLocal = a - _center;
         var bLocal = b - _center;
-        var length = aLocal.DistanceTo(bLocal);
-        var sag = Mathf.Clamp(length / 16f, 0.08f, 0.42f);
         _bridgeBody = new StaticBody3D
         {
             Name = "BridgeWalkway",
@@ -111,44 +129,33 @@ public partial class WebVisual : Node3D
         };
         AddChild(_bridgeBody);
 
-        Vector3 Point(float t)
-        {
-            var point = aLocal.Lerp(bLocal, t);
-            point.Y -= Mathf.Sin(t * Mathf.Pi) * sag;
-            return point;
-        }
-
         var samples = 7;
-        var previous = Point(0);
+        var previous = aLocal;
         for (var i = 1; i <= samples; i++)
         {
-            var next = Point(i / (float)samples);
-            AddWalkwaySegment(previous, next);
-            previous = next;
+            var point = ToVector3(BridgeGeometry.EvaluateSpan(
+                ToCoreVec3(aLocal), ToCoreVec3(bLocal), i / (double)samples));
+            AddWalkwayCollision(previous, point);
+            previous = point;
         }
 
         // Walkable approaches connect the bridge anchors to solid ground on both
         // banks. The shared core helper uses authored bank points for the ravine
         // posts, so this is correct whichever anchor the player selected first.
-        var approach = BridgeGeometry.ComputeApproachPoints(
-            ToCoreVec3(a),
-            ToCoreVec3(b),
-            RegionCatalog.FindAnchor(_state.AnchorA)?.BridgeGroundPoint,
-            RegionCatalog.FindAnchor(_state.AnchorB)?.BridgeGroundPoint);
         var leftGround = ToVector3(approach.A) - _center;
         var rightGround = ToVector3(approach.B) - _center;
         _rampGroundPoints.Clear();
         _rampGroundPoints.Add(ToVector3(approach.A));
         _rampGroundPoints.Add(ToVector3(approach.B));
-        AddWalkwaySegment(leftGround, aLocal);
-        AddWalkwaySegment(bLocal, rightGround);
+        AddWalkwayCollision(leftGround, aLocal);
+        AddWalkwayCollision(bLocal, rightGround);
     }
 
     private static Vec3 ToCoreVec3(Vector3 v) => new(v.X, v.Y, v.Z);
 
     private static Vector3 ToVector3(Vec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
 
-    private void AddWalkwaySegment(Vector3 from, Vector3 to)
+    private void AddWalkwayCollision(Vector3 from, Vector3 to)
     {
         var delta = to - from;
         var length = delta.Length();
@@ -166,13 +173,6 @@ public partial class WebVisual : Node3D
             Shape = new BoxShape3D { Size = new Vector3(0.9f, 0.1f, length + 0.08f) },
             Transform = new Transform3D(basis, centre)
         });
-        AddChild(new MeshInstance3D
-        {
-            Name = "BridgeWalkwaySilk",
-            Mesh = new BoxMesh { Size = new Vector3(0.58f, 0.055f, length + 0.02f) },
-            MaterialOverride = _material,
-            Transform = new Transform3D(basis, centre)
-        });
     }
 
     public void UpdateState(WebState state)
@@ -181,17 +181,22 @@ public partial class WebVisual : Node3D
         if (_lastDurability == state.Durability) return;
         _lastDurability = state.Durability;
         var ratio = state.MaxDurability <= 0 ? 0 : (float)state.Durability / state.MaxDurability;
-        var baseColor = Type == WebType.Capture ? UiKit.Dew : UiKit.Gold;
-        var color = ratio > 0.7f ? baseColor : ratio > 0 ? UiKit.Gold : UiKit.Coral;
-        if (ratio <= 0.35f) color = UiKit.Coral;
-        _material.AlbedoColor = new Color(color.R, color.G, color.B, ratio <= 0 ? 0.6f : 0.92f);
-        _material.Emission = color;
-        _material.EmissionEnergyMultiplier = ratio <= 0 ? 0.1f : 0.55f;
-        if (_repairLabel is not null) _repairLabel.Visible = state.Durability < state.MaxDurability;
-        if (_mesh is not null && Type == WebType.Capture)
+        if (Type == WebType.Bridge)
         {
-            _mesh.Scale = ratio <= 0 ? new Vector3(1, 0.8f, 1) : Vector3.One;
+            _bridgeVisual?.SetDamageRatio(ratio);
         }
+        else
+        {
+            var baseColor = UiKit.Dew;
+            var color = ratio > 0.7f ? baseColor : ratio > 0 ? UiKit.Gold : UiKit.Coral;
+            if (ratio <= 0.35f) color = UiKit.Coral;
+            _material.AlbedoColor = new Color(color.R, color.G, color.B, ratio <= 0 ? 0.6f : 0.92f);
+            _material.Emission = color;
+            _material.EmissionEnergyMultiplier = ratio <= 0 ? 0.1f : 0.55f;
+            if (_mesh is not null)
+                _mesh.Scale = ratio <= 0 ? new Vector3(1, 0.8f, 1) : Vector3.One;
+        }
+        if (_repairLabel is not null) _repairLabel.Visible = state.Durability < state.MaxDurability;
     }
 
     public void SetNearby(bool nearby)
@@ -201,12 +206,19 @@ public partial class WebVisual : Node3D
 
     public void SetPreviewColor(bool valid)
     {
+        if (Type == WebType.Bridge)
+        {
+            _bridgeVisual?.SetPreviewColor(valid);
+            return;
+        }
         var color = valid ? UiKit.FreshLeaf : UiKit.Coral;
         _material.AlbedoColor = new Color(color.R, color.G, color.B, 0.42f);
         _material.Emission = color;
     }
 
-    public static Node3D CreatePreview(WebType type, Vector3 a, Vector3 b, bool valid = true)
+    public static Node3D CreatePreview(
+        WebType type, Vector3 a, Vector3 b, bool valid = true,
+        Vector3? groundA = null, Vector3? groundB = null)
     {
         var color = valid ? UiKit.FreshLeaf : UiKit.Coral;
         var material = WebMeshFactory.SilkMaterial(new Color(color.R, color.G, color.B, 0.45f), true);
@@ -228,11 +240,15 @@ public partial class WebVisual : Node3D
         }
         else
         {
-            node.Position = (a + b) * 0.5f;
-            node.AddChild(new MeshInstance3D
-            {
-                Mesh = WebMeshFactory.BuildBridge(a, b, color), MaterialOverride = material
-            });
+            var centre = (a + b) * 0.5f;
+            node.Position = centre;
+            var assembler = new BridgeVisualAssembler { Name = "BridgePreview" };
+            node.AddChild(assembler);
+            assembler.Configure(
+                "preview", a - centre, b - centre,
+                groundA is { } ga ? ga - centre : null,
+                groundB is { } gb ? gb - centre : null,
+                valid ? BridgeVisualMode.PreviewValid : BridgeVisualMode.PreviewInvalid);
         }
         return node;
     }

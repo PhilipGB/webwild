@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T03:29:47.0318785Z",
+  "generatedUtc": "2026-11-12T11:58:24.3900481Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
-  "renderer": "headless",
-  "passes": 168,
+  "renderer": "X11",
+  "passes": 236,
   "failures": 0,
   "checks": [
     {
@@ -108,7 +108,7 @@
     {
       "name": "scene-player-contract",
       "pass": true,
-      "detail": "pos=(-13.5, 0.03833329, 8.5) layer=2 mask=1"
+      "detail": "pos=(-13.5, 0.00027555972, 8.5) layer=2 mask=1"
     },
     {
       "name": "scene-runtime-roots",
@@ -159,6 +159,26 @@
       "name": "scene-region-registry",
       "pass": true,
       "detail": "garden_clearing,reedwater_bank"
+    },
+    {
+      "name": "scene-bridge-parts-exist",
+      "pass": true,
+      "detail": "11/11 parts; meshes=68; "
+    },
+    {
+      "name": "scene-bridge-asset-gallery",
+      "pass": true,
+      "detail": "children=11 meshes=68"
+    },
+    {
+      "name": "scene-bridge-vertex-colour-material",
+      "pass": true,
+      "detail": "path=res://art/materials/vertex_color_material.tres"
+    },
+    {
+      "name": "scene-bridge-no-legacy-ribbon",
+      "pass": true,
+      "detail": "legacy flat ribbon builder is gone"
     },
     {
       "name": "scene-rw-bank-scene",
@@ -338,7 +358,7 @@
     {
       "name": "climb-stem",
       "pass": true,
-      "detail": "height=4.19"
+      "detail": "height=3.92"
     },
     {
       "name": "build-tool-open",
@@ -406,9 +426,69 @@
       "detail": "shapes=9"
     },
     {
+      "name": "bridge-gap-modular-planks",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-gap-modular-variants",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-gap-silk-rails",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-gap-detail-fixtures",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-gap-vertex-materials",
+      "pass": true,
+      "detail": "unstyled=0 planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-gap-no-solid-ribbon",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-gap-layout-not-degenerate",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-preview-uses-assembler",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=0;rails=1200;ribbon=0;degenerate=0;mode=PreviewValid"
+    },
+    {
+      "name": "bridge-preview-has-no-collision",
+      "pass": true,
+      "detail": "Preview owns no duplicate walkway collision"
+    },
+    {
+      "name": "bridge-preview-valid-cue",
+      "pass": true,
+      "detail": "(0.6392157, 0.8509804, 0.5058824, 0.45)"
+    },
+    {
+      "name": "bridge-preview-invalid-cue",
+      "pass": true,
+      "detail": "(0.9019608, 0.43529412, 0.38431373, 0.45)"
+    },
+    {
       "name": "bridge-enables-player-crossing",
       "pass": true,
-      "detail": "x=11.33"
+      "detail": "x=11.23"
+    },
+    {
+      "name": "bridge-damage-visual",
+      "pass": true,
+      "detail": "overlays=588 durability=25"
     },
     {
       "name": "hatch-started",
@@ -523,7 +603,7 @@
     {
       "name": "reload-world-scene-authored",
       "pass": true,
-      "detail": "47/47 scene checks after load"
+      "detail": "51/51 scene checks after load"
     },
     {
       "name": "settings-persist",
@@ -586,9 +666,14 @@
       "detail": "region=reedwater_bank"
     },
     {
+      "name": "reedwater-supply-granted-once",
+      "pass": true,
+      "detail": "food=7 silk=30 claimed=reedwater_bank"
+    },
+    {
       "name": "reedwater-player-arrival",
       "pass": true,
-      "detail": "player=(10, 0.49722227, 8.5)"
+      "detail": "player=(10, 0.00023493171, 8.5)"
     },
     {
       "name": "reedwater-anchors-visible",
@@ -603,7 +688,7 @@
     {
       "name": "water-blocks-without-bridge",
       "pass": true,
-      "detail": "x=6.85 inWater=False"
+      "detail": "x=6.05 inWater=True"
     },
     {
       "name": "pond-route-blocked-before-bridges",
@@ -638,7 +723,7 @@
     {
       "name": "player-crosses-reedwater-bridge",
       "pass": true,
-      "detail": "x=0.12"
+      "detail": "x=0.37"
     },
     {
       "name": "reed-capture-web-built",
@@ -659,6 +744,41 @@
       "name": "bridge-three-built",
       "pass": true,
       "detail": "Root island to far bank"
+    },
+    {
+      "name": "reedwater-bridge-modular-planks",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reedwater-bridge-modular-variants",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reedwater-bridge-silk-rails",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reedwater-bridge-detail-fixtures",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reedwater-bridge-vertex-materials",
+      "pass": true,
+      "detail": "unstyled=0 planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reedwater-bridge-no-solid-ribbon",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reedwater-bridge-layout-not-degenerate",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
     },
     {
       "name": "far-capture-web-built",
@@ -701,6 +821,11 @@
       "detail": "reedwater_bank"
     },
     {
+      "name": "save-records-supply-claim",
+      "pass": true,
+      "detail": "schema=3 claimed=reedwater_bank"
+    },
+    {
       "name": "save-records-reedwater-webs",
       "pass": true,
       "detail": "webs=5"
@@ -726,6 +851,41 @@
       "detail": "completed=3"
     },
     {
+      "name": "reload-reedwater-bridge-modular-planks",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reload-reedwater-bridge-modular-variants",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reload-reedwater-bridge-silk-rails",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reload-reedwater-bridge-detail-fixtures",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reload-reedwater-bridge-vertex-materials",
+      "pass": true,
+      "detail": "unstyled=0 planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reload-reedwater-bridge-no-solid-ribbon",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "reload-reedwater-bridge-layout-not-degenerate",
+      "pass": true,
+      "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
       "name": "return-to-garden",
       "pass": true,
       "detail": "region=garden_clearing"
@@ -744,6 +904,11 @@
       "name": "reenter-reedwater-objectives",
       "pass": true,
       "detail": "completed=3"
+    },
+    {
+      "name": "reenter-supply-not-regranted",
+      "pass": true,
+      "detail": "claimed=reedwater_bank food=3 silk=9"
     },
     {
       "name": "critical-bridge-present",
@@ -771,14 +936,119 @@
       "detail": "Navigation restored"
     },
     {
+      "name": "toast-visible-100",
+      "pass": true,
+      "detail": "Clever Crossing earned. Keep exploring or use the trail to return."
+    },
+    {
+      "name": "toast-inside-viewport-100",
+      "pass": true,
+      "detail": "(934, 273.6), (330, 116)"
+    },
+    {
+      "name": "toast-avoids-mission-100",
+      "pass": true,
+      "detail": "(934, 273.6), (330, 116) vs (820, 18), (440, 145)"
+    },
+    {
+      "name": "toast-avoids-actions-100",
+      "pass": true,
+      "detail": "(934, 273.6), (330, 116) vs (22, 82), (196, 177)"
+    },
+    {
+      "name": "toast-avoids-toolbar-100",
+      "pass": true,
+      "detail": "(934, 273.6), (330, 116) vs (0, 584), (1280, 62)"
+    },
+    {
+      "name": "toast-avoids-status-100",
+      "pass": true,
+      "detail": "(934, 273.6), (330, 116) vs (0, 550), (1280, 27)"
+    },
+    {
+      "name": "toast-avoids-camera-centre-100",
+      "pass": true,
+      "detail": "left=934.0 viewport=1280.0"
+    },
+    {
       "name": "ui-scale-applies",
       "pass": true,
       "detail": "scale=1.25"
     },
     {
+      "name": "toast-visible-125",
+      "pass": true,
+      "detail": "Clever Crossing earned. Keep exploring or use the trail to return."
+    },
+    {
+      "name": "toast-inside-viewport-125",
+      "pass": true,
+      "detail": "(678, 218.88), (330, 116)"
+    },
+    {
+      "name": "toast-avoids-mission-125",
+      "pass": true,
+      "detail": "(678, 218.88), (330, 116) vs (564, 18), (440, 145)"
+    },
+    {
+      "name": "toast-avoids-actions-125",
+      "pass": true,
+      "detail": "(678, 218.88), (330, 116) vs (22, 82), (196, 177)"
+    },
+    {
+      "name": "toast-avoids-toolbar-125",
+      "pass": true,
+      "detail": "(678, 218.88), (330, 116) vs (0, 440), (1024, 62)"
+    },
+    {
+      "name": "toast-avoids-status-125",
+      "pass": true,
+      "detail": "(678, 218.88), (330, 116) vs (0, 406), (1024, 27)"
+    },
+    {
+      "name": "toast-avoids-camera-centre-125",
+      "pass": true,
+      "detail": "left=678.0 viewport=1024.0"
+    },
+    {
       "name": "ui-scale-150-applies",
       "pass": true,
       "detail": "scale=1.50"
+    },
+    {
+      "name": "toast-visible-150",
+      "pass": true,
+      "detail": "Clever Crossing earned. Keep exploring or use the trail to return."
+    },
+    {
+      "name": "toast-inside-viewport-150",
+      "pass": true,
+      "detail": "(507.3333, 182.4), (330, 116)"
+    },
+    {
+      "name": "toast-avoids-mission-150",
+      "pass": true,
+      "detail": "(507.3333, 182.4), (330, 116) vs (393.3333, 18), (440, 145)"
+    },
+    {
+      "name": "toast-avoids-actions-150",
+      "pass": true,
+      "detail": "(507.3333, 182.4), (330, 116) vs (22, 82), (196, 177)"
+    },
+    {
+      "name": "toast-avoids-toolbar-150",
+      "pass": true,
+      "detail": "(507.3333, 182.4), (330, 116) vs (0, 344), (853, 62)"
+    },
+    {
+      "name": "toast-avoids-status-150",
+      "pass": true,
+      "detail": "(507.3333, 182.4), (330, 116) vs (0, 310), (853, 27)"
+    },
+    {
+      "name": "toast-avoids-camera-centre-150",
+      "pass": true,
+      "detail": "left=507.3 viewport=853.3"
     },
     {
       "name": "quit-to-menu",
@@ -806,9 +1076,44 @@
       "detail": "shapes=9"
     },
     {
+      "name": "bridge-reverse-modular-planks",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-reverse-modular-variants",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-reverse-silk-rails",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-reverse-detail-fixtures",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-reverse-vertex-materials",
+      "pass": true,
+      "detail": "unstyled=0 planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-reverse-no-solid-ribbon",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-reverse-layout-not-degenerate",
+      "pass": true,
+      "detail": "planks=40;variants=7;variantCount=3;panels=13;details=18;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
       "name": "bridge-reverse-enables-crossing",
       "pass": true,
-      "detail": "x=11.36"
+      "detail": "x=11.23"
     },
     {
       "name": "bridge-removal-clears-collision",
@@ -823,7 +1128,7 @@
     {
       "name": "bridge-removal-blocks-crossing",
       "pass": true,
-      "detail": "x=-5.01"
+      "detail": "x=-5.02"
     },
     {
       "name": "bridge-zaxis-built",
@@ -839,6 +1144,41 @@
       "name": "bridge-zaxis-collision",
       "pass": true,
       "detail": "shapes=9"
+    },
+    {
+      "name": "bridge-zaxis-modular-planks",
+      "pass": true,
+      "detail": "planks=28;variants=7;variantCount=3;panels=9;details=16;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-zaxis-modular-variants",
+      "pass": true,
+      "detail": "planks=28;variants=7;variantCount=3;panels=9;details=16;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-zaxis-silk-rails",
+      "pass": true,
+      "detail": "planks=28;variants=7;variantCount=3;panels=9;details=16;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-zaxis-detail-fixtures",
+      "pass": true,
+      "detail": "planks=28;variants=7;variantCount=3;panels=9;details=16;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-zaxis-vertex-materials",
+      "pass": true,
+      "detail": "unstyled=0 planks=28;variants=7;variantCount=3;panels=9;details=16;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-zaxis-no-solid-ribbon",
+      "pass": true,
+      "detail": "planks=28;variants=7;variantCount=3;panels=9;details=16;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
+    },
+    {
+      "name": "bridge-zaxis-layout-not-degenerate",
+      "pass": true,
+      "detail": "planks=28;variants=7;variantCount=3;panels=9;details=16;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
     },
     {
       "name": "bridge-regression-quit",

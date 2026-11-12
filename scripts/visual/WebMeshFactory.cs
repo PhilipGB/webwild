@@ -40,57 +40,6 @@ public static class WebMeshFactory
         return st.Commit();
     }
 
-    public static ArrayMesh BuildBridge(Vector3 a, Vector3 b, Color color)
-    {
-        var st = new SurfaceTool();
-        st.Begin(Mesh.PrimitiveType.Triangles);
-        st.SetColor(color);
-        var center = (a + b) * 0.5f;
-        var length = a.DistanceTo(b);
-        var sag = Mathf.Clamp(length / 16f, 0.08f, 0.42f);
-        var samples = 18;
-        var halfWidth = 0.22f;
-        Vector3 Point(float t)
-        {
-            var p = a.Lerp(b, t);
-            p.Y -= Mathf.Sin(t * Mathf.Pi) * sag;
-            return p - center;
-        }
-        var previous = Point(0);
-        for (var i = 1; i <= samples; i++)
-        {
-            var t = i / (float)samples;
-            var point = Point(t);
-            var tangent = (point - previous).Normalized();
-            var side = tangent.Cross(Vector3.Up).Normalized() * halfWidth;
-            // Ribbon surface (double-sided via two triangles, cull disabled).
-            st.AddVertex(previous - side);
-            st.AddVertex(previous + side);
-            st.AddVertex(point + side);
-            st.AddVertex(previous - side);
-            st.AddVertex(point + side);
-            st.AddVertex(point - side);
-            previous = point;
-        }
-        for (var i = 0; i <= samples; i++)
-        {
-            var t = i / (float)samples;
-            var point = Point(t);
-            var next = Point(Mathf.Min(1, t + 0.02f));
-            var tangent = (next - point).Normalized();
-            var side = tangent.Cross(Vector3.Up).Normalized() * halfWidth;
-            if (i > 0)
-            {
-                var prevT = (i - 1) / (float)samples;
-                var prev = Point(prevT);
-                AddPrism(st, prev - side, point - side, 0.022f);
-                AddPrism(st, prev + side, point + side, 0.022f);
-            }
-        }
-        st.GenerateNormals();
-        return st.Commit();
-    }
-
     private static void AddPrism(SurfaceTool st, Vector3 a, Vector3 b, float radius)
     {
         var dir = (b - a).Normalized();

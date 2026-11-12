@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 2,
+  "saveId": "edb1e3ad18834cc99c514bb9f8fa07bf",
+  "createdUtc": "2026-11-12T03:29:46.8894571Z",
+  "updatedUtc": "2026-11-12T03:29:46.8894879Z",
+  "seed": 27011,
+  "tick": 32,
+  "elapsedSeconds": 6.400000000000003,
+  "activeRegionId": "garden_clearing",
+  "player": {
+    "x": -5.014378547668457,
+    "y": 1.2925039529800415,
+    "z": 8.997681617736816,
+    "rotationY": -1.5707963705062866
+  },
+  "regionPlayers": [
+    {
+      "region": "garden_clearing",
+      "x": -5.014378547668457,
+      "y": 1.2925039529800415,
+      "z": 8.997681617736816,
+      "rotationY": -1.5707963705062866
+    },
+    {
+      "region": "reedwater_bank",
+      "x": 10,
+      "y": 0.55,
+      "z": 8.5,
+      "rotationY": 0
+    }
+  ],
+  "visitedRegions": [
+    "garden_clearing"
+  ],
+  "food": 5,
+  "silk": 13,
+  "webs": [
+    {
+      "id": "bridge_002",
+      "region": "garden_clearing",
+      "type": "bridge",
+      "anchorA": "twig_west_a",
+      "anchorB": "twig_west_b",
+      "durability": 100,
+      "maxDurability": 100,
+      "exposure": 0.55,
+      "sheltered": false,
+      "isTutorial": false,
+      "constructedAtTick": 32
+    }
+  ],
+  "workers": [],
+  "insects": [
+    {
+      "id": "fly_twins",
+      "region": "garden_clearing",
+      "generation": 0,
+      "phase": "Flying",
+      "x": -11.380268910331917,
+      "y": 2.410685018787381,
+      "z": 4.093149812126193,
+      "waypointIndex": 2,
+      "trappedWebId": null,
+      "capturedAtTick": 0,
+      "respawnAtTick": 0
+    },
+    {
+      "id": "moth_flowers",
+      "region": "garden_clearing",
+      "generation": 0,
+      "phase": "Flying",
+      "x": 5.294457320863462,
+      "y": 1.8570554267913655,
+      "z": -1.2883371962590393,
+      "waypointIndex": 2,
+      "trappedWebId": null,
+      "capturedAtTick": 0,
+      "respawnAtTick": 0
+    },
+    {
+      "id": "fly_wind",
+      "region": "garden_clearing",
+      "generation": 0,
+      "phase": "Flying",
+      "x": 11.978961583403796,
+      "y": 1.9,
+      "z": -8,
+      "waypointIndex": 0,
+      "trappedWebId": null,
+      "capturedAtTick": 0,
+      "respawnAtTick": 0
+    },
+    {
+      "id": "fly_shelter",
+      "region": "garden_clearing",
+      "generation": 0,
+      "phase": "Flying",
+      "x": 14.529238602558308,
+      "y": 1.7,
+      "z": -3,
+      "waypointIndex": 0,
+      "trappedWebId": null,
+      "capturedAtTick": 0,
+      "respawnAtTick": 0
+    },
+    {
+      "id": "rw_reed_fly",
+      "region": "reedwater_bank",
+      "generation": 0,
+      "phase": "Flying",
+      "x": 13.651060651599495,
+      "y": 2.2116313116133504,
+      "z": 7,
+      "waypointIndex": 2,
+      "trappedWebId": null,
+      "capturedAtTick": 0,
+      "respawnAtTick": 0
+    },
+    {
+      "id": "rw_dragonfly_lilies",
+      "region": "reedwater_bank",
+      "generation": 0,
+      "phase": "Flying",
+      "x": -3.4,
+      "y": 2.3,
+      "z": 0.21721700725705673,
+      "waypointIndex": 0,
+      "trappedWebId": null,
+      "capturedAtTick": 0,
+      "respawnAtTick": 0
+    },
+    {
+      "id": "rw_far_dragonfly",
+      "region": "reedwater_bank",
+      "generation": 0,
+      "phase": "Flying",
+      "x": -10.993474741751413,
+      "y": 2.1420543370601983,
+      "z": -1.84108674120397,
+      "waypointIndex": 3,
+      "trappedWebId": null,
+      "capturedAtTick": 0,
+      "respawnAtTick": 0
+    }
+  ],
+  "missions": {
+    "activeMissionIndex": 0,
+    "stepIndex": 0,
+    "progress": [
+      0,
+      0,
+      0
+    ],
+    "completed": [],
+    "seenEvents": [
+      "game_start:0:1",
+      "web_built_bridge_001:0:3",
+      "web_removed_bridge_001:18:5",
+      "web_built_bridge_002:32:7"
+    ],
+    "victoryAwarded": false
+  },
+  "regionalObjectives": {
+    "activeObjectiveIndex": 0,
+    "stepIndex": 0,
+    "progress": [
+      0,
+      0,
+      0
+    ],
+    "completed": [],
+    "seenEvents": [
+      "game_start:0:1",
+      "web_built_bridge_001:0:3",
+      "web_removed_bridge_001:18:5",
+      "web_built_bridge_002:32:7"
+    ],
+    "masteryAwarded": false
+  },
+  "weather": {
+    "phase": "Calm",
+    "remaining": 0,
+    "windStarted": false,
+    "windCompleted": false,
+    "aftermathRemaining": 0
+  },
+  "counters": {
+    "webSequence": 2,
+    "workerSequence": 0,
+    "transactionSequence": 7,
+    "captureWebsBuilt": 0,
+    "bridgeWebsBuilt": 2,
+    "reedwaterCaptureWebsBuilt": 0,
+    "reedwaterBridgeWebsBuilt": 0,
+    "insectsCollected": 0,
+    "repairsCompleted": 0,
+    "emergencyUses": 0,
+    "masteryAwarded": false,
+    "victory": false,
+    "silkAccumulator": 6.400000000000003,
+    "pendingHatchRemaining": 0,
+    "pendingHatchId": null,
+    "pendingHatchRegionId": "garden_clearing",
+    "ledgerKeys": [
+      "spend:build_Bridge:0:2",
+      "grant:dismantle_bridge_001:18:4",
+      "spend:build_Bridge:32:6"
+    ],
+    "issuedEventKeys": [
+      "game_start:0:1",
+      "web_built_bridge_001:0:3",
+      "web_removed_bridge_001:18:5",
+      "web_built_bridge_002:32:7"
+    ],
+    "openedRegionRoutes": []
+  },
+  "settings": {
+    "masterVolume": 0.85,
+    "musicVolume": 0.55,
+    "sfxVolume": 0.8,
+    "uiScalePercent": 150,
+    "reducedMotion": false,
+    "lowThreat": false,
+    "fullscreen": false,
+    "cameraSensitivity": 1,
+    "tutorialPrompts": true
+  }
+}

@@ -1,0 +1,251 @@
+{
+  "pack": "Webwild v0.2.0 P2 modular silk and wood bridge kit",
+  "model_count": 11,
+  "units": "metres",
+  "coordinates": "Godot Y-up; plank local +X along travel, +Z across span; Y up",
+  "material": "Existing res://art/materials/vertex_color_material.tres (vertex_color_use_as_albedo=true)",
+  "models": [
+    {
+      "name": "bark_plank_a",
+      "description": "transverse bark plank A; 0.22 m pitch, local Z spans bridge width",
+      "model": "art/models/bridge/bark_plank_a.glb",
+      "scene": "scenes/building/bridge/parts/BarkPlankA.tscn",
+      "bounds_m": [
+        [
+          -0.1296,
+          -0.053,
+          -0.337
+        ],
+        [
+          0.1294,
+          0.0656,
+          0.3291
+        ]
+      ],
+      "mesh_parts": 7,
+      "triangles": 312,
+      "size_bytes": 20132,
+      "sha256": "37bdcb60e22afdc05670120b426d84f2b7f85bf1f38cf48d7a6edfb8a7a462d0"
+    },
+    {
+      "name": "bark_plank_b",
+      "description": "transverse bark plank B with chipped end",
+      "model": "art/models/bridge/bark_plank_b.glb",
+      "scene": "scenes/building/bridge/parts/BarkPlankB.tscn",
+      "bounds_m": [
+        [
+          -0.1146,
+          -0.048,
+          -0.364
+        ],
+        [
+          0.1145,
+          0.0606,
+          0.4069
+        ]
+      ],
+      "mesh_parts": 8,
+      "triangles": 332,
+      "size_bytes": 22068,
+      "sha256": "b025d56bd1217d7e9b119a83ba2f78bcf421d52b5f25fc2911a4ef9a5b6ff419"
+    },
+    {
+      "name": "bark_plank_c",
+      "description": "transverse bark plank C with subtle moss",
+      "model": "art/models/bridge/bark_plank_c.glb",
+      "scene": "scenes/building/bridge/parts/BarkPlankC.tscn",
+      "bounds_m": [
+        [
+          -0.1396,
+          -0.0457,
+          -0.3408
+        ],
+        [
+          0.1387,
+          0.0581,
+          0.3484
+        ]
+      ],
+      "mesh_parts": 8,
+      "triangles": 342,
+      "size_bytes": 22680,
+      "sha256": "c906561cdfb7436014893f791e6d2095b490ad2dbd25a074e0eee0334d869c7d"
+    },
+    {
+      "name": "silk_cinch_knot",
+      "description": "small coiled silk knot for ends and rail ties",
+      "model": "art/models/bridge/silk_cinch_knot.glb",
+      "scene": "scenes/building/bridge/parts/SilkCinchKnot.tscn",
+      "bounds_m": [
+        [
+          -0.1773,
+          -0.0788,
+          -0.0945
+        ],
+        [
+          0.186,
+          0.1011,
+          0.1033
+        ]
+      ],
+      "mesh_parts": 3,
+      "triangles": 228,
+      "size_bytes": 15668,
+      "sha256": "81e32741638001e8207d7c9acce97bb56f625b6c3df83958b402af59b0c6306f"
+    },
+    {
+      "name": "silk_double_hitch",
+      "description": "decorative crossed silk hitch",
+      "model": "art/models/bridge/silk_double_hitch.glb",
+      "scene": "scenes/building/bridge/parts/SilkDoubleHitch.tscn",
+      "bounds_m": [
+        [
+          -0.0924,
+          -0.0794,
+          -0.071
+        ],
+        [
+          0.0924,
+          0.0993,
+          0.0808
+        ]
+      ],
+      "mesh_parts": 3,
+      "triangles": 504,
+      "size_bytes": 29864,
+      "sha256": "77e12647401a6164e3b69a7d2d3d39ba21a8fe9038eec58b35a4ee892e233c38"
+    },
+    {
+      "name": "wooden_eyelet",
+      "description": "short wooden attachment peg with silk loop",
+      "model": "art/models/bridge/wooden_eyelet.glb",
+      "scene": "scenes/building/bridge/parts/WoodenEyelet.tscn",
+      "bounds_m": [
+        [
+          -0.0758,
+          -0.0047,
+          -0.0611
+        ],
+        [
+          0.0776,
+          0.3047,
+          0.0611
+        ]
+      ],
+      "mesh_parts": 5,
+      "triangles": 478,
+      "size_bytes": 28472,
+      "sha256": "408bff17d3447c955793b466d2037a3dba49521769ccf42372ea0ab0eac1dbaf"
+    },
+    {
+      "name": "forked_rail_fixture",
+      "description": "forked twig fixture for rail lines",
+      "model": "art/models/bridge/forked_rail_fixture.glb",
+      "scene": "scenes/building/bridge/parts/ForkedRailFixture.tscn",
+      "bounds_m": [
+        [
+          -0.1098,
+          -0.0019,
+          -0.0614
+        ],
+        [
+          0.1084,
+          0.3851,
+          0.0614
+        ]
+      ],
+      "mesh_parts": 5,
+      "triangles": 464,
+      "size_bytes": 31368,
+      "sha256": "83ae14fd8f7fd3a2d0c7dd36829be536338ecea05ea60934f32f82483ff31b5a"
+    },
+    {
+      "name": "silk_wrapped_support",
+      "description": "side rail support, origin at base, +Y up",
+      "model": "art/models/bridge/silk_wrapped_support.glb",
+      "scene": "scenes/building/bridge/parts/SilkWrappedSupport.tscn",
+      "bounds_m": [
+        [
+          -0.082,
+          -0.0048,
+          -0.0808
+        ],
+        [
+          0.115,
+          0.7436,
+          0.0808
+        ]
+      ],
+      "mesh_parts": 5,
+      "triangles": 1040,
+      "size_bytes": 60916,
+      "sha256": "5c5d3c6c6073951bdccb6ecba5912ae65d933a266c5e4ca73bbbc6f85b3e02e2"
+    },
+    {
+      "name": "silk_cross_lashing",
+      "description": "woven crossing tie on plank or rope",
+      "model": "art/models/bridge/silk_cross_lashing.glb",
+      "scene": "scenes/building/bridge/parts/SilkCrossLashing.tscn",
+      "bounds_m": [
+        [
+          -0.1381,
+          -0.0499,
+          -0.1142
+        ],
+        [
+          0.1381,
+          0.0935,
+          0.1142
+        ]
+      ],
+      "mesh_parts": 6,
+      "triangles": 390,
+      "size_bytes": 23688,
+      "sha256": "3dc39df30d7cc445148e23df29797910b91011b04cdcbc6008bc43b217e2e8d4"
+    },
+    {
+      "name": "braided_silk_segment",
+      "description": "1 m reference silk braid; use procedural curves for arbitrary spans",
+      "model": "art/models/bridge/braided_silk_segment.glb",
+      "scene": "scenes/building/bridge/parts/BraidedSilkSegment.tscn",
+      "bounds_m": [
+        [
+          -0.5039,
+          -0.0244,
+          -0.026
+        ],
+        [
+          0.5039,
+          0.0244,
+          0.026
+        ]
+      ],
+      "mesh_parts": 3,
+      "triangles": 1296,
+      "size_bytes": 69636,
+      "sha256": "1bae91544bab0754a0817758136208be9287625fa5850af42cfcfbc2bafcc532"
+    },
+    {
+      "name": "woven_silk_panel",
+      "description": "airy 0.23 x 0.59 m woven silk segment to layer under planks",
+      "model": "art/models/bridge/woven_silk_panel.glb",
+      "scene": "scenes/building/bridge/parts/WovenSilkPanel.tscn",
+      "bounds_m": [
+        [
+          -0.1164,
+          -0.0136,
+          -0.2993
+        ],
+        [
+          0.1164,
+          0.0136,
+          0.3003
+        ]
+      ],
+      "mesh_parts": 15,
+      "triangles": 1470,
+      "size_bytes": 67568,
+      "sha256": "7750b2834b8a583617f292fcbd0ed48a3a07ae604e94e6db8399930aaf038cce"
+    }
+  ]
+}

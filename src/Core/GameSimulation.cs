@@ -44,6 +44,7 @@ public sealed class GameSimulation
     private readonly HashSet<string> _openedRegionRoutes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PlayerRegionPosition> _regionPlayerPositions = new(StringComparer.Ordinal);
     private readonly HashSet<string> _visitedRegions = new(StringComparer.Ordinal) { RegionIds.GardenClearing };
+    private readonly HashSet<string> _claimedSupplyCaches = new(StringComparer.Ordinal);
 
     public Tuning Tuning { get; }
     public MissionsConfig MissionsConfig { get; }
@@ -58,6 +59,7 @@ public sealed class GameSimulation
         RegionCatalog.Get(id) is { } region &&
         (region.UnlockedByDefault || Missions.AllComplete);
     public IReadOnlyCollection<string> VisitedRegions => _visitedRegions;
+    public IReadOnlyCollection<string> ClaimedSupplyCaches => _claimedSupplyCaches;
     public int ReedwaterBridgeWebsBuilt { get; private set; }
     public int ReedwaterCaptureWebsBuilt { get; private set; }
     public IReadOnlyCollection<string> OpenedRegionRoutes => _openedRegionRoutes;
@@ -204,9 +206,11 @@ public sealed class GameSimulation
         }
 
         // The first visit to the marshy outpost uncovers a small, exactly-once
-        // colony supply cache. This keeps a child who spent most silk on the
-        // story from arriving with too little to build the first bridge.
+        // colony supply cache. The claim is durable gameplay state, not the
+        // bounded ledger history: unlimited travel, save/load and 512+ later
+        // transactions must never grant it again.
         if (regionId == RegionIds.ReedwaterBank &&
+            _claimedSupplyCaches.Add(regionId) &&
             Ledger.TryGrant(6, 24, $"region_supply_{regionId}"))
         {
             Emit(new GameplayEvent(NextKey($"region_supply_{regionId}"), "RegionSupply",
@@ -1212,7 +1216,8 @@ public sealed class GameSimulation
                 PendingHatchRegionId = PendingHatch?.RegionId,
                 LedgerKeys = Ledger.OrderedProcessedKeys.ToList(),
                 IssuedEventKeys = OrderedIssuedEventKeys.ToList(),
-                OpenedRegionRoutes = _openedRegionRoutes.ToList()
+                OpenedRegionRoutes = _openedRegionRoutes.ToList(),
+                ClaimedSupplyCaches = _claimedSupplyCaches.ToList()
             },
             Settings = settings
         };
@@ -1236,6 +1241,8 @@ public sealed class GameSimulation
         sim.ActiveRegionId = data.ActiveRegionId;
         sim._visitedRegions.Clear();
         foreach (var id in data.VisitedRegions) sim._visitedRegions.Add(id);
+        sim._claimedSupplyCaches.Clear();
+        foreach (var id in data.Counters.ClaimedSupplyCaches) sim._claimedSupplyCaches.Add(id);
         sim._regionPlayerPositions.Clear();
         foreach (var entry in data.RegionPlayers)
             sim._regionPlayerPositions[entry.Region] =

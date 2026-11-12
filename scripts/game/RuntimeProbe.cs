@@ -246,6 +246,32 @@ public partial class RuntimeProbe : Node
             $"rampX={string.Join(",", gapRamps.Select(r => r.X.ToString("0.00")))}");
         Check("bridge-walkway-collision", game.ProbeBridgeWalkwayShapeCount(gapBridge.Id) > 0,
             $"shapes={game.ProbeBridgeWalkwayShapeCount(gapBridge.Id)}");
+        CheckBridgeVisual(game, gapBridge.Id, "bridge-gap");
+        var previewApproach = BridgeGeometry.ComputeApproachPoints(
+            gapA.Position, gapB.Position, gapA.BridgeGroundPoint, gapB.BridgeGroundPoint);
+        var preview = WebVisual.CreatePreview(
+            WebType.Bridge, GardenClearing.ToVector3(gapA.Position), GardenClearing.ToVector3(gapB.Position),
+            true, GardenClearing.ToVector3(previewApproach.A), GardenClearing.ToVector3(previewApproach.B));
+        var previewAssembler = preview.GetNodeOrNull<BridgeVisualAssembler>("BridgePreview");
+        Check("bridge-preview-uses-assembler", previewAssembler is not null &&
+            previewAssembler.PlankCount >= 8 && previewAssembler.RailTriangleCount > 100 &&
+            previewAssembler.DetailCount == 0,
+            previewAssembler?.ProbeSignature ?? "missing preview assembler");
+        Check("bridge-preview-has-no-collision",
+            preview.FindChildren("BridgeWalkway", "", true, false).Count == 0,
+            "Preview owns no duplicate walkway collision");
+        var previewInvalid = WebVisual.CreatePreview(
+            WebType.Bridge, GardenClearing.ToVector3(gapA.Position), GardenClearing.ToVector3(gapB.Position),
+            false, GardenClearing.ToVector3(previewApproach.A), GardenClearing.ToVector3(previewApproach.B));
+        var invalidAssembler = previewInvalid.GetNodeOrNull<BridgeVisualAssembler>("BridgePreview");
+        Check("bridge-preview-valid-cue", previewAssembler is not null &&
+            previewAssembler.PreviewColor.G > previewAssembler.PreviewColor.R,
+            previewAssembler?.PreviewColor.ToString() ?? "missing");
+        Check("bridge-preview-invalid-cue", invalidAssembler is not null &&
+            invalidAssembler.PreviewColor.R > invalidAssembler.PreviewColor.G,
+            invalidAssembler?.PreviewColor.ToString() ?? "missing");
+        preview.QueueFree();
+        previewInvalid.QueueFree();
         game.ProbeClearBuild();
 
         game.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
@@ -261,6 +287,18 @@ public partial class RuntimeProbe : Node
         game.ProbeLookAt(new Vec3(0, 0.6, 1.2));
         await Frames(4);
         await Capture("09-bridge-crossing");
+        game.ProbeSetSafePosition(new Vec3(5.0, 0.55, 3.3));
+        game.ProbeTeleport(new Vec3(5.0, 0.55, 3.3));
+        game.ProbeLookAt(new Vec3(0, 0.5, 1.2));
+        await Frames(4);
+        await Capture("09b-modular-bridge-detail");
+        gapBridge.Durability = Math.Max(1, gapBridge.MaxDurability / 4);
+        await Frames(3);
+        Check("bridge-damage-visual", game.ProbeBridgeDamageOverlayCount(gapBridge.Id) > 0,
+            $"overlays={game.ProbeBridgeDamageOverlayCount(gapBridge.Id)} durability={gapBridge.Durability}");
+        await Capture("09c-bridge-damaged");
+        gapBridge.Durability = gapBridge.MaxDurability;
+        await Frames(3);
         game.ProbeTeleport(WorldLayout.PlayerSpawn);
         await Frames(3);
 
@@ -450,11 +488,28 @@ public partial class RuntimeProbe : Node
         if (continued is not null)
             await RunReedwaterSection(continued);
 
+        if (_main.Game is { } toastGame)
+        {
+            settings.UiScalePercent = 100;
+            GameData.ApplyUiScale(settings);
+            await Frames(6);
+            toastGame.ProbeShowToast("Clever Crossing earned. Keep exploring or use the trail to return.");
+            await Frames(3);
+            CheckToastLane(toastGame, "100");
+            await Capture("16a-ui-toast-100");
+        }
+
         settings.UiScalePercent = 125;
         GameData.ApplyUiScale(settings);
         await Frames(6);
         Check("ui-scale-applies", Math.Abs(GetTree().Root.ContentScaleFactor - 1.25f) < 0.01f,
             $"scale={GetTree().Root.ContentScaleFactor:0.00}");
+        if (_main.Game is { } toastGame125)
+        {
+            toastGame125.ProbeShowToast("Clever Crossing earned. Keep exploring or use the trail to return.");
+            await Frames(3);
+            CheckToastLane(toastGame125, "125");
+        }
         await Capture("16-ui-scale-125");
 
         settings.UiScalePercent = 150;
@@ -462,6 +517,12 @@ public partial class RuntimeProbe : Node
         await Frames(6);
         Check("ui-scale-150-applies", Math.Abs(GetTree().Root.ContentScaleFactor - 1.5f) < 0.01f,
             $"scale={GetTree().Root.ContentScaleFactor:0.00}");
+        if (_main.Game is { } toastGame150)
+        {
+            toastGame150.ProbeShowToast("Clever Crossing earned. Keep exploring or use the trail to return.");
+            await Frames(3);
+            CheckToastLane(toastGame150, "150");
+        }
         await Capture("17-ui-scale-150");
 
         if (_main.Game is { } gameForQuit) gameForQuit.ProbeQuitToMenu();
@@ -488,6 +549,7 @@ public partial class RuntimeProbe : Node
                 $"rampX={string.Join(",", reverseRamps.Select(r => r.X.ToString("0.00")))}");
             Check("bridge-reverse-collision", edge.ProbeBridgeWalkwayShapeCount(reverseWeb.Id) > 0,
                 $"shapes={edge.ProbeBridgeWalkwayShapeCount(reverseWeb.Id)}");
+            CheckBridgeVisual(edge, reverseWeb.Id, "bridge-reverse");
 
             edge.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
             edge.ProbeLookAt(new Vec3(8.0, 0.6, 1.2));
@@ -538,6 +600,7 @@ public partial class RuntimeProbe : Node
                 $"ramps={string.Join(" ", zRamps.Select(r => $"({r.X:0.0},{r.Z:0.0})"))}");
             Check("bridge-zaxis-collision", edge.ProbeBridgeWalkwayShapeCount(zWeb.Id) > 0,
                 $"shapes={edge.ProbeBridgeWalkwayShapeCount(zWeb.Id)}");
+            CheckBridgeVisual(edge, zWeb.Id, "bridge-zaxis");
             edge.ProbeTeleport(new Vec3(-7.5, 0.5, 0.1));
             edge.ProbeLookAt(new Vec3(-9.5, 1.1, 0.1));
             await Frames(4);
@@ -557,6 +620,40 @@ public partial class RuntimeProbe : Node
         await Frames(4);
     }
 
+    private void CheckBridgeVisual(GardenClearing game, string webId, string prefix)
+    {
+        var signature = game.ProbeBridgeVisualSignature(webId);
+        Check($"{prefix}-modular-planks", game.ProbeBridgePlankCount(webId) >= 8, signature);
+        Check($"{prefix}-modular-variants", game.ProbeBridgeUsesAllPlankVariants(webId), signature);
+        Check($"{prefix}-silk-rails", game.ProbeBridgeRailTriangles(webId) > 100, signature);
+        Check($"{prefix}-detail-fixtures", game.ProbeBridgeDetailCount(webId) >= 6, signature);
+        Check($"{prefix}-vertex-materials", game.ProbeBridgeUnstyledMeshCount(webId) == 0,
+            $"unstyled={game.ProbeBridgeUnstyledMeshCount(webId)} {signature}");
+        Check($"{prefix}-no-solid-ribbon", signature.Contains("ribbon=0", StringComparison.Ordinal), signature);
+        Check($"{prefix}-layout-not-degenerate", signature.Contains("degenerate=0", StringComparison.Ordinal), signature);
+    }
+
+    private void CheckToastLane(GardenClearing game, string scaleLabel)
+    {
+        var toast = game.ProbeToastRect;
+        var mission = game.ProbeMissionRect;
+        var actions = game.ProbeActionColumnRect;
+        var toolbar = game.ProbeToolbarRect;
+        var status = game.ProbeStatusRect;
+        var viewport = GetViewport().GetVisibleRect().Size;
+        GD.Print($"[PROBE] TOAST {scaleLabel} toast={toast} mission={mission} actions={actions} toolbar={toolbar} status={status} viewport={viewport}");
+        Check($"toast-visible-{scaleLabel}", game.ProbeToastVisible, game.ProbeToastText);
+        Check($"toast-inside-viewport-{scaleLabel}",
+            toast.Position.X >= 0 && toast.Position.Y >= 0 &&
+            toast.End.X <= viewport.X + 1 && toast.End.Y <= viewport.Y + 1, $"{toast}");
+        Check($"toast-avoids-mission-{scaleLabel}", !toast.Intersects(mission), $"{toast} vs {mission}");
+        Check($"toast-avoids-actions-{scaleLabel}", !toast.Intersects(actions), $"{toast} vs {actions}");
+        Check($"toast-avoids-toolbar-{scaleLabel}", !toast.Intersects(toolbar), $"{toast} vs {toolbar}");
+        Check($"toast-avoids-status-{scaleLabel}", !toast.Intersects(status), $"{toast} vs {status}");
+        Check($"toast-avoids-camera-centre-{scaleLabel}",
+            toast.Position.X >= viewport.X * 0.58f, $"left={toast.Position.X:0.0} viewport={viewport.X:0.0}");
+    }
+
     private async Task RunReedwaterSection(GardenClearing game)
     {
         var sim = game.Simulation;
@@ -570,10 +667,16 @@ public partial class RuntimeProbe : Node
         game.ProbeCloseModal();
         await Frames(2);
 
+        var supplyFoodBefore = sim.Ledger.Food;
+        var supplySilkBefore = sim.Ledger.Silk;
         var travelled = game.ProbeTravel(RegionIds.ReedwaterBank);
         await Frames(8);
         Check("travel-to-reedwater", travelled && game.ActiveRegionId == RegionIds.ReedwaterBank,
             $"region={game.ActiveRegionId}");
+        Check("reedwater-supply-granted-once",
+            sim.Ledger.Food == supplyFoodBefore + 6 && sim.Ledger.Silk >= supplySilkBefore + 24 &&
+            sim.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank),
+            $"food={sim.Ledger.Food} silk={sim.Ledger.Silk} claimed={string.Join(",", sim.ClaimedSupplyCaches)}");
         Check("reedwater-player-arrival",
             game.PlayerPosition.DistanceTo(GardenClearing.ToVector3(ReedwaterLayout.ArrivalPoint)) < 0.6f,
             $"player={game.PlayerPosition}");
@@ -623,6 +726,12 @@ public partial class RuntimeProbe : Node
             "Two bridges for the lily island");
         await Frames(3);
         await Capture("23-bridges-built");
+        game.ProbeTeleport(new Vec3(8.8, 1.6, 10.4));
+        game.ProbeLookAt(new Vec3(3.4, 0.55, 6.2));
+        await Frames(4);
+        await Capture("23b-reedwater-bridge-detail");
+        game.ProbeTeleport(new Vec3(7.6, 0.55, 7.6));
+        await Frames(2);
 
         // Actual player traversal over the two bridge decks and ramps.
         game.ProbeSetSafePosition(new Vec3(7.6, 0.55, 7.6));
@@ -668,6 +777,9 @@ public partial class RuntimeProbe : Node
         // route; the worker must use bridge edges, not teleport.
         Check("bridge-three-built", game.ProbeBuildWeb(ReedwaterLayout.IslandBPost,
             ReedwaterLayout.FarPost, WebType.Bridge), "Root island to far bank");
+        var firstReedwaterBridge = sim.RegionWebs.FirstOrDefault(web => web.Type == WebType.Bridge);
+        if (firstReedwaterBridge is not null)
+            CheckBridgeVisual(game, firstReedwaterBridge.Id, "reedwater-bridge");
         Check("far-capture-web-built", game.ProbeBuildWeb(ReedwaterLayout.FarA,
             ReedwaterLayout.FarB, WebType.Capture), "Far-bank capture web");
         var hatchCheck = sim.CanHatch();
@@ -714,6 +826,10 @@ public partial class RuntimeProbe : Node
         {
             Check("save-records-active-region", loaded.Data.ActiveRegionId == RegionIds.ReedwaterBank,
                 loaded.Data.ActiveRegionId);
+            Check("save-records-supply-claim",
+                loaded.Data.SchemaVersion == SaveGameData.CurrentSchemaVersion &&
+                loaded.Data.Counters.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank),
+                $"schema={loaded.Data.SchemaVersion} claimed={string.Join(",", loaded.Data.Counters.ClaimedSupplyCaches)}");
             Check("save-records-reedwater-webs",
                 loaded.Data.Webs.Count(web => web.Region == RegionIds.ReedwaterBank) == regionWebs,
                 $"webs={regionWebs}");
@@ -731,6 +847,9 @@ public partial class RuntimeProbe : Node
             Check("reload-reedwater-objectives",
                 reloadedRegion.Simulation.RegionalObjectives.CompletedObjectives.Count == completed,
                 $"completed={completed}");
+            var reloadedBridge = reloadedRegion.Simulation.RegionWebs.FirstOrDefault(web => web.Type == WebType.Bridge);
+            if (reloadedBridge is not null)
+                CheckBridgeVisual(reloadedRegion, reloadedBridge.Id, "reload-reedwater-bridge");
             await Capture("28-reedwater-reloaded");
 
             // Return to the garden, verify its own construction is untouched,
@@ -753,6 +872,9 @@ public partial class RuntimeProbe : Node
             Check("reenter-reedwater-objectives",
                 reloadedRegion.Simulation.RegionalObjectives.CompletedObjectives.Count == completed,
                 $"completed={completed}");
+            Check("reenter-supply-not-regranted",
+                reloadedRegion.Simulation.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank),
+                $"claimed={string.Join(",", reloadedRegion.Simulation.ClaimedSupplyCaches)} food={reloadedRegion.Simulation.Ledger.Food} silk={reloadedRegion.Simulation.Ledger.Silk}");
 
             // Remove a critical bridge and prove the worker route becomes
             // invalid; rebuilding it restores the same navigation.

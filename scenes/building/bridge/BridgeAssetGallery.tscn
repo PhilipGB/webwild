@@ -1,0 +1,48 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/BarkPlankA.tscn" id="1_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/BarkPlankB.tscn" id="2_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/BarkPlankC.tscn" id="3_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/SilkCinchKnot.tscn" id="4_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/SilkDoubleHitch.tscn" id="5_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/WoodenEyelet.tscn" id="6_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/ForkedRailFixture.tscn" id="7_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/SilkWrappedSupport.tscn" id="8_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/SilkCrossLashing.tscn" id="9_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/BraidedSilkSegment.tscn" id="10_item"]
+[ext_resource type="PackedScene" path="res://scenes/building/bridge/parts/WovenSilkPanel.tscn" id="11_item"]
+
+[node name="BridgeAssetGallery" type="Node3D"]
+
+[node name="BarkPlankA" parent="." instance=ExtResource("1_item")]
+position = Vector3(-2.25, 0, -1.1)
+
+[node name="BarkPlankB" parent="." instance=ExtResource("2_item")]
+position = Vector3(-0.75, 0, -1.1)
+
+[node name="BarkPlankC" parent="." instance=ExtResource("3_item")]
+position = Vector3(0.75, 0, -1.1)
+
+[node name="SilkCinchKnot" parent="." instance=ExtResource("4_item")]
+position = Vector3(2.25, 0, -1.1)
+
+[node name="SilkDoubleHitch" parent="." instance=ExtResource("5_item")]
+position = Vector3(-2.25, 0, 0.3999999999999999)
+
+[node name="WoodenEyelet" parent="." instance=ExtResource("6_item")]
+position = Vector3(-0.75, 0, 0.3999999999999999)
+
+[node name="ForkedRailFixture" parent="." instance=ExtResource("7_item")]
+position = Vector3(0.75, 0, 0.3999999999999999)
+
+[node name="SilkWrappedSupport" parent="." instance=ExtResource("8_item")]
+position = Vector3(2.25, 0, 0.3999999999999999)
+
+[node name="SilkCrossLashing" parent="." instance=ExtResource("9_item")]
+position = Vector3(-2.25, 0, 1.9)
+
+[node name="BraidedSilkSegment" parent="." instance=ExtResource("10_item")]
+position = Vector3(-0.75, 0, 1.9)
+
+[node name="WovenSilkPanel" parent="." instance=ExtResource("11_item")]
+position = Vector3(0.75, 0, 1.9)

@@ -122,6 +122,7 @@ public sealed class SimCountersSave
     public List<string> LedgerKeys { get; set; } = new();
     public List<string> IssuedEventKeys { get; set; } = new();
     public List<string> OpenedRegionRoutes { get; set; } = new();
+    public List<string> ClaimedSupplyCaches { get; set; } = new();
 }
 
 public sealed class SettingsData
@@ -148,7 +149,7 @@ public sealed class SettingsData
 
 public sealed class SaveGameData
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public string SaveId { get; set; } = "";
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;

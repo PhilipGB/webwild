@@ -25,10 +25,14 @@ Linux build. Real Godot screenshots are in `artifacts/screenshots/`. The capture
 covers title, garden, pause, help, colony, build mode, finished web, trapped
 insect, modular bridge close-ups, damaged bridge, nursery, wind warning, victory,
 settings, reloaded save, title with Continue, Reedwater travel and completion,
-and UI scales 100%, 125% and 150% with the notification lane active.
+and UI scales 100%, 125% and 150% with the notification lane active. The v0.2.1
+shoreline pass adds regraded start/far shore, island-edge and low-angle views,
+plus a labeled before/after comparison; all were inspected at pixel level.
 
 ## Known usability limits found during inspection
 
+- Reedwater's water-over-grass defect is resolved: the pond uses an authored
+  shoreline/shelf/bed and no longer paints translucent rectangles across grass.
 - Toasts stay in the right-hand lane below the mission card. At 150% UI scale
   they cover some world-space labels but no permanent control, the player, the
   mission card, status hint or toolbar; runtime rectangle checks enforce this.

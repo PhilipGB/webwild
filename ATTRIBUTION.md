@@ -9,6 +9,7 @@ No third-party models, textures, music or sound effects are bundled.
 
 - 92 original low-poly GLB models under `art/models/` (creatures, flora, terrain, colony, the 15-model Reedwater Bank pack and the 11-model modular bridge pack)
 - Original SVG HUD icons under `art/ui/icons/`
+- Original static Reedwater shoreline, shore-shelf and pond-bed meshes under `art/meshes/`
 - Reference-only concept art, maps and UI mock-ups under `assets/reference/`;
   these are **not** runtime assets and are never presented as game screenshots.
 
@@ -24,8 +25,9 @@ loaded as gameplay geometry. See `LICENSE_BRIDGE_ASSETS.md`.
 
 ## Code and generated content
 
-All C#, Godot scenes, materials, procedural web meshes, UI and original
-synthesised sound effects were created for Webwild during this build. No
+All C#, Godot scenes, materials, procedural web meshes, authored shoreline
+meshes, UI and original synthesised sound effects were created for Webwild
+during this build. No
 downloaded textures, fonts, music or third-party game assets are used.
 
 ## Fonts

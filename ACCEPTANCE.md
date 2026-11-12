@@ -32,7 +32,7 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Consistent input: click select, right-click/Esc cancel, E interact, Esc pause, Tab colony; modals block background | PASS | Runtime checks and `_UnhandledInput`/modal stop handling; `04-help.png`, `05-colony.png` |
 | Contrast, UI scale, reduced motion and volume settings function and persist | PASS (full-screen actual presentation NOT VERIFIED) | `settings-persist`, `ui-scale-applies` (1.25), `ui-scale-150-applies` (1.50), `low-threat-applies`, `low-threat-restores`, `settings-save-error-visible`; `16/17` screenshots. Full-screen toggle persists and calls Godot’s window mode, but no compositor test |
 | Sound and visuals communicate capture, damage, build and success even with audio muted | PASS | Visual toasts/status/icons and web colour changes in screenshots; audio buses and WAVs load (`audio-buses`) |
-| Cohesive authored detail; no prominent untextured placeholder; camera not clipping main quest | PASS (stylised) | Visual inspection of all 36 screenshots; SpringArm collision mask; ground, paths, flora and landmarks are authored `.tscn` content, not unfinished cubes |
+| Cohesive authored detail; no prominent untextured placeholder; camera not clipping main quest | PASS (stylised) | Visual inspection of all 44 screenshots; SpringArm collision mask; ground, paths, flora and landmarks are authored `.tscn` content, not unfinished cubes |
 
 ## Engineering and delivery
 
@@ -40,14 +40,14 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 |---|---|---|
 | Godot 4.7.2 .NET + C# / net10.0; clean-checkout launch | PASS | `godot --version`; `godot --headless --path . --editor --quit`; imported and ran from source |
 | Pure deterministic tests for validation, capture, economy, workers, missions, wind, recovery, saves, bridge layout and scene contracts | PASS | `dotnet test`: **106 passed, 0 failed, 0 skipped** |
-| Godot headless import + C# startup + dedicated runtime acceptance smoke | PASS | Headless import exit 0; scene contract **51/51**; headless probe **236/236**; rendered probe **236/236** |
+| Godot headless import + C# startup + dedicated runtime acceptance smoke | PASS | Headless import exit 0; scene contract **55/55**; headless probe **246/246**; rendered probe **246/246** |
 | Versioned save, validation, atomic write, backup recovery, no false “Saved” | PASS | `SaveTests` roundtrip, corrupt main, invalid schema, failed write; runtime `save-succeeds`, `save-loads`, `reload-*` |
 | Private repo with source, assets/attribution, instructions, tests and evidence | PASS | `PhilipGB/webwild` private; README/ATTRIBUTION/evidence tracked |
 | P0–P8 and v0.1.x hardening recorded with commit/PR links and green checks | PASS | PRs [#1](https://github.com/PhilipGB/webwild/pull/1)–[#10](https://github.com/PhilipGB/webwild/pull/10) merged with green CI; merge commits in `docs/EVIDENCE.md` |
-| Linux x64 playable export produced and launched/tested | PASS | `exports/linux/Webwild.x86_64`; headless and rendered Xvfb probes both 236/236 |
+| Linux x64 playable export produced and launched/tested | PASS | `exports/linux/Webwild.x86_64`; headless and rendered Xvfb probes both 246/246 |
 | Windows x64 export produced; runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | `exports/windows/Webwild.exe` PE32+ x86-64; no Windows host |
 | `v0.2.0` P0 merged only after exact-head checks pass | PASS | Dedicated branch, PR and green CI; no v0.2.0 release is published yet |
-| Screenshots show actual Godot game | PASS | 36 real PNGs in `artifacts/screenshots/`; runtime probe reports renderer X11 |
+| Screenshots show actual Godot game | PASS | 44 real PNGs in `artifacts/screenshots/`; runtime probe reports renderer X11 |
 
 ## v0.1.1 independent-review hardening
 
@@ -127,13 +127,32 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Windows x64 export produced; runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | `exports/windows/Webwild.exe` PE32+ x86-64; no Windows host |
 | Repository private; annotated v0.2.0 tag/release only on verified main | PASS | `gh repo view` private; release workflow recorded in `docs/EVIDENCE.md#v020-p2` |
 
+## v0.2.1 — Reedwater shoreline correction
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Pond water occupies only intended water; dry banks are not covered | PASS | Authored water mesh bounds x −7.13..6.20 versus banks at −7..6; `rw-water-shore-bounds`, `rw-water-below-banks`; `22d-start-shoreline`, `22e-far-shoreline` |
+| No rectangular water boundary crosses grass | PASS | Wavy static ArrayMesh plus shelf; previous oversized `PlaneMesh` removed; visual inspection of `22b`/`22d`–`22g` |
+| Water meets shoreline cleanly without exposed gaps | PASS | Continuous shore shelf; `rw-water-shore-bounds`; visual inspection of low-angle `22g` |
+| Islands sit correctly within the pond | PASS | Island props/colliders unchanged; `22f-island-edges`; runtime island-safe queries |
+| Water remains continuous where designed | PASS | Single authored surface; bridges and `24-reedwater-crossing` show continuous water beneath |
+| Water colour and friendly low-poly style preserved | PASS | Same water material palette/emission; `21`, `22b`, `23b` |
+| Water renders from elevated, low-angle and rotated views without sorting artefacts | PASS | `22b-reedwater-overview`, `22d`, `22e`, `22f`, `22g`, `23b`, `24` inspected |
+| Water hazard detection remains correct; banks/islands safe; open water recovers | PASS | Runtime `shoreline-start-bank-dry`, `shoreline-far-bank-dry`, `shoreline-island-a/b-safe`, `shoreline-open-water-is-hazardous`, `shoreline-water-recovery` |
+| Bridge traversal, bridge ramps, no-bridge rejection and worker navigation remain correct | PASS | Existing `water-blocks-without-bridge`, `player-crosses-reedwater-bridge`, `worker-used-reedwater-bridge`, `critical-bridge-*`; no bridge-collision edits |
+| Region transitions, missions, spawn and save/load remain intact | PASS | Existing travel/reload/objective checks and pure tests; scene/save schema unchanged |
+| Existing tests retained and new geometry assertions added | PASS | 106/106 unit tests; 55/55 scene checks; 246/246 runtime checks |
+| Exported Linux rendering inspected | PASS | Exported headless scene 55/55 and runtime 246/246; exported rendered runtime 246/246 |
+| Windows runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | PE32+ export rebuilt; no Windows host |
+| v0.2.1 release status | Not released by instruction | Merged fix only; v0.2.0 remains the published release |
+
 ## Sign-off
 
 | Area | Result |
 |---|---|
-| Automated gameplay acceptance | **PASS** — 236/236 runtime checks, 106/106 unit tests, 51/51 scene contracts |
-| Rendered practical inspection | **PASS** — 36 screenshots and full flow |
-| Linux export | **PASS** — exported, launched, scene 51/51 and probe 236/236 headless and rendered |
+| Automated gameplay acceptance | **PASS** — 246/246 runtime checks, 106/106 unit tests, 55/55 scene contracts |
+| Rendered practical inspection | **PASS** — 44 screenshots and full flow |
+| Linux export | **PASS** — exported, launched, scene 55/55 and probe 246/246 headless and rendered |
 | Windows release | **PARTIAL** — export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no child playtest |
-| Milestone status | **RELEASED as v0.2.0** on verified `main`; Linux archive re-downloaded and rerun. Windows runtime and child playtesting remain documented limitations |
+| Milestone status | v0.2.0 released; v0.2.1 shoreline fix merged but deliberately **not released**. Windows runtime and child playtesting remain documented limitations |

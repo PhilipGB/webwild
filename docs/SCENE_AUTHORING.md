@@ -210,7 +210,7 @@ godot --headless --path . -- --scene-validate
 godot --headless --path . -- --runtime-probe
 ```
 
-`--scene-validate` checks **51 contracts** across both regions: the garden
+`--scene-validate` checks **55 contracts** across both regions: the garden
 composition, eight landmarks, 12 anchors and markers, ravine/collision contracts,
 123 model instances and 934 meshes, plus Reedwater's authored world groups, five
 landmarks, 10 anchors and markers, bridge bank points, bank/water collision,
@@ -218,10 +218,32 @@ landmarks, 10 anchors and markers, bridge bank points, bank/water collision,
 `reedwater_vertex_color_material.tres`, all eleven modular bridge wrappers and
 their material/gallery contract, and transition-registry checks.
 
-The runtime probe includes the same 51 checks plus the full gameplay acceptance
-flow, including water blocking, bridge construction/traversal, modular bridge
-assembly, Reedwater objectives, worker crossing, return travel, in-region
-save/load and the notification lane at all UI scales.
+The runtime probe includes the same 55 checks plus the full gameplay acceptance
+flow, including water blocking, shoreline dry/wet/recovery checks, bridge
+construction/traversal, modular bridge assembly, Reedwater objectives, worker
+crossing, return travel, in-region save/load and the notification lane at all UI
+scales.
+
+## Reedwater shoreline
+
+The pond surface is authored scene geometry, not a runtime generator.
+
+- `ReedwaterTerrain.tscn` references three static ArrayMesh resources under
+  `art/meshes/`: `reedwater_water_surface.tres`, `reedwater_shore_shelf.tres` and
+  `reedwater_pond_bed.tres`.
+- The water outline is a wavy superellipse around the open water between the
+  banks. It sits at Y −0.03, just below the grass top at Y 0, and tucks under the
+  opaque bank volumes so there is no seam. The shelf at Y −0.08 provides the
+  visible mossy rim; the bed at Y −1.45 gives the transparent water a real floor.
+- To reshape the pond, edit the mesh resources (or regenerate them with an
+  offline authoring tool) and update the four water `Area3D` boxes together.
+  Scene validation will fail if the water rises above the banks, escapes the
+  bank span, loses its shelf or has hazards outside the shoreline.
+- Do not replace the surface with a large `PlaneMesh` or rely on lowering the
+  plane alone; the original defect was the oversized rectangular footprint.
+- Keep banks and islands as authored collision bodies. The water hazard rule
+  still requires a real ground hit under the player, which is what keeps bridge
+  decks and island tops safe.
 
 ## Modular bridge art
 

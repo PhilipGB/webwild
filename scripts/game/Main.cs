@@ -74,22 +74,33 @@ public partial class Main : Node3D
 
     private void RunSceneValidation()
     {
+        var checks = new List<SceneValidationCheck>();
         var packed = GD.Load<PackedScene>("res://scenes/world/GardenClearing.tscn");
         GardenClearing? instance = null;
-        IReadOnlyList<SceneValidationCheck> checks;
         if (packed is null)
         {
-            checks = new[]
-            {
-                new SceneValidationCheck("scene-loads", false, "GardenClearing.tscn is missing")
-            };
+            checks.Add(new SceneValidationCheck("scene-loads", false, "GardenClearing.tscn is missing"));
         }
         else
         {
             instance = packed.Instantiate<GardenClearing>();
             instance.ValidationOnly = true;
             AddChild(instance);
-            checks = SceneContentValidator.Validate(instance);
+            checks.AddRange(SceneContentValidator.Validate(instance));
+        }
+
+        var reedwaterPacked = GD.Load<PackedScene>("res://scenes/world/regions/ReedwaterBank/ReedwaterBank.tscn");
+        ReedwaterRegion? reedwater = null;
+        if (reedwaterPacked is null)
+        {
+            checks.Add(new SceneValidationCheck("rw-scene-loads", false,
+                "ReedwaterBank.tscn is missing"));
+        }
+        else
+        {
+            reedwater = reedwaterPacked.Instantiate<ReedwaterRegion>();
+            AddChild(reedwater);
+            checks.AddRange(SceneContentValidator.ValidateReedwater(reedwater));
         }
 
         var passes = checks.Count(check => check.Pass);
@@ -114,6 +125,7 @@ public partial class Main : Node3D
         GD.Print($"[SCENE] SUMMARY passes={passes} failures={failures} report={path}");
 
         instance?.Free();
+        reedwater?.Free();
         GetTree().Quit(failures == 0 ? 0 : 1);
     }
 
@@ -327,7 +339,12 @@ public partial class Main : Node3D
         }
 
         var packed = GD.Load<PackedScene>("res://scenes/world/GardenClearing.tscn");
-        var clearing = packed?.Instantiate<GardenClearing>() ?? new GardenClearing();
+        if (packed is null)
+            throw new InvalidOperationException(
+                "GardenClearing.tscn is missing. A mandatory scene is not replaced procedurally.");
+        var clearing = packed.Instantiate<GardenClearing>()
+            ?? throw new InvalidOperationException(
+                "GardenClearing.tscn did not instantiate as GardenClearing.");
         clearing.Name = "GardenClearing";
         clearing.Configure(Settings, Saves, _probeMode);
         AddChild(clearing);

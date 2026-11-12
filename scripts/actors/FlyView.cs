@@ -17,11 +17,17 @@ public partial class FlyView : Node3D
     public void Configure(InsectState state)
     {
         _state = state;
-        var scene = GD.Load<PackedScene>($"res://art/models/creatures/{state.Definition.Model}.glb");
-        _visual = scene?.Instantiate<Node3D>() ?? new Node3D();
+        var isReedwaterModel = state.Definition.Model == "dragonfly";
+        var modelPath = isReedwaterModel
+            ? "res://art/models/reedwater/dragonfly.glb"
+            : $"res://art/models/creatures/{state.Definition.Model}.glb";
+        var scene = GD.Load<PackedScene>(modelPath);
+        if (scene is null)
+            throw new InvalidOperationException($"Insect model '{modelPath}' is missing.");
+        _visual = scene.Instantiate<Node3D>();
         _visual.Scale = new Vector3(0.5f, 0.5f, 0.5f);
         AddChild(_visual);
-        ArtMaterials.ApplyVertexColors(_visual);
+        ArtMaterials.ApplyVertexColors(_visual, isReedwaterModel);
 
         _glow = new Node3D { Position = new Vector3(0, 0.18f, 0) };
         var sprite = new Sprite3D

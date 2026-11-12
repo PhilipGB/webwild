@@ -1,14 +1,17 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/GardenClearing.cs" id="1_clearing"]
 [ext_resource type="PackedScene" path="res://scenes/world/GardenWorld.tscn" id="2_world"]
 [ext_resource type="PackedScene" path="res://scenes/building/webs/AnchorSocket.tscn" id="3_anchor"]
 [ext_resource type="PackedScene" path="res://scenes/actors/spider/SpiderPlayer.tscn" id="4_player"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/GardenClearing/GardenPassage.tscn" id="5_passage"]
 
 [node name="GardenClearing" type="Node3D"]
 script = ExtResource("1_clearing")
 
 [node name="World" parent="." instance=ExtResource("2_world")]
+
+[node name="Passage" parent="." instance=ExtResource("5_passage")]
 
 [node name="Anchors" type="Node3D" parent="."]
 
@@ -70,5 +73,15 @@ position = Vector3(-13.5, 0.45, 8.5)
 [node name="Workers" type="Node3D" parent="."]
 
 [node name="WebPreview" type="Node3D" parent="."]
+
+[node name="TravelPoints" type="Node3D" parent="."]
+
+[node name="ToReedwaterBank" type="Marker3D" parent="TravelPoints"]
+position = Vector3(16.1, 0, 8.5)
+
+[node name="FromReedwaterBank" type="Marker3D" parent="TravelPoints"]
+position = Vector3(15.1, 0.45, 8.5)
+
+[node name="Regions" type="Node3D" parent="."]
 
 [node name="UI" type="Node" parent="."]

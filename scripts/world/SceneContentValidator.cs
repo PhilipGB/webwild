@@ -37,6 +37,25 @@ public static class SceneContentValidator
         ("Boundaries", "res://scenes/world/GardenBoundaries.tscn")
     };
 
+    private static readonly (string Name, string Path)[] ReedwaterGroups =
+    {
+        ("Environment", "res://scenes/world/regions/ReedwaterBank/ReedwaterEnvironment.tscn"),
+        ("Terrain", "res://scenes/world/regions/ReedwaterBank/ReedwaterTerrain.tscn"),
+        ("Paths", "res://scenes/world/regions/ReedwaterBank/ReedwaterPaths.tscn"),
+        ("Landmarks", "res://scenes/world/regions/ReedwaterBank/ReedwaterLandmarks.tscn"),
+        ("Flora", "res://scenes/world/regions/ReedwaterBank/ReedwaterFlora.tscn"),
+        ("Boundaries", "res://scenes/world/regions/ReedwaterBank/ReedwaterBoundaries.tscn")
+    };
+
+    private static readonly (string Name, string Path)[] ReedwaterLandmarks =
+    {
+        ("StartBank", "res://scenes/world/regions/ReedwaterBank/landmarks/StartBank.tscn"),
+        ("IslandA", "res://scenes/world/regions/ReedwaterBank/landmarks/IslandA.tscn"),
+        ("IslandB", "res://scenes/world/regions/ReedwaterBank/landmarks/IslandB.tscn"),
+        ("FarBank", "res://scenes/world/regions/ReedwaterBank/landmarks/FarBank.tscn"),
+        ("Outpost", "res://scenes/world/regions/ReedwaterBank/landmarks/Outpost.tscn")
+    };
+
     public static IReadOnlyList<SceneValidationCheck> Validate(Node root)
     {
         var checks = new List<SceneValidationCheck>();
@@ -233,7 +252,203 @@ public static class SceneContentValidator
             GD.Load<PackedScene>("res://scenes/boot/TitleBackdrop.tscn") is not null,
             "GardenClearing and TitleBackdrop load");
 
+        Check("garden-passage-authored",
+            root.GetNodeOrNull<Node3D>("Passage") is { } passage &&
+            (passage.SceneFilePath ?? "").EndsWith("GardenPassage.tscn", StringComparison.Ordinal),
+            $"passage={root.GetNodeOrNull<Node3D>("Passage")?.SceneFilePath ?? "missing"}");
+        Check("garden-travel-markers",
+            MarkerMatches(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "ToReedwaterBank", WorldLayout.TravelPoint) &&
+            MarkerMatches(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "FromReedwaterBank", WorldLayout.TravelArrivalPoint),
+            $"{MarkerDetail(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "ToReedwaterBank")}; " +
+            $"{MarkerDetail(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "FromReedwaterBank")}");
+        Check("region-registry",
+            RegionIds.IsKnown(RegionIds.GardenClearing) && RegionIds.IsKnown(RegionIds.ReedwaterBank) &&
+            RegionCatalog.All.Select(region => region.Id).Distinct(StringComparer.Ordinal).Count() ==
+            RegionCatalog.All.Count,
+            string.Join(",", RegionCatalog.All.Select(region => region.Id)));
+
         return checks;
+    }
+
+    /// <summary>
+    /// Region-specific scene contract for the Reedwater Bank root. It deliberately
+    /// runs the same shape of checks as the garden: authored group instances,
+    /// landmark scenes, anchors and markers, bridge banks, water collision,
+    /// required materials and no procedural fallback.
+    /// </summary>
+    public static IReadOnlyList<SceneValidationCheck> ValidateReedwater(Node root)
+    {
+        var checks = new List<SceneValidationCheck>();
+        void Check(string name, bool pass, string detail = "") =>
+            checks.Add(new SceneValidationCheck(name, pass, detail));
+
+        var scenePath = root.SceneFilePath ?? "";
+        Check("rw-bank-scene",
+            root is ReedwaterRegion && scenePath.EndsWith("ReedwaterBank.tscn", StringComparison.Ordinal),
+            $"scene={scenePath}");
+
+        var world = root.GetNodeOrNull<Node3D>("World");
+        Check("rw-world-scene-authored",
+            world is not null && (world.SceneFilePath ?? "").EndsWith("ReedwaterWorld.tscn", StringComparison.Ordinal),
+            world is null ? "missing World node" : $"scene={world.SceneFilePath}");
+
+        var groupFailures = new List<string>();
+        foreach (var (name, path) in ReedwaterGroups)
+        {
+            var group = world?.GetNodeOrNull<Node3D>(name);
+            if (group is null || !(group.SceneFilePath ?? "").EndsWith(Path.GetFileName(path), StringComparison.Ordinal))
+                groupFailures.Add($"{name}={(group?.SceneFilePath ?? "missing")}");
+        }
+        Check("rw-world-group-instances", groupFailures.Count == 0, string.Join(", ", groupFailures));
+
+        var region = RegionCatalog.GetRequired(RegionIds.ReedwaterBank);
+        var landmarks = world?.GetNodeOrNull<Node3D>("Landmarks");
+        var landmarkChildren = landmarks?.GetChildren().OfType<Node3D>().ToList() ?? new List<Node3D>();
+        var landmarkFailures = new List<string>();
+        if (landmarkChildren.Count != ReedwaterLandmarks.Length)
+            landmarkFailures.Add($"count={landmarkChildren.Count}");
+        foreach (var (name, path) in ReedwaterLandmarks)
+        {
+            var landmark = landmarks?.GetNodeOrNull<Node3D>(name);
+            if (landmark is null || !(landmark.SceneFilePath ?? "").EndsWith(Path.GetFileName(path), StringComparison.Ordinal))
+                landmarkFailures.Add($"{name}={(landmark?.SceneFilePath ?? "missing")}");
+        }
+        Check("rw-landmark-scenes", landmarkFailures.Count == 0, string.Join(", ", landmarkFailures));
+
+        var anchorsRoot = root.GetNodeOrNull<Node3D>("Anchors");
+        var anchorNodes = anchorsRoot?.GetChildren().OfType<AnchorNode>().ToList() ?? new List<AnchorNode>();
+        var definitions = region.Anchors.ToDictionary(definition => definition.Id, StringComparer.Ordinal);
+        var ids = anchorNodes.Select(anchor => anchor.AnchorId).ToList();
+        Check("rw-anchor-count", anchorNodes.Count == 10 && definitions.Count == 10,
+            $"scene={anchorNodes.Count} simulation={definitions.Count}");
+        Check("rw-anchor-ids-unique",
+            ids.All(id => !string.IsNullOrWhiteSpace(id)) &&
+            ids.Distinct(StringComparer.Ordinal).Count() == ids.Count &&
+            ids.All(definitions.ContainsKey),
+            string.Join(",", ids));
+
+        var transformFailures = new List<string>();
+        foreach (var anchor in anchorNodes)
+        {
+            if (!definitions.TryGetValue(anchor.AnchorId, out var definition)) continue;
+            if (!Near(anchor.GlobalPosition, definition.Position))
+                transformFailures.Add($"{anchor.AnchorId}={anchor.GlobalPosition} expected {ToVector3(definition.Position)}");
+        }
+        Check("rw-anchor-transforms-match-simulation", transformFailures.Count == 0,
+            string.Join("; ", transformFailures));
+
+        var markerFailures = new List<string>();
+        var markerCount = 0;
+        foreach (var definition in definitions.Values)
+        {
+            var matches = landmarkChildren
+                .SelectMany(child => child.GetChildren().OfType<Marker3D>())
+                .Where(marker => marker.Name.ToString() == $"Anchor_{definition.Id}")
+                .ToList();
+            markerCount += matches.Count;
+            if (matches.Count != 1)
+            {
+                markerFailures.Add($"{definition.Id} markers={matches.Count}");
+                continue;
+            }
+            if (!Near(matches[0].GlobalPosition, definition.Position))
+                markerFailures.Add($"{definition.Id} marker={matches[0].GlobalPosition} expected {ToVector3(definition.Position)}");
+        }
+        Check("rw-landmark-anchor-markers", markerFailures.Count == 0 && markerCount == 10,
+            $"{markerCount} markers; {string.Join("; ", markerFailures)}");
+
+        Check("rw-nursery-marker",
+            MarkerMatches(landmarks, "Outpost", "NurseryPoint", ReedwaterLayout.NurseryPosition),
+            MarkerDetail(landmarks, "Outpost", "NurseryPoint"));
+        Check("rw-first-destination-marker",
+            MarkerMatches(landmarks, "IslandB", "FirstDestinationPoint", ReedwaterLayout.FirstDestinationPosition),
+            MarkerDetail(landmarks, "IslandB", "FirstDestinationPoint"));
+        Check("rw-far-bank-marker",
+            MarkerMatches(landmarks, "FarBank", "FarBankPoint", ReedwaterLayout.FarBankPosition),
+            MarkerDetail(landmarks, "FarBank", "FarBankPoint"));
+        Check("rw-arrival-return-markers",
+            MarkerMatches(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "ArrivalPoint", ReedwaterLayout.ArrivalPoint) &&
+            MarkerMatches(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "TravelPoint", ReedwaterLayout.TravelPoint),
+            $"{MarkerDetail(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "ArrivalPoint")}; " +
+            $"{MarkerDetail(root.GetNodeOrNull<Node3D>("TravelPoints"), "", "TravelPoint")}");
+
+        Check("rw-bridge-bank-markers",
+            MarkerMatches(landmarks, "StartBank", "BridgeGround_rw_start_post", ReedwaterLayout.StartPostGround) &&
+            MarkerMatches(landmarks, "IslandA", "BridgeGround_rw_island_a_post", ReedwaterLayout.IslandAPostGround) &&
+            MarkerMatches(landmarks, "IslandB", "BridgeGround_rw_island_b_post", ReedwaterLayout.IslandBPostGround) &&
+            MarkerMatches(landmarks, "FarBank", "BridgeGround_rw_far_post", ReedwaterLayout.FarPostGround),
+            $"{MarkerDetail(landmarks, "StartBank", "BridgeGround_rw_start_post")}; " +
+            $"{MarkerDetail(landmarks, "IslandA", "BridgeGround_rw_island_a_post")}; " +
+            $"{MarkerDetail(landmarks, "IslandB", "BridgeGround_rw_island_b_post")}; " +
+            $"{MarkerDetail(landmarks, "FarBank", "BridgeGround_rw_far_post")}");
+
+        var terrain = world?.GetNodeOrNull<Node3D>("Terrain");
+        var startBank = terrain?.GetNodeOrNull<StaticBody3D>("StartBank");
+        var farBank = terrain?.GetNodeOrNull<StaticBody3D>("FarBank");
+        var bankOk = startBank is not null && farBank is not null &&
+                     startBank.CollisionLayer == 1 && startBank.CollisionMask == 0 &&
+                     farBank.CollisionLayer == 1 && farBank.CollisionMask == 0 &&
+                     HasShape(startBank) && HasShape(farBank);
+        Check("rw-bank-collision", bankOk,
+            $"start L{startBank?.CollisionLayer}/M{startBank?.CollisionMask} far L{farBank?.CollisionLayer}/M{farBank?.CollisionMask}");
+
+        var waterAreas = terrain?.GetChildren().OfType<Area3D>()
+            .Where(area => area.IsInGroup("water")).ToList() ?? new List<Area3D>();
+        Check("rw-water-collision",
+            waterAreas.Count == 4 && waterAreas.All(area =>
+                area.CollisionLayer == 8 && area.CollisionMask == 2 &&
+                area.GetNodeOrNull<CollisionShape3D>("CollisionShape3D")?.Shape is BoxShape3D),
+            $"water areas={waterAreas.Count}");
+
+        var solidBodies = Descendants(world).OfType<StaticBody3D>().ToList();
+        Check("rw-solid-collision-contract",
+            solidBodies.Count >= 8 && solidBodies.All(body =>
+                body.CollisionLayer == 1 && body.CollisionMask == 0 && HasShape(body)),
+            $"bodies={solidBodies.Count}");
+
+        var modelFailures = new List<string>();
+        var modelCount = 0;
+        var meshCount = 0;
+        foreach (var node in Descendants(world))
+        {
+            var path = node.SceneFilePath ?? "";
+            if (!path.StartsWith("res://art/models/", StringComparison.Ordinal)) continue;
+            modelCount++;
+            if (!ResourceLoader.Exists(path))
+                modelFailures.Add($"{node.Name}: resource missing");
+            if (!HasBakedModelMaterials(node))
+                modelFailures.Add($"{node.Name}: mesh/material missing");
+        }
+        foreach (var mesh in Descendants(world).OfType<MeshInstance3D>())
+        {
+            meshCount++;
+            if (mesh.Mesh is null) modelFailures.Add($"{mesh.Name}: null mesh");
+        }
+        var reedwaterMaterial = GD.Load<Material>("res://art/materials/reedwater_vertex_color_material.tres");
+        Check("rw-material-resource", reedwaterMaterial is not null,
+            reedwaterMaterial is null ? "resource did not load" : reedwaterMaterial.ResourcePath);
+        Check("rw-model-resources", modelFailures.Count == 0,
+            $"models={modelCount} meshes={meshCount} {string.Join("; ", modelFailures.Take(6))}");
+        Check("rw-insect-routes",
+            region.InsectRoutes.Count >= 3 &&
+            region.InsectRoutes.All(route => route.Region == RegionIds.ReedwaterBank) &&
+            region.InsectRoutes.Select(route => route.Id).Distinct(StringComparer.Ordinal).Count() ==
+            region.InsectRoutes.Count,
+            string.Join(",", region.InsectRoutes.Select(route => route.Id)));
+        Check("rw-no-procedural-scenery",
+            !Godot.FileAccess.FileExists("res://scripts/world/ReedwaterScenery.cs") &&
+            root.FindChildren("ReedwaterScenery", "", true, false).Count == 0,
+            "Reedwater scenery is authored, not generated in C#");
+
+        return checks;
+    }
+
+    public static void ValidateReedwaterOrThrow(Node root)
+    {
+        var failures = ValidateReedwater(root).Where(check => !check.Pass).ToList();
+        if (failures.Count == 0) return;
+        var lines = string.Join("\n", failures.Select(check => $" - {check.Name}: {check.Detail}"));
+        throw new InvalidOperationException($"Authored Reedwater Bank scene validation failed:\n{lines}");
     }
 
     public static void ValidateOrThrow(Node root)
@@ -266,17 +481,23 @@ public static class SceneContentValidator
         }
     }
 
-    private static bool MarkerMatches(Node3D? landmarks, string landmark, string marker, Vec3 expected)
+    private static bool MarkerMatches(Node3D? root, string owner, string marker, Vec3 expected)
     {
-        var node = landmarks?.GetNodeOrNull<Marker3D>($"{landmark}/{marker}");
+        var node = MarkerNode(root, owner, marker);
         return node is not null && Near(node.GlobalPosition, expected);
     }
 
-    private static string MarkerDetail(Node3D? landmarks, string landmark, string marker)
+    private static string MarkerDetail(Node3D? root, string owner, string marker)
     {
-        var node = landmarks?.GetNodeOrNull<Marker3D>($"{landmark}/{marker}");
-        return node is null ? $"{landmark}/{marker}=missing" : $"{landmark}/{marker}={node.GlobalPosition}";
+        var node = MarkerNode(root, owner, marker);
+        var path = string.IsNullOrWhiteSpace(owner) ? marker : $"{owner}/{marker}";
+        return node is null ? $"{path}=missing" : $"{path}={node.GlobalPosition}";
     }
+
+    private static Marker3D? MarkerNode(Node3D? root, string owner, string marker) =>
+        string.IsNullOrWhiteSpace(owner)
+            ? root?.GetNodeOrNull<Marker3D>(marker)
+            : root?.GetNodeOrNull<Marker3D>($"{owner}/{marker}");
 
     private static bool Near(Vector3 actual, Vec3 expected) =>
         actual.DistanceTo(ToVector3(expected)) <= PositionTolerance;

@@ -447,6 +447,9 @@ public partial class RuntimeProbe : Node
                 continued.Simulation.Ledger.Silk > silkAfterBuild, "Dismantle removes web and refunds silk");
         }
 
+        if (continued is not null)
+            await RunReedwaterSection(continued);
+
         settings.UiScalePercent = 125;
         GameData.ApplyUiScale(settings);
         await Frames(6);
@@ -461,7 +464,7 @@ public partial class RuntimeProbe : Node
             $"scale={GetTree().Root.ContentScaleFactor:0.00}");
         await Capture("17-ui-scale-150");
 
-        continued?.ProbeQuitToMenu();
+        if (_main.Game is { } gameForQuit) gameForQuit.ProbeQuitToMenu();
         await Frames(8);
         Check("quit-to-menu", _main.TitleVisible && _main.ContinueAvailable, "Save and quit returns to title");
 
@@ -554,7 +557,234 @@ public partial class RuntimeProbe : Node
         await Frames(4);
     }
 
+    private async Task RunReedwaterSection(GardenClearing game)
+    {
+        var sim = game.Simulation;
+        var gardenWebsBefore = sim.Webs.Count(web => web.Region == RegionIds.GardenClearing);
+        Check("reedwater-unlocked", sim.ReedwaterUnlocked, "Story victory opens the east passage");
+
+        game.ProbeOpenTravel();
+        await Frames(4);
+        Check("travel-dialog-opens", game.TravelModalOpen, "Destination and explanation are shown");
+        await Capture("20-travel-dialog");
+        game.ProbeCloseModal();
+        await Frames(2);
+
+        var travelled = game.ProbeTravel(RegionIds.ReedwaterBank);
+        await Frames(8);
+        Check("travel-to-reedwater", travelled && game.ActiveRegionId == RegionIds.ReedwaterBank,
+            $"region={game.ActiveRegionId}");
+        Check("reedwater-player-arrival",
+            game.PlayerPosition.DistanceTo(GardenClearing.ToVector3(ReedwaterLayout.ArrivalPoint)) < 0.6f,
+            $"player={game.PlayerPosition}");
+        Check("reedwater-anchors-visible", game.VisibleAnchorCount == 10,
+            $"anchors={game.VisibleAnchorCount}");
+        Check("reedwater-insects-visible", game.VisibleInsectCount == 3,
+            $"insects={game.VisibleInsectCount}");
+        await Capture("21-reedwater-arrival");
+
+        // The pond is real collision, not a simulation flag. Walk west from the
+        // starting bank without a bridge and verify the water returns the player.
+        game.ProbeSetSafePosition(ReedwaterLayout.ArrivalPoint);
+        game.ProbeTeleport(new Vec3(6.5, 0.55, 6.5));
+        game.ProbeLookAt(new Vec3(0, 0.55, 5.8));
+        await Frames(3);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(110);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(20);
+        Check("water-blocks-without-bridge",
+            game.PlayerPosition.X > 5.9f,
+            $"x={game.PlayerPosition.X:0.00} inWater={game.ProbeInWater()}");
+        await Capture("22-reedwater-pond");
+        game.ProbeTeleport(new Vec3(9.5, 1.2, 12.8));
+        game.ProbeLookAt(new Vec3(-4.0, 0.4, 2.0));
+        await Frames(4);
+        await Capture("22b-reedwater-overview");
+        game.ProbeTeleport(new Vec3(3.2, 0.8, 9.0));
+        game.ProbeLookAt(new Vec3(1.0, 0.2, 5.8));
+        await Frames(4);
+        await Capture("22c-first-island");
+
+        var routeBefore = sim.Graph.FindRoute(ReedwaterLayout.NurseryNode,
+            ReedwaterLayout.FirstDestinationNode);
+        Check("pond-route-blocked-before-bridges", routeBefore is null, "No dry route to the lily island");
+        Check("bridge-one-built", game.ProbeBuildWeb(ReedwaterLayout.StartPost,
+            ReedwaterLayout.IslandAPost, WebType.Bridge), "Reed post to mossy island");
+        Check("bridge-two-built", game.ProbeBuildWeb(ReedwaterLayout.IslandAPost,
+            ReedwaterLayout.IslandBPost, WebType.Bridge), "Mossy island to lily island");
+        var routeAfter = sim.Graph.FindRoute(ReedwaterLayout.NurseryNode,
+            ReedwaterLayout.FirstDestinationNode);
+        Check("pond-route-open-after-bridges", routeAfter is not null && routeAfter.UsesBridge,
+            "Two connected bridge decisions");
+        Check("r01-complete", sim.RegionalObjectives.CompletedObjectives.Contains("R01"),
+            "Across the Water");
+        Check("clever-crossing-earned", sim.RegionalObjectives.MasteryAwarded,
+            "Two bridges for the lily island");
+        await Frames(3);
+        await Capture("23-bridges-built");
+
+        // Actual player traversal over the two bridge decks and ramps.
+        game.ProbeSetSafePosition(new Vec3(7.6, 0.55, 7.6));
+        game.ProbeTeleport(new Vec3(7.6, 0.55, 7.6));
+        game.ProbeLookAt(new Vec3(6.6, 0.6, 7.0));
+        await Frames(3);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(28);
+        game.ProbeLookAt(new Vec3(1.4, 0.8, 5.6));
+        await PhysicsFrames(230);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(20);
+        Check("player-crosses-reedwater-bridge", game.PlayerPosition.X < 2.7f,
+            $"x={game.PlayerPosition.X:0.00}");
+        await Capture("24-reedwater-crossing");
+
+        // Capture the straightforward reed flyway and catch three insects.
+        Check("reed-capture-web-built", game.ProbeBuildWeb(ReedwaterLayout.EasyA,
+            ReedwaterLayout.EasyB, WebType.Capture), "Capture web across the reed stems");
+        var caught = 0;
+        for (var i = 0; i < 30 && caught < 3; i++)
+        {
+            game.ProbeAdvance(5);
+            await Frames(2);
+            var trapped = sim.RegionInsects.FirstOrDefault(insect => insect.CanBeCollected);
+            if (trapped is null) continue;
+            game.ProbeTeleport(trapped.Position + new Vec3(1.4, 1.2, 1.4));
+            game.ProbeLookAt(trapped.Position);
+            await Frames(3);
+            if (caught == 0) await Capture("25-reedwater-capture-trapped");
+            game.ProbeTeleport(trapped.Position);
+            await Frames(2);
+            game.ProbeInteract();
+            caught++;
+            await Frames(2);
+        }
+        Check("reedwater-insects-collected", caught >= 3, $"caught={caught}");
+        Check("r02-complete", sim.RegionalObjectives.CompletedObjectives.Contains("R02"),
+            "The Reed Harvest");
+        await Capture("25-reedwater-capture");
+
+        // The third bridge plus far-bank capture gives a helper a meaningful
+        // route; the worker must use bridge edges, not teleport.
+        Check("bridge-three-built", game.ProbeBuildWeb(ReedwaterLayout.IslandBPost,
+            ReedwaterLayout.FarPost, WebType.Bridge), "Root island to far bank");
+        Check("far-capture-web-built", game.ProbeBuildWeb(ReedwaterLayout.FarA,
+            ReedwaterLayout.FarB, WebType.Capture), "Far-bank capture web");
+        var hatchCheck = sim.CanHatch();
+        var hatched = game.ProbeHatch();
+        Check("reedwater-helper-hatched", hatched,
+            hatchCheck.CanHatch ? "Outpost hatch uses shared colony resources" : hatchCheck.Reason);
+        var workerCrossed = false;
+        var regionComplete = false;
+        for (var i = 0; i < 100 && !regionComplete; i++)
+        {
+            game.ProbeAdvance(2);
+            await Frames(1);
+            workerCrossed |= HasRegionEvent("WorkerUsedBridge", RegionIds.ReedwaterBank);
+            regionComplete = sim.RegionalObjectives.CompletedObjectives.Contains("R03");
+        }
+        Check("worker-used-reedwater-bridge", workerCrossed, "Worker crossed a real bridge edge");
+        Check("r03-complete", sim.RegionalObjectives.CompletedObjectives.Contains("R03"),
+            "The Far Bank");
+        Check("reedwater-completion-feedback", game.RegionCompleteModalOpen,
+            "Completion acknowledgement without ending free play");
+        await Capture("27-reedwater-complete");
+        if (game.RegionCompleteModalOpen)
+        {
+            game.ProbeCloseModal();
+            await Frames(2);
+        }
+        var farWorker = sim.RegionWorkers.FirstOrDefault();
+        if (farWorker is not null)
+        {
+            game.ProbeSetSafePosition(new Vec3(-8.6, 0.6, -3.6));
+            game.ProbeTeleport(new Vec3(-8.6, 0.6, -3.6));
+            game.ProbeLookAt(farWorker.Position);
+            await Frames(4);
+        }
+        await Capture("26-reedwater-worker");
+
+        // Save and reload inside the second region.
+        Check("reedwater-save", game.ProbeSave(), "Save while standing in Reedwater Bank");
+        var loaded = _main.Saves.Load();
+        Check("reedwater-save-loads", loaded.Success && loaded.Data is not null, loaded.Message);
+        var regionWebs = sim.Webs.Count(web => web.Region == RegionIds.ReedwaterBank);
+        var completed = sim.RegionalObjectives.CompletedObjectives.Count;
+        if (loaded.Data is not null)
+        {
+            Check("save-records-active-region", loaded.Data.ActiveRegionId == RegionIds.ReedwaterBank,
+                loaded.Data.ActiveRegionId);
+            Check("save-records-reedwater-webs",
+                loaded.Data.Webs.Count(web => web.Region == RegionIds.ReedwaterBank) == regionWebs,
+                $"webs={regionWebs}");
+            Check("save-records-reedwater-objectives",
+                loaded.Data.RegionalObjectives.Completed.Count == completed,
+                $"completed={completed}");
+
+            var reloadedRegion = _main.StartGame(loaded.Data);
+            await Frames(10);
+            Check("reload-in-reedwater", reloadedRegion.ActiveRegionId == RegionIds.ReedwaterBank,
+                $"region={reloadedRegion.ActiveRegionId}");
+            Check("reload-reedwater-construction",
+                reloadedRegion.Simulation.Webs.Count(web => web.Region == RegionIds.ReedwaterBank) == regionWebs,
+                $"webs={regionWebs}");
+            Check("reload-reedwater-objectives",
+                reloadedRegion.Simulation.RegionalObjectives.CompletedObjectives.Count == completed,
+                $"completed={completed}");
+            await Capture("28-reedwater-reloaded");
+
+            // Return to the garden, verify its own construction is untouched,
+            // then re-enter Reedwater and verify persistence.
+            var back = reloadedRegion.ProbeTravel(RegionIds.GardenClearing);
+            await Frames(8);
+            Check("return-to-garden", back && reloadedRegion.ActiveRegionId == RegionIds.GardenClearing,
+                $"region={reloadedRegion.ActiveRegionId}");
+            Check("garden-state-preserved",
+                reloadedRegion.Simulation.Webs.Count(web => web.Region == RegionIds.GardenClearing) ==
+                gardenWebsBefore,
+                $"gardenWebs={gardenWebsBefore}");
+            await Capture("29-returned-garden");
+
+            var returned = reloadedRegion.ProbeTravel(RegionIds.ReedwaterBank);
+            await Frames(8);
+            Check("reenter-reedwater", returned &&
+                reloadedRegion.ActiveRegionId == RegionIds.ReedwaterBank,
+                $"region={reloadedRegion.ActiveRegionId}");
+            Check("reenter-reedwater-objectives",
+                reloadedRegion.Simulation.RegionalObjectives.CompletedObjectives.Count == completed,
+                $"completed={completed}");
+
+            // Remove a critical bridge and prove the worker route becomes
+            // invalid; rebuilding it restores the same navigation.
+            var critical = reloadedRegion.Simulation.RegionWebs.FirstOrDefault(web =>
+                web.Type == WebType.Bridge &&
+                web.Connects(ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost));
+            Check("critical-bridge-present", critical is not null, "Middle bridge exists");
+            if (critical is not null)
+            {
+                Check("critical-bridge-dismantles",
+                    reloadedRegion.Simulation.TryDismantleWeb(critical.Id, out _, out _),
+                    "Dismantled for navigation regression");
+                reloadedRegion.ProbeClearBuild();
+                Check("critical-bridge-breaks-route",
+                    reloadedRegion.Simulation.Graph.FindRoute(ReedwaterLayout.NurseryNode,
+                        ReedwaterLayout.FirstDestinationNode) is null,
+                    "Worker route invalid without the middle bridge");
+                Check("critical-bridge-rebuilt", reloadedRegion.ProbeBuildWeb(
+                    ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost, WebType.Bridge),
+                    "Rebuilt the middle bridge");
+                Check("critical-bridge-restores-route",
+                    reloadedRegion.Simulation.Graph.FindRoute(ReedwaterLayout.NurseryNode,
+                        ReedwaterLayout.FirstDestinationNode) is not null,
+                    "Navigation restored");
+            }
+        }
+    }
+
     private bool HasEvent(string type) => _main.Game?.EventLog.Any(e => e.Type == type) ?? false;
+
+    private bool HasRegionEvent(string type, string region) =>
+        _main.Game?.EventLog.Any(e => e.Type == type && e.Region == region) ?? false;
 
     private void Check(string name, bool success, string detail = "")
     {

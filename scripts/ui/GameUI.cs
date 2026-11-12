@@ -21,6 +21,7 @@ public partial class GameUI : CanvasLayer
     private Control _root = null!;
     private Label _foodLabel = null!;
     private Label _silkLabel = null!;
+    private Label _locationLabel = null!;
     private Label _missionTitle = null!;
     private Label _missionHint = null!;
     private VBoxContainer _stepsBox = null!;
@@ -50,6 +51,8 @@ public partial class GameUI : CanvasLayer
     private bool _helpOpen;
     private bool _confirmOpen;
     private bool _saveFailedOpen;
+    private bool _travelOpen;
+    private bool _regionCompleteOpen;
     private float _toastTimer;
     private float _toastDuration;
     private GameSimulation? _lastSim;
@@ -59,8 +62,8 @@ public partial class GameUI : CanvasLayer
     private bool _tutorialPrompts = true;
     private readonly List<Button> _workerChips = new();
 
-    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen;
-    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen;
+    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
+    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
     public bool BlocksWorldInput => IsModalOpen;
     public bool IsVictoryOpen => _victoryOpen;
     public bool IsPauseOpen => _pauseOpen;
@@ -68,6 +71,8 @@ public partial class GameUI : CanvasLayer
     public bool IsColonyOpen => _colonyOpen;
     public bool IsNurseryOpen => _nurseryOpen;
     public bool IsSaveFailedOpen => _saveFailedOpen;
+    public bool IsTravelOpen => _travelOpen;
+    public bool IsRegionCompleteOpen => _regionCompleteOpen;
 
     public override void _Ready()
     {
@@ -86,6 +91,10 @@ public partial class GameUI : CanvasLayer
         left.AddThemeConstantOverride("separation", 10);
         left.AddChild(ResourcePill("food", out _foodLabel));
         left.AddChild(ResourcePill("silk", out _silkLabel));
+        _locationLabel = UiKit.Label("Garden Clearing", 17, UiKit.Pine);
+        _locationLabel.AddThemeColorOverride("font_outline_color", UiKit.Cream);
+        _locationLabel.AddThemeConstantOverride("outline_size", 5);
+        left.AddChild(_locationLabel);
         _root.AddChild(left);
 
         // A compact action column keeps the primary build buttons uncluttered
@@ -331,7 +340,8 @@ public partial class GameUI : CanvasLayer
 
     public void CloseModal()
     {
-        _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen = _saveFailedOpen = false;
+        _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen =
+            _saveFailedOpen = _travelOpen = _regionCompleteOpen = false;
         _modalRoot.Visible = false;
         foreach (var child in _modalContent.GetChildren())
         {
@@ -339,10 +349,12 @@ public partial class GameUI : CanvasLayer
             child.QueueFree();
         }
         _workerChips.Clear();
-        if (_lastSim is not null && !_victoryOpen) SetStatus(_lastSim.GetHint());
+        if (_lastSim is not null && !_victoryOpen) SetStatus(_lastSim.GetActiveRegionHint());
     }
 
-    private void ConfigureModalState(bool pause = false, bool nursery = false, bool victory = false, bool colony = false, bool help = false, bool confirm = false, bool saveFailed = false)
+    private void ConfigureModalState(bool pause = false, bool nursery = false, bool victory = false,
+        bool colony = false, bool help = false, bool confirm = false, bool saveFailed = false,
+        bool travel = false, bool regionComplete = false)
     {
         _pauseOpen = pause;
         _nurseryOpen = nursery;
@@ -351,6 +363,8 @@ public partial class GameUI : CanvasLayer
         _helpOpen = help;
         _confirmOpen = confirm;
         _saveFailedOpen = saveFailed;
+        _travelOpen = travel;
+        _regionCompleteOpen = regionComplete;
         _modalRoot.Visible = true;
     }
 
@@ -359,6 +373,7 @@ public partial class GameUI : CanvasLayer
         _lastSim = sim;
         _foodLabel.Text = sim.Ledger.Food.ToString();
         _silkLabel.Text = sim.Ledger.Silk.ToString();
+        _locationLabel.Text = sim.ActiveRegion.DisplayName;
         _colonyButton.Text = $"Spiders {sim.TotalSpiders}/{sim.MaxSpiders}  [Tab]";
         _captureButton.Text = $"Capture web  [1]  {sim.Tuning.Webs.Capture.SilkCost} silk";
         _bridgeButton.Text = $"Silk bridge  [2]  {sim.Tuning.Webs.Bridge.SilkCost} silk";
@@ -367,7 +382,12 @@ public partial class GameUI : CanvasLayer
         _warningPanel.Visible = warning;
         if (warning)
             _warningLabel.Text = $"Wind in {(int)Math.Ceiling(sim.WeatherRemaining)}s — protect your web!";
-        if (sim.MasteryAwarded)
+        if (sim.ActiveRegionId == RegionIds.ReedwaterBank && sim.RegionalObjectives.MasteryAwarded)
+        {
+            _masteryLabel.Visible = true;
+            _masteryLabel.Text = "★ Clever Crossing — two bridges";
+        }
+        else if (sim.ActiveRegionId == RegionIds.GardenClearing && sim.MasteryAwarded)
         {
             _masteryLabel.Visible = true;
             _masteryLabel.Text = "★ Clever Weaver — 3 insects, 2 webs";
@@ -394,23 +414,62 @@ public partial class GameUI : CanvasLayer
 
     private void UpdateMission(GameSimulation sim)
     {
+        var regional = sim.ActiveRegionId == RegionIds.ReedwaterBank;
         var mission = sim.Missions.ActiveMission;
-        var signature = mission is null
-            ? "done"
-            : $"{mission.Id}:{sim.Missions.StepIndex}:{string.Join(",", sim.Missions.StepProgressList)}:{sim.Missions.CompletedMissions.Count}";
-        if (signature == _missionSignature) return;
+        var objective = sim.RegionalObjectives.ActiveObjective;
+        var signature = regional
+            ? $"R:{objective?.Id ?? "done"}:{sim.RegionalObjectives.StepIndex}:" +
+              $"{string.Join(",", sim.RegionalObjectives.StepProgressList)}:" +
+              $"{sim.RegionalObjectives.CompletedObjectives.Count}:{sim.RegionalObjectives.MasteryAwarded}"
+            : $"G:{mission?.Id ?? "done"}:{sim.Missions.StepIndex}:" +
+              $"{string.Join(",", sim.Missions.StepProgressList)}:{sim.Missions.CompletedMissions.Count}";
+        if (signature == _missionSignature)
+        {
+            if (regional && objective is not null) _missionHint.Text = sim.GetActiveRegionHint();
+            return;
+        }
         _missionSignature = signature;
+
+        foreach (var child in _stepsBox.GetChildren()) child.QueueFree();
+        if (regional)
+        {
+            if (objective is null)
+            {
+                _missionTitle.Text = "Reedwater Bank complete";
+                _missionHint.Text = sim.RegionalObjectives.MasteryAwarded
+                    ? "Clever Crossing earned. Keep exploring or return to the garden."
+                    : "Keep exploring. Can you reach the lily island with only two bridges?";
+                return;
+            }
+            _missionTitle.Text = $"{objective.Id} · {objective.Title}";
+            _missionHint.Text = sim.GetActiveRegionHint();
+            for (var i = 0; i < objective.Steps.Count; i++)
+            {
+                var done = i < sim.RegionalObjectives.StepIndex;
+                var active = i == sim.RegionalObjectives.StepIndex;
+                var prefix = done ? "✓" : active ? "●" : "○";
+                var step = objective.Steps[i];
+                var text = RegionalObjectiveTracker.DescribeStep(step);
+                if (step.Count > 1)
+                    text += $" ({sim.RegionalObjectives.StepProgress}/{step.Count})";
+                _stepsBox.AddChild(UiKit.Label($"{prefix}  {text}", 16,
+                    done ? UiKit.TealDark : active ? UiKit.Pine : new Color(UiKit.Ink, 0.55f)));
+            }
+            return;
+        }
+
         if (mission is null)
         {
             _missionTitle.Text = "Garden complete";
-            _missionHint.Text = "Keep playing, weave new webs and fill the nursery.";
+            _missionHint.Text = sim.ReedwaterUnlocked
+                ? "A path to Reedwater Bank is open by the east hedge."
+                : "Keep playing, weave new webs and fill the nursery.";
         }
         else
         {
             _missionTitle.Text = $"{mission.Id} · {mission.Title}";
             _missionHint.Text = mission.Hint;
         }
-        foreach (var child in _stepsBox.GetChildren()) child.QueueFree();
         if (mission is not null)
         {
             for (var i = 0; i < mission.Steps.Count; i++)
@@ -443,7 +502,7 @@ public partial class GameUI : CanvasLayer
         _cancelButton.Visible = type is not null;
         if (type is null)
         {
-            SetStatus(sim.GetHint());
+            SetStatus(sim.GetActiveRegionHint());
         }
         else
         {
@@ -565,8 +624,9 @@ public partial class GameUI : CanvasLayer
             ("repair", "Press E beside a damaged web to repair it for 2 silk."),
             ("nest", "Press E at the leaf nursery to hatch a helper (up to 5 spiders)."),
             ("wind", "Wind is forecast before it arrives. Sheltered webs near the log take less damage."),
-            ("quest", "Right-click or Esc cancels a build. X dismantles a nearby web."),
-            ("silk", "Tab shows your colony. Esc pauses the game.")
+            ("bridge", "In Reedwater Bank, build two bridges to reach the lily island. The water is too deep to walk through."),
+            ("quest", "Near the east hedge, press E at the reed path to travel between regions."),
+            ("silk", "Right-click or Esc cancels a build. X dismantles a nearby web. Tab shows your colony.")
         };
         foreach (var (icon, text) in lines)
             _modalContent.AddChild(UiKit.IconLabel(icon, text, 18));
@@ -581,7 +641,7 @@ public partial class GameUI : CanvasLayer
 
     public void OpenNursery(GameSimulation sim)
     {
-        OpenModal("Leaf Nursery", 600);
+        OpenModal(sim.ActiveRegion.NurseryLabel, 600);
         ConfigureModalState(nursery: true);
         RefreshNursery(sim);
     }
@@ -694,6 +754,60 @@ public partial class GameUI : CanvasLayer
         _modalContent.AddChild(panel);
     }
 
+    public void OpenTravel(string destination, string description, bool available, string reason, Action travel)
+    {
+        OpenModal($"Travel to {destination}?", 600);
+        ConfigureModalState(travel: true);
+        _modalContent.AddChild(UiKit.IconLabel("quest", destination, 24, UiKit.Pine));
+        _modalContent.AddChild(UiKit.Label(description, 18, new Color(UiKit.Ink, 0.86f), true));
+        if (!available && !string.IsNullOrWhiteSpace(reason))
+            _modalContent.AddChild(UiKit.Label(reason, 17, UiKit.Coral, true));
+        _modalContent.AddChild(UiKit.Label(
+            "Your food, silk and helpers travel with you. Built webs stay in their region.",
+            16, new Color(UiKit.Ink, 0.72f), true));
+        _modalContent.AddChild(UiKit.Spacer(8));
+        var go = UiKit.Button($"Travel to {destination}", 420, 58, available);
+        go.Disabled = !available;
+        go.Pressed += () =>
+        {
+            CloseModal();
+            travel();
+        };
+        _modalContent.AddChild(go);
+        var stay = UiKit.Button(available ? "Stay here" : "Back", 420, 52);
+        stay.Pressed += CloseModal;
+        _modalContent.AddChild(stay);
+    }
+
+    public void ShowRegionComplete(GameSimulation sim)
+    {
+        OpenModal("Reedwater Bank is thriving!", 640);
+        ConfigureModalState(regionComplete: true);
+        _modalContent.AddChild(UiKit.IconLabel("quest",
+            "Across the Water · The Reed Harvest · The Far Bank complete", 21, UiKit.TealDark));
+        _modalContent.AddChild(UiKit.Label(
+            "The reed-bed outpost is connected, the colony is fed, and a helper has crossed to the far bank. The pond is still yours to explore.",
+            20, UiKit.Pine, true));
+        if (sim.RegionalObjectives.MasteryAwarded)
+            _modalContent.AddChild(UiKit.Label(
+                "★ Clever Crossing badge earned: the lily island with only two bridges!",
+                18, UiKit.Violet, true));
+        _modalContent.AddChild(UiKit.Spacer(8));
+        var keep = UiKit.Button("Keep playing", 420, 60, true);
+        keep.Pressed += () =>
+        {
+            CloseModal();
+            ContinuePlayingRequested?.Invoke();
+        };
+        _modalContent.AddChild(keep);
+        var save = UiKit.Button("Save game", 420, 52);
+        save.Pressed += () => SaveRequested?.Invoke();
+        _modalContent.AddChild(save);
+        var menu = UiKit.Button("Save and return to menu", 420, 52);
+        menu.Pressed += () => QuitToMenuRequested?.Invoke();
+        _modalContent.AddChild(menu);
+    }
+
     public void ShowVictory(GameSimulation sim)
     {
         OpenModal("Your garden is thriving!", 640);
@@ -702,6 +816,9 @@ public partial class GameUI : CanvasLayer
         _modalContent.AddChild(UiKit.Label(
             $"You caught {sim.InsectsCollected} insects, raised {sim.Workers.Count} helper{(sim.Workers.Count == 1 ? "" : "s")} and kept the colony safe through the wind.",
             20, UiKit.Pine, true));
+        _modalContent.AddChild(UiKit.Label(
+            "A new path has opened by the east hedge. Follow the tall reeds to Reedwater Bank.",
+            19, UiKit.TealDark, true));
         if (sim.MasteryAwarded)
             _modalContent.AddChild(UiKit.Label("★ Clever Weaver badge earned: 3 insects with only 2 capture webs!", 18, UiKit.Violet, true));
         _modalContent.AddChild(UiKit.Spacer(8));

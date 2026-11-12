@@ -133,8 +133,8 @@ public partial class WebVisual : Node3D
         var approach = BridgeGeometry.ComputeApproachPoints(
             ToCoreVec3(a),
             ToCoreVec3(b),
-            WorldLayout.BridgeGroundPointFor(_state.AnchorA),
-            WorldLayout.BridgeGroundPointFor(_state.AnchorB));
+            RegionCatalog.FindAnchor(_state.AnchorA)?.BridgeGroundPoint,
+            RegionCatalog.FindAnchor(_state.AnchorB)?.BridgeGroundPoint);
         var leftGround = ToVector3(approach.A) - _center;
         var rightGround = ToVector3(approach.B) - _center;
         _rampGroundPoints.Clear();

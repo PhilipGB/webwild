@@ -18,6 +18,13 @@ public sealed class AnchorDefinition
     public bool Sheltered { get; init; }
     public double Exposure { get; init; } = 0.5;
     public string Label { get; init; } = "Twig";
+
+    /// <summary>
+    /// Optional authored point on solid ground where a bridge approach ramp
+    /// starts. Use it where inferring "away from the other anchor" would be
+    /// ambiguous, such as anchors that sit on the lip of a ravine.
+    /// </summary>
+    public Vec3? BridgeGroundPoint { get; init; }
 }
 
 public sealed class WebState

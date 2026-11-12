@@ -399,19 +399,35 @@ public sealed class SettingsService
     public SaveResult Save(SettingsData settings)
     {
         settings.Normalise();
+        string? temp = null;
         try
         {
             var dir = Path.GetDirectoryName(_path);
             if (!string.IsNullOrWhiteSpace(dir) && !_fs.DirectoryExists(dir)) _fs.CreateDirectory(dir);
             var bytes = JsonSerializer.SerializeToUtf8Bytes(settings, Tuning.JsonOptions);
-            var temp = _path + ".tmp-" + Guid.NewGuid().ToString("N");
+            temp = _path + ".tmp-" + Guid.NewGuid().ToString("N");
             _fs.WriteAllBytes(temp, bytes);
             if (_fs.FileExists(_path)) _fs.Copy(_path, _backup, true);
             _fs.Move(temp, _path, true);
+            temp = null;
             return SaveResult.Ok(_path);
         }
         catch (Exception ex)
         {
+            // Best-effort cleanup. A cleanup failure must never hide the real
+            // reason the settings write failed, and the message must never claim
+            // the save succeeded.
+            if (temp is not null)
+            {
+                try
+                {
+                    if (_fs.FileExists(temp)) _fs.Delete(temp);
+                }
+                catch
+                {
+                    // The original exception remains the reported cause.
+                }
+            }
             return SaveResult.Fail("Couldn't save settings", ex.Message);
         }
     }

@@ -52,6 +52,25 @@ public class WorkerAndMissionTests
     }
 
     [Fact]
+    public void ReversedBridgeSelection_StillConnectsTheWorkerRoute()
+    {
+        var sim = TestWorld.NewSim(t => t.SilkProduction.SilkPerFedWorkerEverySeconds = 0);
+        Assert.True(sim.TryBuildWeb(WorldLayout.GapEast, WorldLayout.GapWest, WebType.Bridge, out _, out var bridgeReason),
+            bridgeReason.Reason);
+        Assert.NotNull(sim.Graph.FindRoute(WorldLayout.NurseryNode, WorldLayout.TwigA));
+
+        Assert.True(sim.TryBuildWeb(WorldLayout.TwigA, WorldLayout.TwigB, WebType.Capture, out _, out _));
+        sim.AdvanceSeconds(12);
+        var trapped = sim.Insects.First(i => i.Phase == InsectPhase.Trapped);
+        Assert.True(sim.TryStartHatch(out var hatchReason), hatchReason);
+        sim.AdvanceSeconds(40);
+
+        Assert.Contains(sim.Events, e => e.Type == "WorkerUsedBridge");
+        Assert.True(trapped.Generation > 0 || trapped.Phase == InsectPhase.Retrieved);
+        Assert.Contains(sim.Workers, w => w.CollectCount >= 1);
+    }
+
+    [Fact]
     public void RemovingBridge_InvalidatesRouteImmediately()
     {
         var sim = TestWorld.NewSim();

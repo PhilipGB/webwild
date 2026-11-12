@@ -65,6 +65,7 @@ public sealed class GameSimulation
     public IReadOnlyList<WorkerState> Workers => _workers;
     public IReadOnlyDictionary<string, AnchorDefinition> Anchors => _anchors;
     public IReadOnlyList<GameplayEvent> Events => _events;
+    public IReadOnlyList<string> OrderedIssuedEventKeys => _issuedEventOrder.ToArray();
     public int TotalSpiders => 1 + _workers.Count + (PendingHatch is not null ? 1 : 0);
     public int MaxSpiders => Tuning.MaxSpidersIncludingPlayer;
     public int SilkProducers => 1 + _workers.Count;
@@ -944,7 +945,7 @@ public sealed class GameSimulation
                 StepIndex = Missions.StepIndex,
                 Progress = Missions.StepProgressList.ToList(),
                 Completed = Missions.CompletedMissions.ToList(),
-                SeenEvents = Missions.SeenEventKeys.ToList(),
+                SeenEvents = Missions.OrderedSeenEventKeys.ToList(),
                 VictoryAwarded = Missions.VictoryAwarded
             },
             Weather = new WeatherSave
@@ -970,8 +971,8 @@ public sealed class GameSimulation
                 SilkAccumulator = _silkAccumulator,
                 PendingHatchRemaining = PendingHatch?.Remaining ?? 0,
                 PendingHatchId = PendingHatch?.Id,
-                LedgerKeys = Ledger.ProcessedKeys.ToList(),
-                IssuedEventKeys = _issuedEventKeys.ToList()
+                LedgerKeys = Ledger.OrderedProcessedKeys.ToList(),
+                IssuedEventKeys = OrderedIssuedEventKeys.ToList()
             },
             Settings = settings
         };
@@ -985,6 +986,7 @@ public sealed class GameSimulation
         var sim = new GameSimulation(tuning, missions);
         sim._events.Clear();
         sim._issuedEventKeys.Clear();
+        sim._issuedEventOrder.Clear();
         sim.Ledger.Restore(data.Food, data.Silk);
         sim.Ledger.RestoreProcessed(data.Counters.LedgerKeys);
         sim.TickCount = data.Tick;
@@ -1089,8 +1091,11 @@ public sealed class GameSimulation
                 Remaining = data.Counters.PendingHatchRemaining
             };
         }
-        foreach (var key in data.Counters.IssuedEventKeys) sim._issuedEventKeys.Add(key);
-        foreach (var key in data.Counters.IssuedEventKeys) sim._issuedEventOrder.Enqueue(key);
+        foreach (var key in data.Counters.IssuedEventKeys)
+        {
+            if (string.IsNullOrWhiteSpace(key)) continue;
+            if (sim._issuedEventKeys.Add(key)) sim._issuedEventOrder.Enqueue(key);
+        }
         sim.TrimIssuedEvents(HistoryRetentionLimit);
         return sim;
     }

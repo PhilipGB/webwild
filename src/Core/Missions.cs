@@ -38,6 +38,10 @@ public sealed class MissionTracker
     public IReadOnlyList<string> CompletedMissions => _completed;
     public IReadOnlyList<int> StepProgressList => _stepProgress;
     public IReadOnlyCollection<string> SeenEventKeys => _seenEvents;
+
+    /// <summary>Retention order, oldest first. Serialise this for save/load.</summary>
+    public IReadOnlyList<string> OrderedSeenEventKeys => _seenOrder.ToArray();
+
     public MissionsConfig Config => _config;
 
     public MissionTracker(MissionsConfig config)

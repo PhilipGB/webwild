@@ -38,6 +38,8 @@ public static class WorldLayout
     public static readonly Vec3 ClimbTop = new(-5.0, 4.4, 9.0);
     public const float RavineHalfWidth = 3.0f;
     public const float RavineDepth = 3.2f;
+    public static readonly Vec3 GapWestGround = new(-4.4, 0, 1.2);
+    public static readonly Vec3 GapEastGround = new(4.4, 0, 1.2);
 
     public static List<AnchorDefinition> CreateAnchors() => new()
     {
@@ -63,13 +65,13 @@ public static class WorldLayout
         {
             Id = GapWest, Position = new Vec3(-3.0, 0.55, 1.2), Normal = new Vec3(-1, 0, 0),
             Surface = "pebble", Group = "gap", Capacity = 2, Exposure = 0.2, Sheltered = true,
-            Label = "Pebble post"
+            Label = "Pebble post", BridgeGroundPoint = GapWestGround
         },
         new AnchorDefinition
         {
             Id = GapEast, Position = new Vec3(3.0, 0.55, 1.2), Normal = new Vec3(1, 0, 0),
             Surface = "pebble", Group = "gap", Capacity = 2, Exposure = 0.2, Sheltered = true,
-            Label = "Pebble post"
+            Label = "Pebble post", BridgeGroundPoint = GapEastGround
         },
         new AnchorDefinition
         {
@@ -194,6 +196,13 @@ public static class WorldLayout
             }
         }
     };
+
+    /// <summary>
+    /// Authored ground point for a bridge approach, or null when the generic
+    /// away-from-the-other-anchor inference is unambiguous.
+    /// </summary>
+    public static Vec3? BridgeGroundPointFor(string anchorId) =>
+        CreateAnchors().FirstOrDefault(anchor => anchor.Id == anchorId)?.BridgeGroundPoint;
 
     public static string SuggestedTutorialPair => $"{TwigA} + {TwigB}";
     public static string SuggestedBridgePair => $"{GapWest} + {GapEast}";

@@ -4,5 +4,5 @@ namespace Webwild.Core;
 public static class BuildInfo
 {
     public const string GameName = "Webwild";
-    public const string CoreVersion = "0.1.1";
+    public const string CoreVersion = "0.1.2";
 }

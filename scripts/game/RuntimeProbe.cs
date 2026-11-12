@@ -235,6 +235,15 @@ public partial class RuntimeProbe : Node
             w.Connects(WorldLayout.GapWest, WorldLayout.GapEast));
         Check("bridge-built", bridgeBuilt, "Two mouse clicks on Pebble gap");
         Check("bridge-visible", game.VisibleWebCount >= 2, $"webs={game.VisibleWebCount}");
+        var gapBridge = game.Simulation.Webs.First(w => w.Type == WebType.Bridge &&
+            w.Connects(WorldLayout.GapWest, WorldLayout.GapEast));
+        var gapRamps = game.ProbeBridgeRampGroundPoints(gapBridge.Id).OrderBy(r => r.X).ToList();
+        Check("bridge-ramps-west-east", gapRamps.Count == 2 &&
+            gapRamps[0].X <= -WorldLayout.RavineHalfWidth &&
+            gapRamps[1].X >= WorldLayout.RavineHalfWidth,
+            $"rampX={string.Join(",", gapRamps.Select(r => r.X.ToString("0.00")))}");
+        Check("bridge-walkway-collision", game.ProbeBridgeWalkwayShapeCount(gapBridge.Id) > 0,
+            $"shapes={game.ProbeBridgeWalkwayShapeCount(gapBridge.Id)}");
         game.ProbeClearBuild();
 
         game.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
@@ -450,6 +459,85 @@ public partial class RuntimeProbe : Node
         continued?.ProbeQuitToMenu();
         await Frames(8);
         Check("quit-to-menu", _main.TitleVisible && _main.ContinueAvailable, "Save and quit returns to title");
+
+        // Dedicated bridge-geometry regression in a fresh garden: reversed
+        // anchor order, a predominantly Z-axis span, and collision removal.
+        var edge = _main.StartGame(null)!;
+        await Frames(10);
+        Check("edge-game-started", edge.Simulation is not null, "Fresh garden for bridge regressions");
+
+        var reverseBuilt = edge.ProbeBuildWeb(WorldLayout.GapEast, WorldLayout.GapWest, WebType.Bridge);
+        await Frames(4);
+        Check("bridge-reverse-built", reverseBuilt, "East-first bridge selection accepted");
+        if (reverseBuilt)
+        {
+            var reverseWeb = edge.Simulation!.Webs.First(w => w.Type == WebType.Bridge &&
+                w.Connects(WorldLayout.GapWest, WorldLayout.GapEast));
+            var reverseRamps = edge.ProbeBridgeRampGroundPoints(reverseWeb.Id);
+            Check("bridge-reverse-ramps", reverseRamps.Count == 2 &&
+                reverseRamps[0].X >= WorldLayout.RavineHalfWidth &&
+                reverseRamps[1].X <= -WorldLayout.RavineHalfWidth,
+                $"rampX={string.Join(",", reverseRamps.Select(r => r.X.ToString("0.00")))}");
+            Check("bridge-reverse-collision", edge.ProbeBridgeWalkwayShapeCount(reverseWeb.Id) > 0,
+                $"shapes={edge.ProbeBridgeWalkwayShapeCount(reverseWeb.Id)}");
+
+            edge.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
+            edge.ProbeLookAt(new Vec3(8.0, 0.6, 1.2));
+            await Frames(4);
+            Input.ActionPress("move_forward");
+            await PhysicsFrames(180);
+            Input.ActionRelease("move_forward");
+            await PhysicsFrames(30);
+            Check("bridge-reverse-enables-crossing", edge.PlayerPosition.X > 3.2f,
+                $"x={edge.PlayerPosition.X:0.00}");
+            edge.ProbeTeleport(new Vec3(-6.5, 0.6, 4.5));
+            edge.ProbeLookAt(new Vec3(0, 0.55, 1.2));
+            await Frames(4);
+            await Capture("18-bridge-reversed");
+
+            edge.ProbeTeleport(new Vec3(0, 0.5, 1.2));
+            await Frames(3);
+            edge.ProbeDismantleNearest();
+            await Frames(5);
+            Check("bridge-removal-clears-collision", edge.ProbeBridgeWalkwayShapeCount(reverseWeb.Id) == 0,
+                "Dismantled bridge view owns no collision");
+            Check("bridge-removal-removes-web", edge.Simulation.GetWeb(reverseWeb.Id) is null,
+                "Dismantled bridge left the simulation");
+        }
+
+        edge.ProbeTeleport(new Vec3(-4.5, 0.5, 1.2));
+        edge.ProbeLookAt(new Vec3(8.0, 0.6, 1.2));
+        await Frames(3);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(150);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(20);
+        Check("bridge-removal-blocks-crossing", edge.PlayerPosition.X < -2.5f,
+            $"x={edge.PlayerPosition.X:0.00}");
+
+        var zBuilt = edge.ProbeBuildWeb(WorldLayout.TwigA, WorldLayout.TwigB, WebType.Bridge);
+        await Frames(4);
+        Check("bridge-zaxis-built", zBuilt, "Predominantly Z-axis bridge accepted");
+        if (zBuilt)
+        {
+            var zWeb = edge.Simulation!.Webs.First(w => w.Type == WebType.Bridge &&
+                w.Connects(WorldLayout.TwigA, WorldLayout.TwigB));
+            var zRamps = edge.ProbeBridgeRampGroundPoints(zWeb.Id);
+            Check("bridge-zaxis-ramps", zRamps.Count == 2 &&
+                Math.Abs(zRamps[0].Z - (-2.6)) < 0.15f &&
+                Math.Abs(zRamps[1].Z - 2.8) < 0.15f &&
+                Math.Abs(zRamps[0].X + 9.5) < 0.05f,
+                $"ramps={string.Join(" ", zRamps.Select(r => $"({r.X:0.0},{r.Z:0.0})"))}");
+            Check("bridge-zaxis-collision", edge.ProbeBridgeWalkwayShapeCount(zWeb.Id) > 0,
+                $"shapes={edge.ProbeBridgeWalkwayShapeCount(zWeb.Id)}");
+            edge.ProbeTeleport(new Vec3(-7.5, 0.5, 0.1));
+            edge.ProbeLookAt(new Vec3(-9.5, 1.1, 0.1));
+            await Frames(4);
+            await Capture("19-bridge-z-axis");
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(8);
+        Check("bridge-regression-quit", _main.TitleVisible, "Fresh bridge-regression garden leaves cleanly");
 
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;

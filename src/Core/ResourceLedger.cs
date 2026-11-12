@@ -90,4 +90,7 @@ public sealed class ResourceLedger
 
     public int ProcessedKeyCount => _processed.Count;
     public IReadOnlyCollection<string> ProcessedKeys => _processed;
+
+    /// <summary>Retention order, oldest first. Serialise this rather than the set.</summary>
+    public IReadOnlyList<string> OrderedProcessedKeys => _processedOrder.ToArray();
 }

@@ -125,7 +125,7 @@ public class SaveTests : IDisposable
         var reloaded = good.Load();
         Assert.True(reloaded.Success);
         Assert.Equal(7, reloaded.Data!.Tick);
-        Assert.False(File.Exists(main + ".tmp"));
+        Assert.Empty(TempFiles());
     }
 
     [Fact]
@@ -226,22 +226,132 @@ public class SaveTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
+    [Fact]
+    public void Settings_PartialTempWrite_LeavesNoTempFile()
+    {
+        var path = Path.Combine(_dir, "settings-partial.json");
+        var service = new SettingsService(path, new FailingSaveFileSystem { FailWrites = true });
+        var result = service.Save(new SettingsData { ReducedMotion = true });
+
+        Assert.False(result.Success);
+        Assert.Contains("Couldn't save settings", result.Message);
+        Assert.Contains("Simulated read-only storage", result.Error);
+        Assert.False(File.Exists(path));
+        Assert.Empty(TempFiles());
+    }
+
+    [Fact]
+    public void Settings_BackupCopyFailure_KeepsExistingMainAndCleansTemp()
+    {
+        var path = Path.Combine(_dir, "settings-copy.json");
+        var seed = new SettingsService(path);
+        Assert.True(seed.Save(new SettingsData { MasterVolume = 0.3, ReducedMotion = false }).Success);
+
+        var failing = new FailingSaveFileSystem { FailCopy = true };
+        var service = new SettingsService(path, failing);
+        var result = service.Save(new SettingsData { MasterVolume = 0.9, ReducedMotion = true });
+
+        Assert.False(result.Success);
+        Assert.Contains("Simulated copy failure", result.Error);
+        Assert.Empty(TempFiles());
+        var reloaded = new SettingsService(path).Load();
+        Assert.Equal(0.3, reloaded.MasterVolume, 3);
+        Assert.False(reloaded.ReducedMotion);
+    }
+
+    [Fact]
+    public void Settings_MoveFailure_KeepsMainAndBackupAndCleansTemp()
+    {
+        var path = Path.Combine(_dir, "settings-move.json");
+        var backup = path + ".bak";
+        var seed = new SettingsService(path);
+        Assert.True(seed.Save(new SettingsData { MasterVolume = 0.25 }).Success);
+        Assert.True(seed.Save(new SettingsData { MasterVolume = 0.4 }).Success);
+
+        var failing = new FailingSaveFileSystem { FailMove = true };
+        var service = new SettingsService(path, failing);
+        var result = service.Save(new SettingsData { MasterVolume = 0.95, UiScalePercent = 150 });
+
+        Assert.False(result.Success);
+        Assert.Contains("Simulated move failure", result.Error);
+        Assert.Empty(TempFiles());
+        Assert.True(File.Exists(path));
+        Assert.True(File.Exists(backup));
+        var reloaded = new SettingsService(path).Load();
+        Assert.Equal(0.4, reloaded.MasterVolume, 3);
+        Assert.Equal(100, reloaded.UiScalePercent);
+    }
+
+    [Fact]
+    public void Settings_RetryAfterFailure_SucceedsWithoutOrphanedFiles()
+    {
+        var path = Path.Combine(_dir, "settings-retry.json");
+        var failing = new FailingSaveFileSystem { FailWrites = true };
+        var service = new SettingsService(path, failing);
+
+        Assert.False(service.Save(new SettingsData { ReducedMotion = true }).Success);
+        Assert.Empty(TempFiles());
+
+        failing.FailWrites = false;
+        var result = service.Save(new SettingsData { ReducedMotion = true, UiScalePercent = 125 });
+        Assert.True(result.Success, result.Error);
+        Assert.Empty(TempFiles());
+        var reloaded = new SettingsService(path).Load();
+        Assert.True(reloaded.ReducedMotion);
+        Assert.Equal(125, reloaded.UiScalePercent);
+    }
+
+    [Fact]
+    public void Settings_CleanupFailure_DoesNotMaskOriginalError()
+    {
+        var path = Path.Combine(_dir, "settings-cleanup.json");
+        var seed = new SettingsService(path);
+        Assert.True(seed.Save(new SettingsData()).Success);
+
+        var failing = new FailingSaveFileSystem { FailMove = true, FailDelete = true };
+        var service = new SettingsService(path, failing);
+        var result = service.Save(new SettingsData { ReducedMotion = true });
+
+        Assert.False(result.Success);
+        Assert.Contains("Simulated move failure", result.Error);
+        Assert.DoesNotContain("Simulated delete failure", result.Error);
+    }
+
+    private string[] TempFiles() => Directory.GetFiles(_dir, "*.tmp-*");
+
     private sealed class FailingSaveFileSystem : ISaveFileSystem
     {
         private readonly DefaultSaveFileSystem _inner = new();
         public bool FailWrites { get; set; }
+        public bool FailCopy { get; set; }
+        public bool FailMove { get; set; }
+        public bool FailDelete { get; set; }
         public bool FileExists(string path) => _inner.FileExists(path);
         public bool DirectoryExists(string path) => _inner.DirectoryExists(path);
         public void CreateDirectory(string path) => _inner.CreateDirectory(path);
         public byte[] ReadAllBytes(string path) => _inner.ReadAllBytes(path);
         public void WriteAllBytes(string path, byte[] bytes)
         {
-            if (FailWrites) throw new IOException("Simulated read-only storage");
+            // Simulate a partial write followed by an I/O failure so cleanup is
+            // exercised even before a temp file would normally be complete.
             _inner.WriteAllBytes(path, bytes);
+            if (FailWrites) throw new IOException("Simulated read-only storage");
         }
-        public void Move(string source, string destination, bool overwrite) => _inner.Move(source, destination, overwrite);
-        public void Copy(string source, string destination, bool overwrite) => _inner.Copy(source, destination, overwrite);
-        public void Delete(string path) => _inner.Delete(path);
+        public void Move(string source, string destination, bool overwrite)
+        {
+            if (FailMove) throw new IOException("Simulated move failure");
+            _inner.Move(source, destination, overwrite);
+        }
+        public void Copy(string source, string destination, bool overwrite)
+        {
+            if (FailCopy) throw new IOException("Simulated copy failure");
+            _inner.Copy(source, destination, overwrite);
+        }
+        public void Delete(string path)
+        {
+            if (FailDelete) throw new IOException("Simulated delete failure");
+            _inner.Delete(path);
+        }
         public long Length(string path) => _inner.Length(path);
     }
 }

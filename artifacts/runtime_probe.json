@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T20:46:49.8209997Z",
+  "generatedUtc": "2026-11-12T20:50:41.4677945Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
-  "renderer": "X11",
-  "passes": 306,
+  "renderer": "headless",
+  "passes": 305,
   "failures": 0,
   "checks": [
     {
@@ -108,7 +108,7 @@
     {
       "name": "scene-player-contract",
       "pass": true,
-      "detail": "pos=(-13.5, 0.00027555972, 8.5) layer=2 mask=1"
+      "detail": "pos=(-13.5, 0.03833329, 8.5) layer=2 mask=1"
     },
     {
       "name": "scene-runtime-roots",
@@ -378,7 +378,7 @@
     {
       "name": "climb-stem",
       "pass": true,
-      "detail": "height=3.71"
+      "detail": "height=4.20"
     },
     {
       "name": "build-tool-open",
@@ -388,17 +388,17 @@
     {
       "name": "anchor-recommended-highlight",
       "pass": true,
-      "detail": "glow=True;label=True;alpha=0.95;suggested=True;selected=False;hovered=False;distance=2.7"
+      "detail": "glow=True;label=True;alpha=0.95;suggested=True;selected=False;hovered=False;distance=2.5"
     },
     {
       "name": "anchor-unrelated-dimmed",
       "pass": true,
-      "detail": "glow=True;label=False;alpha=0.24;suggested=False;selected=False;hovered=False;distance=17.1"
+      "detail": "glow=True;label=False;alpha=0.24;suggested=False;selected=False;hovered=False;distance=17.0"
     },
     {
       "name": "anchor-labels-only-near-or-recommended",
       "pass": true,
-      "detail": "twig=glow=True;label=True;alpha=0.95;suggested=True;selected=False;hovered=False;distance=2.7 flower=glow=True;label=False;alpha=0.24;suggested=False;selected=False;hovered=False;distance=17.1"
+      "detail": "twig=glow=True;label=True;alpha=0.95;suggested=True;selected=False;hovered=False;distance=2.5 flower=glow=True;label=False;alpha=0.24;suggested=False;selected=False;hovered=False;distance=17.0"
     },
     {
       "name": "build-confirm-shows-pair",
@@ -453,7 +453,7 @@
     {
       "name": "food-collected",
       "pass": true,
-      "detail": "food 2-\u003E4"
+      "detail": "food 3-\u003E5"
     },
     {
       "name": "status-clears-after-objective",
@@ -489,11 +489,6 @@
       "name": "bridge-build-animation-starts",
       "pass": true,
       "detail": "active=True parts=58"
-    },
-    {
-      "name": "bridge-build-animation-finishes",
-      "pass": true,
-      "detail": "Planks finish appearing; collision was complete from the first frame"
     },
     {
       "name": "bridge-ramps-west-east",
@@ -563,7 +558,7 @@
     {
       "name": "bridge-enables-player-crossing",
       "pass": true,
-      "detail": "x=11.28"
+      "detail": "x=11.37"
     },
     {
       "name": "bridge-damage-visual",
@@ -583,12 +578,12 @@
     {
       "name": "nursery-progress-visible",
       "pass": true,
-      "detail": "A helper is hatching\u2026 47% \u00B7 1.6s left"
+      "detail": "A helper is hatching\u2026 33% \u00B7 2.0s left"
     },
     {
       "name": "nursery-progress-advances",
       "pass": true,
-      "detail": "value=1.40"
+      "detail": "value=1.00"
     },
     {
       "name": "nursery-pending-count",
@@ -598,7 +593,7 @@
     {
       "name": "nursery-neutral-hatching-text",
       "pass": true,
-      "detail": "A helper is hatching\u2026 47% \u00B7 1.6s left"
+      "detail": "A helper is hatching\u2026 33% \u00B7 2.0s left"
     },
     {
       "name": "nursery-refreshes-after-hatch",
@@ -783,12 +778,12 @@
     {
       "name": "reedwater-supply-granted-once",
       "pass": true,
-      "detail": "food=2-\u003E8 silk=7-\u003E31 claimed=reedwater_bank event=False"
+      "detail": "food=1-\u003E7 silk=6-\u003E30 claimed=reedwater_bank event=False"
     },
     {
       "name": "reedwater-player-arrival",
       "pass": true,
-      "detail": "player=(10, 0.00023493171, 8.5)"
+      "detail": "player=(10, 0.4708334, 8.5)"
     },
     {
       "name": "reedwater-anchors-visible",
@@ -833,12 +828,12 @@
     {
       "name": "shoreline-water-recovery",
       "pass": true,
-      "detail": "player=(7, 1.8455088E-05, 8.5) safe=(7, 0.55, 8.5)"
+      "detail": "player=(7, 0.5183334, 8.5) safe=(7, 0.55, 8.5)"
     },
     {
       "name": "water-blocks-without-bridge",
       "pass": true,
-      "detail": "x=6.05 inWater=False"
+      "detail": "x=6.85 inWater=False"
     },
     {
       "name": "pond-route-blocked-before-bridges",
@@ -873,7 +868,7 @@
     {
       "name": "anchor-screen-nearest-target",
       "pass": true,
-      "detail": "pick=rw_island_b_post islandB=(623.78973, 107.530556) lilyB=(645.89056, 83.64565)"
+      "detail": "pick=rw_island_b_post islandB=(612.14636, 290.09427) lilyB=(650.10645, 253.88939)"
     },
     {
       "name": "anchor-screen-empty-space-does-not-select",
@@ -883,37 +878,37 @@
     {
       "name": "player-walks-bank-onto-bridge-one",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 1.9996455907821655, Y = 0.42760711908340454, Z = 5.959555149078369, LengthSquared = 39.697727911931864, Length = 6.300613296492006, HorizontalLength = 6.286086227824199, IsFinite = True } seconds=5.6"
+      "detail": "reached=True end=Vec3 { X = 1.9997038841247559, Y = 0.4275916814804077, Z = 5.959587574005127, LengthSquared = 39.69833432249119, Length = 6.300661419445675, HorizontalLength = 6.286135512094847, IsFinite = True } seconds=1.8"
     },
     {
       "name": "player-walks-bridge-one-to-island-a",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.9996455907821655, Y = 0.42760711908340454, Z = 5.959555149078369, LengthSquared = 39.697727911931864, Length = 6.300613296492006, HorizontalLength = 6.286086227824199, IsFinite = True }"
+      "detail": "end=Vec3 { X = 1.9997038841247559, Y = 0.4275916814804077, Z = 5.959587574005127, LengthSquared = 39.69833432249119, Length = 6.300661419445675, HorizontalLength = 6.286135512094847, IsFinite = True }"
     },
     {
       "name": "player-walks-island-a-onto-bridge-two",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -2.653080463409424, Y = 0.4635019898414612, Z = 2.137805223464966, LengthSquared = 11.82388121338585, Length = 3.438587095506794, HorizontalLength = 3.4072051770914613, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -2.653059244155884, Y = 0.4634875953197479, Z = 2.1378908157348633, LengthSquared = 11.82412124401975, Length = 3.4386219978386325, HorizontalLength = 3.4072423590059553, IsFinite = True }"
     },
     {
       "name": "clever-crossing-earned-by-arrival",
       "pass": true,
-      "detail": "bridges=2 position=Vec3 { X = -2.653080463409424, Y = 0.4635019898414612, Z = 2.137805223464966, LengthSquared = 11.82388121338585, Length = 3.438587095506794, HorizontalLength = 3.4072051770914613, IsFinite = True }"
+      "detail": "bridges=2 position=Vec3 { X = -2.653059244155884, Y = 0.4634875953197479, Z = 2.1378908157348633, LengthSquared = 11.82412124401975, Length = 3.4386219978386325, HorizontalLength = 3.4072423590059553, IsFinite = True }"
     },
     {
       "name": "player-walks-bridge-two-back-to-island-a",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.695874810218811, Y = 0.4852209687232971, Z = 5.92538595199585, LengthSquared = 38.22162944053322, Length = 6.182364389174519, HorizontalLength = 6.163293766489185, IsFinite = True } seconds=3.2"
+      "detail": "end=Vec3 { X = 1.6959446668624878, Y = 0.4852428734302521, Z = 5.925447940826416, LengthSquared = 38.222622258718175, Length = 6.182444683029374, HorizontalLength = 6.1633725842677505, IsFinite = True } seconds=1.3"
     },
     {
       "name": "player-walks-bridge-one-back-to-bank",
       "pass": true,
-      "detail": "end=Vec3 { X = 8.621152877807617, Y = 0.000830845907330513, Z = 8.262085914611816, LengthSquared = 142.58634129326245, Length = 11.940952277488694, HorizontalLength = 11.94095224858376, IsFinite = True } seconds=2.7"
+      "detail": "end=Vec3 { X = 8.621620178222656, Y = 0.0008375535835511982, Z = 8.262340545654297, LengthSquared = 142.598606491395, Length = 11.94146584349656, HorizontalLength = 11.941465814124287, IsFinite = True } seconds=1.6"
     },
     {
       "name": "player-stops-and-resumes-at-deck-joint",
       "pass": true,
-      "detail": "end=Vec3 { X = 2.0001707077026367, Y = 0.4274686276912689, Z = 5.959829330444336, LengthSquared = 39.702977935636504, Length = 6.301029910707971, HorizontalLength = 6.286513223399458, IsFinite = True }"
+      "detail": "end=Vec3 { X = 1.9997038841247559, Y = 0.4275916814804077, Z = 5.959587574005127, LengthSquared = 39.69833432249119, Length = 6.300661419445675, HorizontalLength = 6.286135512094847, IsFinite = True }"
     },
     {
       "name": "player-turns-around-on-bridge",
@@ -948,12 +943,12 @@
     {
       "name": "player-walks-island-b-onto-bridge-three",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -8.859029769897461, Y = 0.0001004217192530632, Z = -1.988564133644104, LengthSquared = 82.4367957876297, Length = 9.079471118277192, HorizontalLength = 9.079471117721846, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -8.858633041381836, Y = 0.0002549905329942703, Z = -1.9882800579071045, LengthSquared = 82.42863701555325, Length = 9.079021809399581, HorizontalLength = 9.07902180581879, IsFinite = True }"
     },
     {
       "name": "player-walks-bridge-three-back-to-island-b",
       "pass": true,
-      "detail": "end=Vec3 { X = -3.0714285373687744, Y = 0.5314395427703857, Z = 2.1272029876708984, LengthSquared = 14.241093798539282, Length = 3.773737378056306, HorizontalLength = 3.7361297904274267, IsFinite = True } seconds=6.5"
+      "detail": "end=Vec3 { X = -3.0709757804870605, Y = 0.5313736200332642, Z = 2.1276707649230957, LengthSquared = 14.240233052313798, Length = 3.7736233320661188, HorizontalLength = 3.7360239731894844, IsFinite = True } seconds=1.6"
     },
     {
       "name": "reedwater-bridge-modular-planks",
@@ -1038,7 +1033,7 @@
     {
       "name": "far-bank-return-shortcut",
       "pass": true,
-      "detail": "player=(10.2, 1.8455088E-05, 6.8)"
+      "detail": "player=(10.2, 0.5183334, 6.8)"
     },
     {
       "name": "reedwater-save",
@@ -1088,7 +1083,7 @@
     {
       "name": "reload-reedwater-bridge-walk",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=6.8"
+      "detail": "end=Vec3 { X = 1.9996992349624634, Y = 0.42759308218955994, Z = 5.959583759307861, LengthSquared = 39.69827145845185, Length = 6.300656430757977, HorizontalLength = 6.286130416600938, IsFinite = True } seconds=1.8"
     },
     {
       "name": "reload-reedwater-bridge-modular-planks",
@@ -1148,7 +1143,7 @@
     {
       "name": "reenter-supply-not-regranted",
       "pass": true,
-      "detail": "claimed=reedwater_bank food=5 silk=13"
+      "detail": "claimed=reedwater_bank food=4 silk=8"
     },
     {
       "name": "critical-bridge-present",
@@ -1178,32 +1173,32 @@
     {
       "name": "toast-visible-100",
       "pass": true,
-      "detail": "A fly is caught! Walk close and press E."
+      "detail": "Clever Crossing earned. Keep exploring or use the trail to return."
     },
     {
       "name": "toast-inside-viewport-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87)"
+      "detail": "(934, 486.4), (330, 116)"
     },
     {
       "name": "toast-avoids-mission-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (820, 18), (440, 145)"
+      "detail": "(934, 486.4), (330, 116) vs (820, 18), (440, 145)"
     },
     {
       "name": "toast-avoids-actions-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (22, 82), (196, 177)"
+      "detail": "(934, 486.4), (330, 116) vs (22, 82), (196, 177)"
     },
     {
       "name": "toast-avoids-toolbar-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (0, 584), (1280, 62)"
+      "detail": "(934, 486.4), (330, 116) vs (0, 1144), (1280, 62)"
     },
     {
       "name": "toast-avoids-status-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (0, 550), (1280, 27)"
+      "detail": "(934, 486.4), (330, 116) vs (0, 1110), (1280, 27)"
     },
     {
       "name": "toast-avoids-camera-centre-100",
@@ -1218,17 +1213,17 @@
     {
       "name": "build-confirm-inside-viewport-100",
       "pass": true,
-      "detail": "(0, 580), (1280, 95) viewport=(1280, 720)"
+      "detail": "(0, 1140), (1280, 95) viewport=(1280, 1280)"
     },
     {
       "name": "build-confirm-avoids-mission-100",
       "pass": true,
-      "detail": "(0, 580), (1280, 95) vs (820, 18), (440, 145)"
+      "detail": "(0, 1140), (1280, 95) vs (820, 18), (440, 145)"
     },
     {
       "name": "build-confirm-avoids-actions-100",
       "pass": true,
-      "detail": "(0, 580), (1280, 95) vs (22, 82), (196, 177)"
+      "detail": "(0, 1140), (1280, 95) vs (22, 82), (196, 177)"
     },
     {
       "name": "ui-scale-applies",
@@ -1243,27 +1238,27 @@
     {
       "name": "toast-inside-viewport-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 116)"
+      "detail": "(678, 389.12), (330, 116)"
     },
     {
       "name": "toast-avoids-mission-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 116) vs (564, 18), (440, 145)"
+      "detail": "(678, 389.12), (330, 116) vs (564, 18), (440, 145)"
     },
     {
       "name": "toast-avoids-actions-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 116) vs (22, 82), (196, 177)"
+      "detail": "(678, 389.12), (330, 116) vs (22, 82), (196, 177)"
     },
     {
       "name": "toast-avoids-toolbar-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 116) vs (0, 440), (1024, 62)"
+      "detail": "(678, 389.12), (330, 116) vs (0, 888), (1024, 62)"
     },
     {
       "name": "toast-avoids-status-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 116) vs (0, 406), (1024, 27)"
+      "detail": "(678, 389.12), (330, 116) vs (0, 854), (1024, 27)"
     },
     {
       "name": "toast-avoids-camera-centre-125",
@@ -1278,17 +1273,17 @@
     {
       "name": "build-confirm-inside-viewport-125",
       "pass": true,
-      "detail": "(0, 436), (1024, 95) viewport=(1024, 576)"
+      "detail": "(0, 884), (1024, 95) viewport=(1024, 1024)"
     },
     {
       "name": "build-confirm-avoids-mission-125",
       "pass": true,
-      "detail": "(0, 436), (1024, 95) vs (564, 18), (440, 145)"
+      "detail": "(0, 884), (1024, 95) vs (564, 18), (440, 145)"
     },
     {
       "name": "build-confirm-avoids-actions-125",
       "pass": true,
-      "detail": "(0, 436), (1024, 95) vs (22, 82), (196, 177)"
+      "detail": "(0, 884), (1024, 95) vs (22, 82), (196, 177)"
     },
     {
       "name": "ui-scale-150-applies",
@@ -1303,27 +1298,27 @@
     {
       "name": "toast-inside-viewport-150",
       "pass": true,
-      "detail": "(507.3333, 182.4), (330, 116)"
+      "detail": "(507.3333, 324.26666), (330, 116)"
     },
     {
       "name": "toast-avoids-mission-150",
       "pass": true,
-      "detail": "(507.3333, 182.4), (330, 116) vs (393.3333, 18), (440, 145)"
+      "detail": "(507.3333, 324.26666), (330, 116) vs (393.3333, 18), (440, 145)"
     },
     {
       "name": "toast-avoids-actions-150",
       "pass": true,
-      "detail": "(507.3333, 182.4), (330, 116) vs (22, 82), (196, 177)"
+      "detail": "(507.3333, 324.26666), (330, 116) vs (22, 82), (196, 177)"
     },
     {
       "name": "toast-avoids-toolbar-150",
       "pass": true,
-      "detail": "(507.3333, 182.4), (330, 116) vs (0, 344), (853, 62)"
+      "detail": "(507.3333, 324.26666), (330, 116) vs (0, 717.3333), (853, 62)"
     },
     {
       "name": "toast-avoids-status-150",
       "pass": true,
-      "detail": "(507.3333, 182.4), (330, 116) vs (0, 310), (853, 27)"
+      "detail": "(507.3333, 324.26666), (330, 116) vs (0, 683.3333), (853, 27)"
     },
     {
       "name": "toast-avoids-camera-centre-150",
@@ -1338,17 +1333,17 @@
     {
       "name": "build-confirm-inside-viewport-150",
       "pass": true,
-      "detail": "(0, 340), (853, 95) viewport=(853.3333, 480)"
+      "detail": "(0, 713.3333), (853, 95) viewport=(853.3333, 853.3333)"
     },
     {
       "name": "build-confirm-avoids-mission-150",
       "pass": true,
-      "detail": "(0, 340), (853, 95) vs (393.3333, 18), (440, 145)"
+      "detail": "(0, 713.3333), (853, 95) vs (393.3333, 18), (440, 145)"
     },
     {
       "name": "build-confirm-avoids-actions-150",
       "pass": true,
-      "detail": "(0, 340), (853, 95) vs (22, 82), (196, 177)"
+      "detail": "(0, 713.3333), (853, 95) vs (22, 82), (196, 177)"
     },
     {
       "name": "quit-to-menu",
@@ -1418,7 +1413,7 @@
     {
       "name": "bridge-reverse-enables-crossing",
       "pass": true,
-      "detail": "x=11.28"
+      "detail": "x=11.40"
     },
     {
       "name": "bridge-removal-clears-collision",
@@ -1433,7 +1428,7 @@
     {
       "name": "bridge-removal-blocks-crossing",
       "pass": true,
-      "detail": "x=-5.02"
+      "detail": "x=-5.01"
     },
     {
       "name": "bridge-zaxis-built",
@@ -1508,12 +1503,12 @@
     {
       "name": "new-garden-cancel",
       "pass": true,
-      "detail": "save=53 archive=32"
+      "detail": "save=32 archive=53"
     },
     {
       "name": "new-garden-confirm-archives-previous",
       "pass": true,
-      "detail": "archive=53 expected=53"
+      "detail": "archive=32 expected=32"
     },
     {
       "name": "new-garden-autosave",
@@ -1523,7 +1518,7 @@
     {
       "name": "new-garden-autosave-keeps-archive",
       "pass": true,
-      "detail": "archive=53 expected=53"
+      "detail": "archive=32 expected=32"
     },
     {
       "name": "restore-previous-available",
@@ -1533,7 +1528,7 @@
     {
       "name": "restore-previous-garden",
       "pass": true,
-      "detail": "restoredTick=58 archived=53"
+      "detail": "restoredTick=32 archived=32"
     }
   ]
 }

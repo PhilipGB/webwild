@@ -343,7 +343,9 @@ After restoring the authored position, validation returned to 24/24 and exit 0.
 
 - Branch: `feat/v0.2.0-p1-reedwater-bank`
 - Baseline: `main` at `09b9c72`
-- PR and final commit: recorded after exact-head CI (see PR link below once opened)
+- PR: https://github.com/PhilipGB/webwild/pull/12
+- Implementation head `9e190cb` exact-head CI:
+  https://github.com/PhilipGB/webwild/actions/runs/43148773493 — both checks green
 - No v0.2.0 release is published; this is milestone P1.
 - Region architecture: stable `RegionIds` and `RegionCatalog` in `Webwild.Core`;
   authored `ReedwaterBank.tscn` root with a `World` + 10 sockets + travel markers;

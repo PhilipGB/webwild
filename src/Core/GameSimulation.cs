@@ -93,8 +93,12 @@ public sealed class GameSimulation
         .Where(anchor => anchor.Region == ActiveRegionId).ToList();
     public IReadOnlyList<GameplayEvent> Events => _events;
     public IReadOnlyList<string> OrderedIssuedEventKeys => _issuedEventOrder.ToArray();
-    public int TotalSpiders => 1 + _workers.Count + (PendingHatch is not null ? 1 : 0);
+    public int TotalSpiders => 1 + _workers.Count;
+    public int PendingEggCount => PendingHatch is null ? 0 : 1;
+    public int SpidersIncludingEggs => TotalSpiders + PendingEggCount;
     public int MaxSpiders => Tuning.MaxSpidersIncludingPlayer;
+    public int ReedwaterBridgeCount => _webs.Values.Count(web =>
+        web.Region == RegionIds.ReedwaterBank && web.Type == WebType.Bridge);
     public int SilkProducers => 1 + _workers.Count;
     public int EmergencyUsesRemaining => Math.Max(0, Tuning.Recovery.EmergencyStarterWebRepairUses - EmergencyRecoveryUses);
 
@@ -223,10 +227,33 @@ public sealed class GameSimulation
         return true;
     }
 
+    /// <summary>
+    /// Award Clever Crossing only when the player physically stands on the lily
+    /// island after R01, with at most two bridges currently standing. Graph
+    /// connectivity alone is not enough; a child must make the crossing.
+    /// </summary>
+    public bool TryAwardCleverCrossingOnArrival(Vec3 playerPosition)
+    {
+        if (ActiveRegionId != RegionIds.ReedwaterBank) return false;
+        if (RegionalObjectives.MasteryAwarded) return false;
+        var target = ReedwaterLayout.FirstDestinationPosition;
+        var dx = playerPosition.X - target.X;
+        var dz = playerPosition.Z - target.Z;
+        if (Math.Sqrt(dx * dx + dz * dz) > 2.8) return false;
+        if (ReedwaterBridgeCount > 2) return false;
+        if (Graph.FindRoute(ReedwaterLayout.NurseryNode,
+                ReedwaterLayout.FirstDestinationNode) is null) return false;
+        if (!RegionalObjectives.TryAwardMastery(ReedwaterBridgeCount)) return false;
+        Emit(new GameplayEvent(NextKey("regional_mastery"), "RegionalMasteryEarned",
+            TickCount, RegionalObjectives.Config.Mastery?.Id ?? "RM01",
+            Detail: RegionalObjectives.Config.Mastery?.Title ?? "Clever Crossing",
+            Region: ReedwaterLayout.RegionId));
+        return true;
+    }
+
     public string GetActiveRegionHint() => ActiveRegionId == RegionIds.GardenClearing
         ? GetHint()
-        : GetRegionObjectiveHint();
-    public WebState? GetWebAtAnchor(string anchorId) =>
+        : GetRegionObjectiveHint();    public WebState? GetWebAtAnchor(string anchorId) =>
         _webs.Values.FirstOrDefault(w => w.AnchorA == anchorId || w.AnchorB == anchorId);
 
     public IReadOnlyList<GameplayEvent> DrainEvents()
@@ -469,7 +496,7 @@ public sealed class GameSimulation
     public (bool CanHatch, string Reason) CanHatch()
     {
         if (PendingHatch is not null) return (false, "A new helper is already hatching");
-        if (TotalSpiders >= MaxSpiders) return (false, "The colony is full (5 spiders)");
+        if (SpidersIncludingEggs >= MaxSpiders) return (false, "The colony is full (5 spiders)");
         if (Ledger.Food < Tuning.Nursery.HatchFoodCost || Ledger.Silk < Tuning.Nursery.HatchSilkCost)
             return (false, $"Need {Tuning.Nursery.HatchFoodCost} food and {Tuning.Nursery.HatchSilkCost} silk");
         return (true, "Ready to hatch");
@@ -1065,15 +1092,6 @@ public sealed class GameSimulation
                 NextKey($"regional_done_{regional.CompletedObjectiveId}"),
                 "RegionalObjectiveCompleted", TickCount, regional.CompletedObjectiveId,
                 Detail: regional.CompletedObjectiveId, Region: ReedwaterLayout.RegionId));
-
-            if (regional.CompletedObjectiveId == "R01" &&
-                RegionalObjectives.TryAwardMastery(ReedwaterBridgeWebsBuilt))
-            {
-                Emit(new GameplayEvent(NextKey("regional_mastery"), "RegionalMasteryEarned",
-                    TickCount, RegionalObjectives.Config.Mastery?.Id ?? "RM01",
-                    Detail: RegionalObjectives.Config.Mastery?.Title ?? "Clever Crossing",
-                    Region: ReedwaterLayout.RegionId));
-            }
 
             if (regional.AllComplete)
             {

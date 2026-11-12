@@ -149,6 +149,18 @@ public partial class RuntimeProbe : Node
         game.ProbeSetTool(WebType.Capture);
         await Frames(3);
         Check("build-tool-open", game.VisibleAnchorCount == 12, "All anchor sockets exposed");
+        var twigSuggested = game.ProbeAnchorVisualState(WorldLayout.TwigA);
+        var flowerUnrelated = game.ProbeAnchorVisualState(WorldLayout.FlowerA);
+        Check("anchor-recommended-highlight",
+            twigSuggested.Contains("suggested=True") && twigSuggested.Contains("alpha=0.95"),
+            twigSuggested);
+        Check("anchor-unrelated-dimmed",
+            flowerUnrelated.Contains("suggested=False") && flowerUnrelated.Contains("alpha=0.24"),
+            flowerUnrelated);
+        Check("anchor-labels-only-near-or-recommended",
+            game.ProbeAnchorLabelVisible(WorldLayout.TwigA) &&
+            !game.ProbeAnchorLabelVisible(WorldLayout.FlowerA),
+            $"twig={game.ProbeAnchorVisualState(WorldLayout.TwigA)} flower={game.ProbeAnchorVisualState(WorldLayout.FlowerA)}");
         await Capture("06-build-mode");
         var silkBeforeWeb = game.Simulation!.Ledger.Silk;
         var twigA = game.Simulation.GetAnchor(WorldLayout.TwigA)!;
@@ -169,13 +181,52 @@ public partial class RuntimeProbe : Node
             await Click(screenB);
         }
         await Frames(4);
+        Check("build-confirm-shows-pair",
+            game.ProbeBuildConfirmVisible && game.ProbeBuildConfirmText.Contains('→') &&
+            game.ProbeBuildConfirmText.Contains("silk"), game.ProbeBuildConfirmText);
+        Check("build-confirm-does-not-spend-yet",
+            game.Simulation.Ledger.Silk == silkBeforeWeb && !game.Simulation.Webs.Any(),
+            $"silk={game.Simulation.Ledger.Silk}");
+        await Capture("06b-build-confirm");
+
+        // Cancel must leave both silk and the world untouched.
+        game.ProbeCancelPendingBuild();
+        await Frames(2);
+        Check("build-cancel-no-charge",
+            !game.Simulation.Webs.Any() && game.Simulation.Ledger.Silk == silkBeforeWeb,
+            $"webs={game.Simulation.Webs.Count()} silk={game.Simulation.Ledger.Silk}");
+
+        game.ProbeSetTool(WebType.Capture);
+        await Frames(2);
+        if (DisplayServer.GetName() == "headless")
+        {
+            game.ProbeClickAnchor(WorldLayout.TwigA);
+            game.ProbeClickAnchor(WorldLayout.TwigB);
+        }
+        else
+        {
+            await MouseMove(screenA);
+            await Click(screenA);
+            await MouseMove(screenB);
+            await Click(screenB);
+        }
+        await Frames(3);
+        game.ProbeConfirmBuild();
+        await Frames(4);
         var captureBuilt = game.Simulation.Webs.Any(w => w.Type == WebType.Capture &&
             w.Connects(WorldLayout.TwigA, WorldLayout.TwigB));
-        Check("capture-web-built", captureBuilt, "Two mouse clicks on Twin Twigs");
+        Check("capture-web-built", captureBuilt, "Confirmed build on Twin Twigs");
+        Check("build-confirm-hidden-after-build", !game.ProbeBuildConfirmVisible, "Toolbar returns");
         Check("capture-web-visible", game.VisibleWebCount == 1, $"webs={game.VisibleWebCount}");
         Check("capture-web-cost", game.Simulation.Ledger.Silk == silkBeforeWeb - game.Simulation.Tuning.Webs.Capture.SilkCost,
             $"silk {silkBeforeWeb}->{game.Simulation.Ledger.Silk}");
         var silkAfterWeb = game.Simulation.Ledger.Silk;
+        game.ProbeConfirmBuild();
+        await Frames(2);
+        Check("build-confirm-repeated-click-safe",
+            game.Simulation.Webs.Count(w => w.Type == WebType.Capture) == 1 &&
+            game.Simulation.Ledger.Silk == silkAfterWeb,
+            $"webs={game.Simulation.Webs.Count()} silk={game.Simulation.Ledger.Silk}");
         var occupied = game.Simulation.TryBuildWeb(WorldLayout.TwigA, WorldLayout.TwigB, WebType.Capture, out _, out var occupiedReason);
         Check("occupied-edge-rejected", !occupied && game.Simulation.Ledger.Silk == silkAfterWeb, occupiedReason.Reason);
         game.ProbeClearBuild();
@@ -233,9 +284,14 @@ public partial class RuntimeProbe : Node
             await Click(gapScreenB);
         }
         await Frames(4);
+        Check("bridge-confirm-shows-pair",
+            game.ProbeBuildConfirmVisible && game.ProbeBuildConfirmText.Contains('→'),
+            game.ProbeBuildConfirmText);
+        game.ProbeConfirmBuild();
+        await Frames(4);
         var bridgeBuilt = game.Simulation.Webs.Any(w => w.Type == WebType.Bridge &&
             w.Connects(WorldLayout.GapWest, WorldLayout.GapEast));
-        Check("bridge-built", bridgeBuilt, "Two mouse clicks on Pebble gap");
+        Check("bridge-built", bridgeBuilt, "Confirmed build on Pebble gap");
         Check("bridge-visible", game.VisibleWebCount >= 2, $"webs={game.VisibleWebCount}");
         var gapBridge = game.Simulation.Webs.First(w => w.Type == WebType.Bridge &&
             w.Connects(WorldLayout.GapWest, WorldLayout.GapEast));
@@ -302,15 +358,61 @@ public partial class RuntimeProbe : Node
         game.ProbeTeleport(WorldLayout.PlayerSpawn);
         await Frames(3);
 
+        // The first hatch needs 4 food; ambient silk production can spend the
+        // last unit while the player walks. Collect a caught fly first so this
+        // check is about the nursery, not about a one-unit race.
+        if (!game.Simulation.CanHatch().CanHatch && game.Simulation.Ledger.Silk >= 4)
+        {
+            for (var i = 0; i < 60 && !game.Simulation.CanHatch().CanHatch; i++)
+            {
+                var prey = game.Simulation.RegionInsects.FirstOrDefault(insect => insect.CanBeCollected);
+                if (prey is not null)
+                {
+                    game.ProbeTeleport(prey.Position);
+                    await Frames(2);
+                    game.ProbeInteract();
+                    await Frames(2);
+                }
+                else game.ProbeAdvance(3);
+                await Frames(1);
+            }
+        }
         game.ProbeOpenNursery();
         await Frames(4);
         GD.Print("[PROBE] NURSERY " + game.DebugUi);
+        Check("nursery-counts-living-only",
+            game.ProbeNurseryCountText.Contains("1 of 5") &&
+            !game.ProbeNurseryCountText.Contains("egg"), game.ProbeNurseryCountText);
+        Check("nursery-progress-hidden-before-hatch", !game.ProbeNurseryProgressVisible,
+            "No progress bar before an egg");
         await Capture("10-nursery");
-        game.ProbeCloseModal();
-        await Frames(2);
 
+        // Start and complete a hatch while the panel is open: status, count and
+        // progress must update instead of freezing at 0%.
         var hatchStarted = game.ProbeHatch();
-        game.ProbeAdvance(5);
+        game.ProbeAdvance(1);
+        await Frames(3);
+        Check("nursery-progress-visible", game.ProbeNurseryProgressVisible,
+            game.ProbeNurseryStatusText);
+        Check("nursery-progress-advances", game.ProbeNurseryProgressValue > 0.1,
+            $"value={game.ProbeNurseryProgressValue:0.00}");
+        Check("nursery-pending-count",
+            game.ProbeNurseryCountText.Contains("1 of 5") &&
+            game.ProbeNurseryCountText.Contains("1 egg hatching"),
+            game.ProbeNurseryCountText);
+        Check("nursery-neutral-hatching-text",
+            game.ProbeNurseryStatusText.StartsWith("A helper is hatching"),
+            game.ProbeNurseryStatusText);
+        await Capture("10a-nursery-hatching");
+        game.ProbeAdvance(4);
+        await Frames(4);
+        Check("nursery-refreshes-after-hatch",
+            !game.ProbeNurseryProgressVisible &&
+            game.ProbeNurseryCountText.Contains("2 of 5") &&
+            !game.ProbeNurseryCountText.Contains("egg"),
+            $"{game.ProbeNurseryCountText} status='{game.ProbeNurseryStatusText}'");
+        await Capture("10b-nursery-hatched");
+        game.ProbeCloseModal();
         await Frames(3);
         Check("hatch-started", hatchStarted, "Nursery spends food and silk");
         Check("worker-hatched", game.Simulation.Workers.Count >= 1, $"workers={game.Simulation.Workers.Count}");
@@ -389,6 +491,10 @@ public partial class RuntimeProbe : Node
         game.ProbeCloseSettings();
         await Frames(2);
 
+        // Save from the authored spawn so the reload scene contract can compare
+        // the restored player with WorldLayout.PlayerSpawn.
+        game.ProbeTeleport(WorldLayout.PlayerSpawn);
+        await Frames(2);
         var saved = game.ProbeSave();
         Check("save-succeeds", saved, saved ? "Save written atomically" : game.LastSaveError);
         var loaded = _main.Saves.Load();
@@ -416,6 +522,8 @@ public partial class RuntimeProbe : Node
             Check("reload-victory", reloaded.Simulation.Victory, "Victory restored");
             Check("reload-player", reloaded.Player is not null, "Player restored");
             var reloadSceneChecks = reloaded.ProbeSceneValidation();
+            foreach (var failedSceneCheck in reloadSceneChecks.Where(check => !check.Pass))
+                GD.Print($"[PROBE] SCENE-FAIL {failedSceneCheck.Name} — {failedSceneCheck.Detail}");
             Check("reload-world-scene-authored", reloadSceneChecks.All(check => check.Pass),
                 $"{reloadSceneChecks.Count(check => check.Pass)}/{reloadSceneChecks.Count} scene checks after load");
             await Capture("14-reloaded");
@@ -496,6 +604,11 @@ public partial class RuntimeProbe : Node
             toastGame.ProbeShowToast("Clever Crossing earned. Keep exploring or use the trail to return.");
             await Frames(3);
             CheckToastLane(toastGame, "100");
+            toastGame.ProbeShowBuildConfirmation();
+            await Frames(3);
+            CheckBuildConfirmLane(toastGame, "100");
+            await Capture("16b-ui-build-confirm-100");
+            toastGame.ProbeHideBuildConfirmation();
             await Capture("16a-ui-toast-100");
         }
 
@@ -509,6 +622,10 @@ public partial class RuntimeProbe : Node
             toastGame125.ProbeShowToast("Clever Crossing earned. Keep exploring or use the trail to return.");
             await Frames(3);
             CheckToastLane(toastGame125, "125");
+            toastGame125.ProbeShowBuildConfirmation();
+            await Frames(3);
+            CheckBuildConfirmLane(toastGame125, "125");
+            toastGame125.ProbeHideBuildConfirmation();
         }
         await Capture("16-ui-scale-125");
 
@@ -522,6 +639,10 @@ public partial class RuntimeProbe : Node
             toastGame150.ProbeShowToast("Clever Crossing earned. Keep exploring or use the trail to return.");
             await Frames(3);
             CheckToastLane(toastGame150, "150");
+            toastGame150.ProbeShowBuildConfirmation();
+            await Frames(3);
+            CheckBuildConfirmLane(toastGame150, "150");
+            toastGame150.ProbeHideBuildConfirmation();
         }
         await Capture("17-ui-scale-150");
 
@@ -694,6 +815,23 @@ public partial class RuntimeProbe : Node
             toast.Position.X >= viewport.X * 0.58f, $"left={toast.Position.X:0.0} viewport={viewport.X:0.0}");
     }
 
+    private void CheckBuildConfirmLane(GardenClearing game, string scaleLabel)
+    {
+        var rect = game.ProbeBuildConfirmRect;
+        var viewport = GetViewport().GetVisibleRect().Size;
+        var mission = game.ProbeMissionRect;
+        var actions = game.ProbeActionColumnRect;
+        Check($"build-confirm-visible-{scaleLabel}", game.ProbeBuildConfirmVisible,
+            game.ProbeBuildConfirmText);
+        Check($"build-confirm-inside-viewport-{scaleLabel}",
+            rect.Position.X >= 0 && rect.Position.Y >= 0 &&
+            rect.End.X <= viewport.X + 1 && rect.End.Y <= viewport.Y + 1, $"{rect} viewport={viewport}");
+        Check($"build-confirm-avoids-mission-{scaleLabel}", !rect.Intersects(mission),
+            $"{rect} vs {mission}");
+        Check($"build-confirm-avoids-actions-{scaleLabel}", !rect.Intersects(actions),
+            $"{rect} vs {actions}");
+    }
+
     private async Task RunReedwaterSection(GardenClearing game)
     {
         var sim = game.Simulation;
@@ -710,13 +848,18 @@ public partial class RuntimeProbe : Node
         var supplyFoodBefore = sim.Ledger.Food;
         var supplySilkBefore = sim.Ledger.Silk;
         var travelled = game.ProbeTravel(RegionIds.ReedwaterBank);
+        // Read the grant before a real-time silk batch can spend a food unit.
+        var supplyFoodAfter = sim.Ledger.Food;
+        var supplySilkAfter = sim.Ledger.Silk;
         await Frames(8);
         Check("travel-to-reedwater", travelled && game.ActiveRegionId == RegionIds.ReedwaterBank,
             $"region={game.ActiveRegionId}");
+        var supplyEvent = sim.Events.Any(e => e.Type == "RegionSupply" && e.Region == RegionIds.ReedwaterBank);
         Check("reedwater-supply-granted-once",
-            sim.Ledger.Food >= supplyFoodBefore + 6 && sim.Ledger.Silk >= supplySilkBefore + 24 &&
+            supplyFoodAfter >= supplyFoodBefore + 6 && supplySilkAfter >= supplySilkBefore + 24 &&
             sim.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank),
-            $"food={sim.Ledger.Food} silk={sim.Ledger.Silk} claimed={string.Join(",", sim.ClaimedSupplyCaches)}");
+            $"food={supplyFoodBefore}->{supplyFoodAfter} silk={supplySilkBefore}->{supplySilkAfter} " +
+            $"claimed={string.Join(",", sim.ClaimedSupplyCaches)} event={supplyEvent}");
         Check("reedwater-player-arrival",
             game.PlayerPosition.DistanceTo(GardenClearing.ToVector3(ReedwaterLayout.ArrivalPoint)) < 0.6f,
             $"player={game.PlayerPosition}");
@@ -820,6 +963,11 @@ public partial class RuntimeProbe : Node
         var routeBefore = sim.Graph.FindRoute(ReedwaterLayout.NurseryNode,
             ReedwaterLayout.FirstDestinationNode);
         Check("pond-route-blocked-before-bridges", routeBefore is null, "No dry route to the lily island");
+        game.ProbeSetTool(WebType.Bridge);
+        await Frames(3);
+        await Capture("22h-reedwater-build-anchors");
+        game.ProbeClearBuild();
+        await Frames(2);
         Check("bridge-one-built", game.ProbeBuildWeb(ReedwaterLayout.StartPost,
             ReedwaterLayout.IslandAPost, WebType.Bridge), "Reed post to mossy island");
         Check("bridge-two-built", game.ProbeBuildWeb(ReedwaterLayout.IslandAPost,
@@ -830,13 +978,35 @@ public partial class RuntimeProbe : Node
             "Two connected bridge decisions");
         Check("r01-complete", sim.RegionalObjectives.CompletedObjectives.Contains("R01"),
             "Across the Water");
-        Check("clever-crossing-earned", sim.RegionalObjectives.MasteryAwarded,
-            "Two bridges for the lily island");
+        Check("clever-crossing-not-yet-earned", !sim.RegionalObjectives.MasteryAwarded,
+            "Building the second bridge is not enough; the player must arrive");
         await Frames(3);
         await Capture("23-bridges-built");
         game.ProbeTeleport(new Vec3(8.8, 1.6, 10.4));
         game.ProbeLookAt(new Vec3(3.4, 0.55, 6.2));
         await Frames(4);
+        var islandBScreen = game.ProbeAnchorScreenPosition(ReedwaterLayout.IslandBPost);
+        var lilyBScreen = game.ProbeAnchorScreenPosition(ReedwaterLayout.MidB);
+        var towardLily = (lilyBScreen - islandBScreen).Normalized();
+        var nearestPick = game.ProbePickAnchorAt(islandBScreen + towardLily * 2f);
+        Check("anchor-screen-nearest-target",
+            nearestPick == ReedwaterLayout.IslandBPost,
+            $"pick={nearestPick} islandB={islandBScreen} lilyB={lilyBScreen}");
+        var emptyPick = string.Empty;
+        var foundEmpty = false;
+        foreach (var y in new[] { 40, 120, 680 })
+        {
+            foreach (var x in new[] { 60, 320, 640, 960, 1220 })
+            {
+                emptyPick = game.ProbePickAnchorAt(new Vector2(x, y));
+                if (emptyPick != "") continue;
+                foundEmpty = true;
+                break;
+            }
+            if (foundEmpty) break;
+        }
+        Check("anchor-screen-empty-space-does-not-select", foundEmpty && emptyPick == "",
+            $"pick={emptyPick}");
         await Capture("23b-reedwater-bridge-detail");
         game.ProbeTeleport(new Vec3(7.6, 0.55, 7.6));
         await Frames(2);
@@ -858,6 +1028,10 @@ public partial class RuntimeProbe : Node
         Check("player-walks-island-a-onto-bridge-two",
             toIslandB.Reached && toIslandB.End.X < -2.2f && !toIslandB.EnteredWater,
             $"reached={toIslandB.Reached} end={toIslandB.End}");
+        Check("clever-crossing-earned-by-arrival",
+            sim.RegionalObjectives.MasteryAwarded,
+            $"bridges={sim.ReedwaterBridgeCount} position={toIslandB.End}");
+        await Capture("24a-clever-crossing-arrival");
 
         var backToIslandA = await WalkRoute(game, toIslandB.End,
             Reverse(ReedwaterIslandAToIslandB), 0.7f, 40f);

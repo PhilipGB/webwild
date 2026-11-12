@@ -147,6 +147,27 @@ Follow-up to the six-mission real-input playtest. No new region or mechanics.
 - Verification: 115/115 .NET tests, 55/55 scene checks, 264/264 headless and
   264/264 rendered runtime checks.
 
+### PR 2 — anchor interaction, nursery and progression
+
+- Recommended anchors now carry a bright gold star halo and label; unrelated
+  sockets are dimmed and only show labels when the player is close, hovered or
+  selected. Reedwater's overlapping sockets no longer form a label cluster.
+- Cursor selection uses screen-space nearest-target within a forgiving radius
+  and rejects sockets hidden behind foreground bodies.
+- The second anchor click no longer spends silk. A From → To · cost bar shows
+  **Build** and **Cancel**; Enter/Space confirms, right-click/Esc cancels, and
+  a second click can change the pair. Nothing is spent until Build.
+- The nursery panel updates live: an advancing percentage and remaining time,
+  a neutral "hatching" button, a separate pending-egg count, and a neutral
+  refresh after completion. Living spider counts exclude unhatched eggs.
+- Completion/victory modals close any open panel first, so they cannot stack.
+- Clever Crossing is awarded only when the player physically reaches the lily
+  island with at most two standing bridges. Building is not enough; the mission
+  card explains the challenge and the current bridge count. Existing saves keep
+  an earned badge.
+- Verification: 119/119 .NET tests, 55/55 scene checks, 295/295 headless and
+  295/295 rendered runtime checks.
+
 
 ## Webwild v0.2.0 P1 — Reedwater Bank second region (unreleased milestone)
 

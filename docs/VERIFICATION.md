@@ -84,6 +84,18 @@
 - `dotnet test`: 115/115; scene contract 55/55; headless and rendered Linux
   runtime probes 264/264.
 
+## Integration performed in the v0.2.2 hardening pass (PR 2)
+
+- Anchor selection, recommended/dim states, star labels, screen-space nearest
+  targeting, foreground rejection, and the From → To confirmation bar were
+  exercised in the garden and Reedwater at 100/125/150% UI scale.
+- Nursery progress, neutral hatching state, pending-egg count and live refresh
+  were captured in real rendered frames.
+- Clever Crossing is now awarded only on physical arrival at the lily island
+  with at most two standing bridges; building alone does not award it.
+- `dotnet test`: 119/119; scene contract 55/55; headless and rendered Linux
+  runtime probes 295/295.
+
 ## Not performed
 
 - Windows runtime: no Windows host was available. The v0.2.1 Windows export was

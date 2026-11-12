@@ -145,7 +145,7 @@ public class RegionTests
     }
 
     [Fact]
-    public void TwoBridgesOpenR01_AndAwardCleverCrossing()
+    public void TwoBridgesOpenR01_AndPhysicalArrivalAwardsCleverCrossing()
     {
         var sim = UnlockedSim();
         UnlockAndTravel(sim);
@@ -160,9 +160,55 @@ public class RegionTests
         Assert.NotNull(sim.Graph.FindRoute(ReedwaterLayout.NurseryNode, ReedwaterLayout.FirstDestinationNode));
         Assert.Contains("R01", sim.RegionalObjectives.CompletedObjectives);
         Assert.Equal("R02", sim.RegionalObjectives.ActiveObjectiveId);
+        Assert.Equal(2, sim.ReedwaterBridgeWebsBuilt);
+
+        // Building the second bridge alone must not award the badge.
+        Assert.False(sim.RegionalObjectives.MasteryAwarded);
+        Assert.DoesNotContain(sim.Events, e => e.Type == "RegionalMasteryEarned");
+
+        // Standing at the outpost is not arrival either.
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.NurseryPosition));
+        Assert.False(sim.RegionalObjectives.MasteryAwarded);
+
+        // Physically reaching the lily island does.
+        Assert.True(sim.TryAwardCleverCrossingOnArrival(
+            ReedwaterLayout.FirstDestinationPosition + new Vec3(1.2, 0, -0.8)));
         Assert.True(sim.RegionalObjectives.MasteryAwarded);
         Assert.Contains(sim.Events, e => e.Type == "RegionalMasteryEarned");
-        Assert.Equal(2, sim.ReedwaterBridgeWebsBuilt);
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
+    }
+
+    [Fact]
+    public void CleverCrossing_IsNotAwardedWithThreeStandingBridges()
+    {
+        var sim = UnlockedSim();
+        UnlockAndTravel(sim);
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.StartPost, ReedwaterLayout.IslandAPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandBPost, ReedwaterLayout.FarPost,
+            WebType.Bridge, out _, out _));
+        Assert.Equal(3, sim.ReedwaterBridgeCount);
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
+        Assert.False(sim.RegionalObjectives.MasteryAwarded);
+    }
+
+    [Fact]
+    public void CleverCrossing_SurvivesSaveAndReload()
+    {
+        var sim = UnlockedSim();
+        UnlockAndTravel(sim);
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.StartPost, ReedwaterLayout.IslandAPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
+
+        var data = sim.ExportSave(ReedwaterLayout.FirstDestinationPosition, 0, new SettingsData());
+        var restored = GameSimulation.FromSave(data, TestWorld.RichTuning(), MissionsConfig.Defaults());
+        Assert.True(restored.RegionalObjectives.MasteryAwarded);
+        Assert.False(restored.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
     }
 
     [Fact]

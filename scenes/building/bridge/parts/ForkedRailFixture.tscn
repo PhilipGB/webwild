@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/bridge/forked_rail_fixture.glb" id="1_model"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vertex"]
+
+[node name="ForkedRailFixture" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="world" parent="Visual" index="0"]
+
+[node name="ForkStem" parent="Visual/world" index="0"]
+material_override = ExtResource("2_vertex")
+
+[node name="LeftFork" parent="Visual/world" index="1"]
+material_override = ExtResource("2_vertex")
+
+[node name="RightFork" parent="Visual/world" index="2"]
+material_override = ExtResource("2_vertex")
+
+[node name="ForkBinding" parent="Visual/world" index="3"]
+material_override = ExtResource("2_vertex")
+
+[node name="OpenSilkLoop" parent="Visual/world" index="4"]
+material_override = ExtResource("2_vertex")
+

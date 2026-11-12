@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/bridge/silk_cross_lashing.glb" id="1_model"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vertex"]
+
+[node name="SilkCrossLashing" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="world" parent="Visual" index="0"]
+
+[node name="CrossLash0" parent="Visual/world" index="0"]
+material_override = ExtResource("2_vertex")
+
+[node name="CrossLash1" parent="Visual/world" index="1"]
+material_override = ExtResource("2_vertex")
+
+[node name="Twist0" parent="Visual/world" index="2"]
+material_override = ExtResource("2_vertex")
+
+[node name="Twist1" parent="Visual/world" index="3"]
+material_override = ExtResource("2_vertex")
+
+[node name="Twist2" parent="Visual/world" index="4"]
+material_override = ExtResource("2_vertex")
+
+[node name="Tail" parent="Visual/world" index="5"]
+material_override = ExtResource("2_vertex")
+

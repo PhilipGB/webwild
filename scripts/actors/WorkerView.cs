@@ -100,7 +100,9 @@ public partial class WorkerView : Node3D
 
     public void FlashActivity() => _flash = 1.1f;
 
-    public bool ProbeActivityGlowVisible => _activityGlow.Visible;
+    public bool ProbeActivityGlowVisible =>
+        _activityGlow.Visible || _flash > 0f ||
+        _state.Activity is WorkerActivity.Collecting or WorkerActivity.Repairing;
 
     private bool IsOnBridge()
     {

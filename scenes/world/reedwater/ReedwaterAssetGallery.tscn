@@ -1,0 +1,189 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/LilyPadSmall.tscn" id="1_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/LilyPadLarge.tscn" id="2_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/LilyPadCluster.tscn" id="3_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/WaterLilyOpen.tscn" id="4_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/WaterLilyBud.tscn" id="5_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/CattailSingle.tscn" id="6_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/CattailCluster.tscn" id="7_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MarshGrassTuft.tscn" id="8_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MossIslandSmall.tscn" id="9_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MossIslandMedium.tscn" id="10_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MossIslandLarge.tscn" id="11_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/PondAnchorPost.tscn" id="12_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/ExposedRootAnchor.tscn" id="13_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/Dragonfly.tscn" id="14_asset"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/SteppingStone.tscn" id="15_asset"]
+
+[node name="ReedwaterAssetGallery" type="Node3D"]
+
+[node name="LilyPadSmall" parent="." instance=ExtResource("1_asset")]
+position = Vector3(-16, 0, -8)
+
+[node name="Label_00" type="Label3D" parent="."]
+position = Vector3(-16, 3.2, -8)
+text = "lily_pad_small"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="LilyPadLarge" parent="." instance=ExtResource("2_asset")]
+position = Vector3(-8, 0, -8)
+
+[node name="Label_01" type="Label3D" parent="."]
+position = Vector3(-8, 3.2, -8)
+text = "lily_pad_large"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="LilyPadCluster" parent="." instance=ExtResource("3_asset")]
+position = Vector3(0, 0, -8)
+
+[node name="Label_02" type="Label3D" parent="."]
+position = Vector3(0, 3.2, -8)
+text = "lily_pad_cluster"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="WaterLilyOpen" parent="." instance=ExtResource("4_asset")]
+position = Vector3(8, 0, -8)
+
+[node name="Label_03" type="Label3D" parent="."]
+position = Vector3(8, 3.2, -8)
+text = "water_lily_open"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="WaterLilyBud" parent="." instance=ExtResource("5_asset")]
+position = Vector3(16, 0, -8)
+
+[node name="Label_04" type="Label3D" parent="."]
+position = Vector3(16, 3.2, -8)
+text = "water_lily_bud"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="CattailSingle" parent="." instance=ExtResource("6_asset")]
+position = Vector3(-16, 0, 0)
+
+[node name="Label_05" type="Label3D" parent="."]
+position = Vector3(-16, 3.2, 0)
+text = "cattail_single"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="CattailCluster" parent="." instance=ExtResource("7_asset")]
+position = Vector3(-8, 0, 0)
+
+[node name="Label_06" type="Label3D" parent="."]
+position = Vector3(-8, 3.2, 0)
+text = "cattail_cluster"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="MarshGrassTuft" parent="." instance=ExtResource("8_asset")]
+position = Vector3(0, 0, 0)
+
+[node name="Label_07" type="Label3D" parent="."]
+position = Vector3(0, 3.2, 0)
+text = "marsh_grass_tuft"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="MossIslandSmall" parent="." instance=ExtResource("9_asset")]
+position = Vector3(8, 0, 0)
+
+[node name="Label_08" type="Label3D" parent="."]
+position = Vector3(8, 3.2, 0)
+text = "moss_island_small"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="MossIslandMedium" parent="." instance=ExtResource("10_asset")]
+position = Vector3(16, 0, 0)
+
+[node name="Label_09" type="Label3D" parent="."]
+position = Vector3(16, 3.2, 0)
+text = "moss_island_medium"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="MossIslandLarge" parent="." instance=ExtResource("11_asset")]
+position = Vector3(-16, 0, 8)
+
+[node name="Label_10" type="Label3D" parent="."]
+position = Vector3(-16, 3.2, 8)
+text = "moss_island_large"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="PondAnchorPost" parent="." instance=ExtResource("12_asset")]
+position = Vector3(-8, 0, 8)
+
+[node name="Label_11" type="Label3D" parent="."]
+position = Vector3(-8, 3.2, 8)
+text = "pond_anchor_post"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="ExposedRootAnchor" parent="." instance=ExtResource("13_asset")]
+position = Vector3(0, 0, 8)
+
+[node name="Label_12" type="Label3D" parent="."]
+position = Vector3(0, 3.2, 8)
+text = "exposed_root_anchor"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="Dragonfly" parent="." instance=ExtResource("14_asset")]
+position = Vector3(8, 0, 8)
+
+[node name="Label_13" type="Label3D" parent="."]
+position = Vector3(8, 3.2, 8)
+text = "dragonfly"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="SteppingStone" parent="." instance=ExtResource("15_asset")]
+position = Vector3(16, 0, 8)
+
+[node name="Label_14" type="Label3D" parent="."]
+position = Vector3(16, 3.2, 8)
+text = "stepping_stone"
+font_size = 36
+pixel_size = 0.009
+billboard = 1
+no_depth_test = true
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-50, -35, 0)
+light_energy = 1.35
+shadow_enabled = true

@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/reedwater/marsh_grass_tuft.glb" id="1_model"]
+[ext_resource type="Material" path="res://art/materials/reedwater_vertex_color_material.tres" id="2_material"]
+
+[node name="MarshGrassTuft" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="world" parent="Visual" index="0"]
+
+[node name="Marsh_grass_blades" parent="Visual/world" index="0"]
+material_override = ExtResource("2_material")
+
+[node name="Pale_reeds_blades" parent="Visual/world" index="1"]
+material_override = ExtResource("2_material")
+

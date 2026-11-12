@@ -1,0 +1,71 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/reedwater/moss_island_large.glb" id="1_model"]
+[ext_resource type="Material" path="res://art/materials/reedwater_vertex_color_material.tres" id="2_material"]
+
+[sub_resource type="CylinderShape3D" id="1_collision"]
+radius = 2.4
+height = 0.88
+
+[node name="MossIslandLarge" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="world" parent="Visual" index="0"]
+
+[node name="Faceted_earth_bank" parent="Visual/world" index="0"]
+material_override = ExtResource("2_material")
+
+[node name="Grass_turf" parent="Visual/world" index="1"]
+material_override = ExtResource("2_material")
+
+[node name="Moss_streaks" parent="Visual/world" index="2"]
+material_override = ExtResource("2_material")
+
+[node name="Waterline_stones" parent="Visual/world" index="3"]
+material_override = ExtResource("2_material")
+
+[node name="Clump_0_blades" parent="Visual/world" index="4"]
+material_override = ExtResource("2_material")
+
+[node name="Clump_1_blades" parent="Visual/world" index="5"]
+material_override = ExtResource("2_material")
+
+[node name="Clump_2_blades" parent="Visual/world" index="6"]
+material_override = ExtResource("2_material")
+
+[node name="Clump_3_blades" parent="Visual/world" index="7"]
+material_override = ExtResource("2_material")
+
+[node name="Clump_4_blades" parent="Visual/world" index="8"]
+material_override = ExtResource("2_material")
+
+[node name="Clump_5_blades" parent="Visual/world" index="9"]
+material_override = ExtResource("2_material")
+
+[node name="Little_exposed_root_gnarled_roots" parent="Visual/world" index="10"]
+material_override = ExtResource("2_material")
+
+[node name="Little_exposed_root_moss" parent="Visual/world" index="11"]
+material_override = ExtResource("2_material")
+
+[node name="Little_exposed_root_silk_tip" parent="Visual/world" index="12"]
+material_override = ExtResource("2_material")
+
+[node name="Pebble_patch_0" parent="Visual/world" index="13"]
+material_override = ExtResource("2_material")
+
+[node name="Pebble_patch_1" parent="Visual/world" index="14"]
+material_override = ExtResource("2_material")
+
+[node name="Pebble_patch_2" parent="Visual/world" index="15"]
+material_override = ExtResource("2_material")
+
+[node name="Collision" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision"]
+position = Vector3(0, -0.3, 0)
+shape = SubResource("1_collision")
+

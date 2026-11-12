@@ -98,7 +98,7 @@ public partial class WorkerView : Node3D
         _activityGlow.Scale = Vector3.One * (1.1f + Mathf.Sin(_time * 5f) * 0.12f);
     }
 
-    public void FlashActivity() => _flash = 1.1f;
+    public void FlashActivity() => _flash = 3.0f;
 
     public bool ProbeActivityGlowVisible =>
         _activityGlow.Visible || _flash > 0f ||

@@ -1165,7 +1165,7 @@ public partial class GardenClearing : Node3D
 
         var from = camera.ProjectRayOrigin(screenPosition);
         var to = from + camera.ProjectRayNormal(screenPosition) * 90f;
-        var query = PhysicsRayQueryParameters3D.Create(from, to, 5);
+        using var query = PhysicsRayQueryParameters3D.Create(from, to, 5);
         query.CollideWithAreas = true;
         query.CollideWithBodies = true;
         var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
@@ -1191,7 +1191,7 @@ public partial class GardenClearing : Node3D
 
     private bool IsAnchorOccluded(Vector3 from, Vector3 world)
     {
-        var query = PhysicsRayQueryParameters3D.Create(from, world, 1);
+        using var query = PhysicsRayQueryParameters3D.Create(from, world, 1);
         query.CollideWithAreas = false;
         query.CollideWithBodies = true;
         var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
@@ -1675,7 +1675,7 @@ public partial class GardenClearing : Node3D
         }
 
         var space = GetWorld3D().DirectSpaceState;
-        var query = new PhysicsShapeQueryParameters3D
+        using var query = new PhysicsShapeQueryParameters3D
         {
             Shape = new SphereShape3D { Radius = 0.2f },
             Transform = new Transform3D(Basis.Identity, _player.GlobalPosition + new Vector3(0, 0.25f, 0))
@@ -1687,7 +1687,7 @@ public partial class GardenClearing : Node3D
         var inWater = hits.Any(hit => hit["collider"].AsGodotObject() is Area3D area && area.IsInGroup("water"));
         // A tall water guard catches jumps over open water, but a player on a
         // real bridge deck or bank has solid ground just below and is safe.
-        var groundQuery = PhysicsRayQueryParameters3D.Create(
+        using var groundQuery = PhysicsRayQueryParameters3D.Create(
             _player.GlobalPosition + new Vector3(0, 0.05f, 0),
             _player.GlobalPosition + new Vector3(0, -1.0f, 0), 1);
         groundQuery.CollideWithAreas = false;
@@ -1935,7 +1935,7 @@ public partial class GardenClearing : Node3D
     {
         var value = ToVector3(position);
         var space = GetWorld3D().DirectSpaceState;
-        var query = new PhysicsShapeQueryParameters3D
+        using var query = new PhysicsShapeQueryParameters3D
         {
             Shape = new SphereShape3D { Radius = 0.2f },
             Transform = new Transform3D(Basis.Identity, value + new Vector3(0, 0.25f, 0))
@@ -1952,7 +1952,7 @@ public partial class GardenClearing : Node3D
     {
         var value = ToVector3(position);
         var space = GetWorld3D().DirectSpaceState;
-        var query = new PhysicsShapeQueryParameters3D
+        using var query = new PhysicsShapeQueryParameters3D
         {
             Shape = new SphereShape3D { Radius = 0.2f },
             Transform = new Transform3D(Basis.Identity, value + new Vector3(0, 0.25f, 0))
@@ -1963,7 +1963,7 @@ public partial class GardenClearing : Node3D
         var inWater = space.IntersectShape(query, 8)
             .Any(hit => hit["collider"].AsGodotObject() is Area3D area && area.IsInGroup("water"));
         if (!inWater) return false;
-        var groundQuery = PhysicsRayQueryParameters3D.Create(
+        using var groundQuery = PhysicsRayQueryParameters3D.Create(
             value + new Vector3(0, 0.05f, 0),
             value + new Vector3(0, -1.0f, 0), 1);
         groundQuery.CollideWithAreas = false;

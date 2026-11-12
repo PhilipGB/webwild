@@ -44,6 +44,10 @@ public partial class SpiderPlayer : CharacterBody3D
         _yaw = CameraPivot.Rotation.Y;
         _defaultZoom = SpringArm.SpringLength;
         _lastSafePosition = GlobalPosition;
+        // A child should never need a jump to climb a bridge joint. The walkable
+        // surface is continuous, and these tolerances absorb tiny mesh steps.
+        FloorMaxAngle = Mathf.DegToRad(55);
+        FloorSnapLength = 0.4f;
         BuildShadow();
     }
 

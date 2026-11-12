@@ -119,8 +119,6 @@ public partial class WebVisual : Node3D
     private void BuildBridgeCollision(
         Vector3 a, Vector3 b, BridgeGeometry.ApproachPoints approach)
     {
-        var aLocal = a - _center;
-        var bLocal = b - _center;
         _bridgeBody = new StaticBody3D
         {
             Name = "BridgeWalkway",
@@ -129,51 +127,34 @@ public partial class WebVisual : Node3D
         };
         AddChild(_bridgeBody);
 
-        var samples = 7;
-        var previous = aLocal;
-        for (var i = 1; i <= samples; i++)
-        {
-            var point = ToVector3(BridgeGeometry.EvaluateSpan(
-                ToCoreVec3(aLocal), ToCoreVec3(bLocal), i / (double)samples));
-            AddWalkwayCollision(previous, point);
-            previous = point;
-        }
-
-        // Walkable approaches connect the bridge anchors to solid ground on both
-        // banks. The shared core helper uses authored bank points for the ravine
-        // posts, so this is correct whichever anchor the player selected first.
-        var leftGround = ToVector3(approach.A) - _center;
-        var rightGround = ToVector3(approach.B) - _center;
         _rampGroundPoints.Clear();
         _rampGroundPoints.Add(ToVector3(approach.A));
         _rampGroundPoints.Add(ToVector3(approach.B));
-        AddWalkwayCollision(leftGround, aLocal);
-        AddWalkwayCollision(bLocal, rightGround);
+
+        // One continuous triangle surface for ramp + deck + ramp. Segmented
+        // collision boxes used to expose a steep end cap at every joint, which
+        // wedged the 0.72 m capsule half-way onto the deck. A surface has no end
+        // caps, so the player can stop, turn and resume anywhere.
+        var surface = BridgeGeometry.BuildWalkwaySurface(
+            ToCoreVec3(a), ToCoreVec3(b), approach.A, approach.B);
+        var faces = new Vector3[surface.Indices.Count];
+        for (var i = 0; i < surface.Indices.Count; i++)
+        {
+            var local = surface.Vertices[surface.Indices[i]] - ToCoreVec3(_center);
+            faces[i] = ToVector3(local);
+        }
+        var shape = new ConcavePolygonShape3D { Data = faces, BackfaceCollision = true };
+        _bridgeBody.AddChild(new CollisionShape3D
+        {
+            Name = "WalkwaySurface",
+            Shape = shape,
+            Transform = Transform3D.Identity
+        });
     }
 
     private static Vec3 ToCoreVec3(Vector3 v) => new(v.X, v.Y, v.Z);
 
     private static Vector3 ToVector3(Vec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
-
-    private void AddWalkwayCollision(Vector3 from, Vector3 to)
-    {
-        var delta = to - from;
-        var length = delta.Length();
-        if (length < 0.01f) return;
-        var z = delta.Normalized();
-        var x = Vector3.Up.Cross(z);
-        if (x.LengthSquared() < 0.0001f) x = Vector3.Right;
-        x = x.Normalized();
-        var y = z.Cross(x).Normalized();
-        var basis = new Basis(x, y, z);
-        var centre = (from + to) * 0.5f - y * 0.05f;
-
-        _bridgeBody!.AddChild(new CollisionShape3D
-        {
-            Shape = new BoxShape3D { Size = new Vector3(0.9f, 0.1f, length + 0.08f) },
-            Transform = new Transform3D(basis, centre)
-        });
-    }
 
     public void UpdateState(WebState state)
     {

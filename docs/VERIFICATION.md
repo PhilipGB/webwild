@@ -71,6 +71,19 @@
 - `dotnet test`: 106/106; scene contract 55/55; headless, rendered and exported
   Linux runtime probes 246/246.
 
+## Integration performed in the v0.2.2 hardening pass (PR 1)
+
+- Bridge collision is now one triangle-strip surface per bridge (1.5 m wide)
+  instead of segmented 0.9 m boxes. Physics walking checks start on bank or
+  island ground and cross all three Reedwater bridges in both directions, stop
+  at joints, turn on the deck, cross after reload, and still respect water.
+- Two decorative Reedwater posts that intersected the bridge centreline were
+  moved off the walkable deck.
+- New Garden confirmation, durable `.previous` archive and title-screen restore
+  were exercised with pure save tests and runtime probe checks.
+- `dotnet test`: 115/115; scene contract 55/55; headless and rendered Linux
+  runtime probes 264/264.
+
 ## Not performed
 
 - Windows runtime: no Windows host was available. The v0.2.1 Windows export was

@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T14:02:41.9091416Z",
+  "generatedUtc": "2026-11-12T18:15:24.5426973Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
-  "passes": 246,
+  "passes": 264,
   "failures": 0,
   "checks": [
     {
@@ -368,17 +368,17 @@
     {
       "name": "pause-freezes-airborne",
       "pass": true,
-      "detail": "start=0.37 paused=0.37"
+      "detail": "start=0.20 paused=0.20"
     },
     {
       "name": "pause-resumes-physics",
       "pass": true,
-      "detail": "resumed=0.00 paused=0.37"
+      "detail": "resumed=0.00 paused=0.20"
     },
     {
       "name": "climb-stem",
       "pass": true,
-      "detail": "height=3.80"
+      "detail": "height=3.71"
     },
     {
       "name": "build-tool-open",
@@ -443,7 +443,7 @@
     {
       "name": "bridge-walkway-collision",
       "pass": true,
-      "detail": "shapes=9"
+      "detail": "shapes=1"
     },
     {
       "name": "bridge-gap-modular-planks",
@@ -503,12 +503,12 @@
     {
       "name": "bridge-enables-player-crossing",
       "pass": true,
-      "detail": "x=11.23"
+      "detail": "x=11.28"
     },
     {
       "name": "bridge-damage-visual",
       "pass": true,
-      "detail": "overlays=588 durability=25"
+      "detail": "overlays=589 durability=25"
     },
     {
       "name": "hatch-started",
@@ -706,6 +706,11 @@
       "detail": "insects=3"
     },
     {
+      "name": "reedwater-helper-hatched",
+      "pass": true,
+      "detail": "Outpost hatch uses shared colony resources"
+    },
+    {
       "name": "shoreline-start-bank-dry",
       "pass": true,
       "detail": "water=False hazard=False"
@@ -738,7 +743,7 @@
     {
       "name": "water-blocks-without-bridge",
       "pass": true,
-      "detail": "x=6.05 inWater=False"
+      "detail": "x=6.14 inWater=False"
     },
     {
       "name": "pond-route-blocked-before-bridges",
@@ -771,9 +776,39 @@
       "detail": "Two bridges for the lily island"
     },
     {
-      "name": "player-crosses-reedwater-bridge",
+      "name": "player-walks-bank-onto-bridge-one",
       "pass": true,
-      "detail": "x=0.37"
+      "detail": "reached=True end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=3.7"
+    },
+    {
+      "name": "player-walks-bridge-one-to-island-a",
+      "pass": true,
+      "detail": "end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True }"
+    },
+    {
+      "name": "player-walks-island-a-onto-bridge-two",
+      "pass": true,
+      "detail": "reached=True end=Vec3 { X = -2.653002977371216, Y = 0.463480681180954, Z = 2.1378886699676514, LengthSquared = 11.82380710494455, Length = 3.4385763194881322, HorizontalLength = 3.4071972005031625, IsFinite = True }"
+    },
+    {
+      "name": "player-walks-bridge-two-back-to-island-a",
+      "pass": true,
+      "detail": "end=Vec3 { X = 1.695939302444458, Y = 0.48524150252342224, Z = 5.925444602966309, LengthSquared = 38.22256317616954, Length = 6.182439904776231, HorizontalLength = 6.163367899160194, IsFinite = True } seconds=2.4"
+    },
+    {
+      "name": "player-walks-bridge-one-back-to-bank",
+      "pass": true,
+      "detail": "end=Vec3 { X = 8.621214866638184, Y = 0.0008238168084062636, Z = 8.262118339538574, LengthSquared = 142.58794591195704, Length = 11.941019467028644, HorizontalLength = 11.94101943861088, IsFinite = True } seconds=2.0"
+    },
+    {
+      "name": "player-stops-and-resumes-at-deck-joint",
+      "pass": true,
+      "detail": "end=Vec3 { X = 2.000155210494995, Y = 0.427472859621048, Z = 5.9598188400268555, LengthSquared = 39.70279451772193, Length = 6.301015356093169, HorizontalLength = 6.286498347411644, IsFinite = True }"
+    },
+    {
+      "name": "player-turns-around-on-bridge",
+      "pass": true,
+      "detail": "mid=4.43 back=5.48 forward=4.19"
     },
     {
       "name": "reed-capture-web-built",
@@ -794,6 +829,16 @@
       "name": "bridge-three-built",
       "pass": true,
       "detail": "Root island to far bank"
+    },
+    {
+      "name": "player-walks-island-b-onto-bridge-three",
+      "pass": true,
+      "detail": "reached=True end=Vec3 { X = -8.858633041381836, Y = 0.0002549905329942703, Z = -1.9882800579071045, LengthSquared = 82.42863701555325, Length = 9.079021809399581, HorizontalLength = 9.07902180581879, IsFinite = True }"
+    },
+    {
+      "name": "player-walks-bridge-three-back-to-island-b",
+      "pass": true,
+      "detail": "end=Vec3 { X = -3.0709757804870605, Y = 0.5313736200332642, Z = 2.1276707649230957, LengthSquared = 14.240233052313798, Length = 3.7736233320661188, HorizontalLength = 3.7360239731894844, IsFinite = True } seconds=5.2"
     },
     {
       "name": "reedwater-bridge-modular-planks",
@@ -834,11 +879,6 @@
       "name": "far-capture-web-built",
       "pass": true,
       "detail": "Far-bank capture web"
-    },
-    {
-      "name": "reedwater-helper-hatched",
-      "pass": true,
-      "detail": "Outpost hatch uses shared colony resources"
     },
     {
       "name": "worker-used-reedwater-bridge",
@@ -901,6 +941,11 @@
       "detail": "completed=3"
     },
     {
+      "name": "reload-reedwater-bridge-walk",
+      "pass": true,
+      "detail": "end=Vec3 { X = 1.9996455907821655, Y = 0.42760711908340454, Z = 5.959555149078369, LengthSquared = 39.697727911931864, Length = 6.300613296492006, HorizontalLength = 6.286086227824199, IsFinite = True } seconds=5.0"
+    },
+    {
       "name": "reload-reedwater-bridge-modular-planks",
       "pass": true,
       "detail": "planks=35;variants=7;variantCount=3;panels=12;details=17;rails=1200;ribbon=0;degenerate=0;mode=Constructed"
@@ -958,7 +1003,7 @@
     {
       "name": "reenter-supply-not-regranted",
       "pass": true,
-      "detail": "claimed=reedwater_bank food=3 silk=9"
+      "detail": "claimed=reedwater_bank food=3 silk=11"
     },
     {
       "name": "critical-bridge-present",
@@ -1123,7 +1168,7 @@
     {
       "name": "bridge-reverse-collision",
       "pass": true,
-      "detail": "shapes=9"
+      "detail": "shapes=1"
     },
     {
       "name": "bridge-reverse-modular-planks",
@@ -1163,7 +1208,7 @@
     {
       "name": "bridge-reverse-enables-crossing",
       "pass": true,
-      "detail": "x=11.23"
+      "detail": "x=11.28"
     },
     {
       "name": "bridge-removal-clears-collision",
@@ -1193,7 +1238,7 @@
     {
       "name": "bridge-zaxis-collision",
       "pass": true,
-      "detail": "shapes=9"
+      "detail": "shapes=1"
     },
     {
       "name": "bridge-zaxis-modular-planks",
@@ -1234,6 +1279,51 @@
       "name": "bridge-regression-quit",
       "pass": true,
       "detail": "Fresh bridge-regression garden leaves cleanly"
+    },
+    {
+      "name": "new-garden-confirm-opens",
+      "pass": true,
+      "detail": "Existing save asks before replacing"
+    },
+    {
+      "name": "new-garden-confirm-default-safe",
+      "pass": true,
+      "detail": "focused=\u0027Cancel\u0027"
+    },
+    {
+      "name": "new-garden-repeat-click-stays-confirming",
+      "pass": true,
+      "detail": "A second click cannot bypass the confirmation"
+    },
+    {
+      "name": "new-garden-cancel",
+      "pass": true,
+      "detail": "save=49 archive=32"
+    },
+    {
+      "name": "new-garden-confirm-archives-previous",
+      "pass": true,
+      "detail": "archive=49 expected=49"
+    },
+    {
+      "name": "new-garden-autosave",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "new-garden-autosave-keeps-archive",
+      "pass": true,
+      "detail": "archive=49 expected=49"
+    },
+    {
+      "name": "restore-previous-available",
+      "pass": true,
+      "detail": "Title offers the kept garden"
+    },
+    {
+      "name": "restore-previous-garden",
+      "pass": true,
+      "detail": "restoredTick=52 archived=49"
     }
   ]
 }

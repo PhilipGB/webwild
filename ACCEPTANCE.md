@@ -146,6 +146,26 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Windows runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | PE32+ export rebuilt; no Windows host |
 | v0.2.1 release status | Not released by instruction | Merged fix only; v0.2.0 remains the published release |
 
+## v0.2.2 PR 1 — bridge traversal and save safety
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Walking from bank to bridge one and onto island A uses ordinary movement | PASS | `player-walks-bank-onto-bridge-one`, `player-walks-bridge-one-to-island-a`; `24-reedwater-crossing.png` |
+| Walking from island A to island B and from island B to the far bank | PASS | `player-walks-island-a-onto-bridge-two`, `player-walks-island-b-onto-bridge-three`; `24b-reedwater-far-bank-walk.png` |
+| Every bridge walked in reverse without jumping | PASS | `player-walks-bridge-two-back-to-island-a`, `player-walks-bridge-one-back-to-bank`, `player-walks-bridge-three-back-to-island-b` |
+| Stopping/restarting at a deck joint and turning on the deck | PASS | `player-stops-and-resumes-at-deck-joint`, `player-turns-around-on-bridge` |
+| Crossing still works after save/reload | PASS | `reload-reedwater-bridge-walk` |
+| Walkway is 1.4–1.6 m wide and every face is a walkable top face | PASS | `BridgeWalkwayTests.WalkwaySurface_IsWideEnoughForThePlayerCapsule`, `WalkwaySurface_HasOnlyUpwardFaces_AndNoThinEndCaps` |
+| Walkway is continuous, follows the visible sag and is anchor-order independent | PASS | `WalkwaySurface_IsContinuousAcrossRampAndDeckJoints`, `WalkwaySurface_FollowsTheSameSagAsTheVisibleDeck`, `WalkwaySurface_IsIndependentOfAnchorSelectionOrder` |
+| Island approaches align with their spans; no post blocks a deck | PASS | Conditional `BridgeGeometry.ComputeApproachPoints`; `IslandA.tscn`/`FarBank.tscn` post offsets |
+| Water still blocks a crossing without a bridge | PASS | `water-blocks-without-bridge`; existing shoreline checks |
+| Worker route remains correct | PASS | `worker-used-reedwater-bridge`; existing unit `WorkerCrossesThreeBridgesAndCompletesR03` |
+| New Garden asks before replacing an existing garden | PASS | `new-garden-confirm-opens`, `new-garden-confirm-default-safe`; `30-new-garden-confirm.png` |
+| Cancel leaves the existing save unchanged; repeated clicks cannot bypass confirmation | PASS | `new-garden-cancel`, `new-garden-repeat-click-stays-confirming` |
+| Confirmed New Garden keeps a durable previous-garden archive across later autosaves | PASS | `new-garden-confirm-archives-previous`, `new-garden-autosave-keeps-archive`; `ArchiveExisting_KeepsPreviousGardenAcrossLaterAutosaves` |
+| Previous garden can be restored from the title screen | PASS | `restore-previous-available`, `restore-previous-garden` |
+| Backup recovery still works | PASS | `ArchiveExisting_UsesHealthyBackupWhenMainIsCorrupt`; existing corrupt-main tests |
+
 ## Sign-off
 
 | Area | Result |

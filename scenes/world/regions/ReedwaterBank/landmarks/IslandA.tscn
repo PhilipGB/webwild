@@ -14,7 +14,7 @@ rotation_degrees = Vector3(0, -18, 0)
 scale = Vector3(0.95, 0.95, 0.95)
 
 [node name="IslandPost" parent="." instance=ExtResource("2_post")]
-position = Vector3(0.6, 0, 4.9)
+position = Vector3(1.8, 0, 5.0)
 rotation_degrees = Vector3(0, 18, 0)
 
 [node name="IslandGrass" parent="." instance=ExtResource("3_grass")]

@@ -20,6 +20,8 @@ public partial class Main : Node3D
     private CanvasLayer _titleLayer = null!;
     private Control _titleRoot = null!;
     private Control? _helpOverlay;
+    private Control? _newGardenConfirm;
+    private Button? _restoreButton;
     private Node3D? _backdrop;
     private Camera3D _titleCamera = null!;
     private Label _messageLabel = null!;
@@ -211,6 +213,11 @@ public partial class Main : Node3D
         _continueButton.Pressed += ContinueGame;
         column.AddChild(_continueButton);
 
+        _restoreButton = UiKit.Button("Restore previous garden", 420, 50);
+        _restoreButton.Pressed += RestorePreviousGarden;
+        _restoreButton.Visible = false;
+        column.AddChild(_restoreButton);
+
         var help = UiKit.Button("How to Play", 420, 50);
         help.Pressed += OpenHelp;
         column.AddChild(help);
@@ -296,6 +303,15 @@ public partial class Main : Node3D
             _continueButton.Disabled = true;
             _continueButton.Text = "Continue (no saved garden yet)";
         }
+        if (_restoreButton is not null)
+        {
+            var hasArchive = Saves.HasArchive;
+            _restoreButton.Visible = hasArchive;
+            _restoreButton.Disabled = !hasArchive;
+            _restoreButton.Text = hasArchive
+                ? "Restore previous garden"
+                : "Restore previous garden (none kept)";
+        }
     }
 
     private void ContinueGame()
@@ -312,16 +328,139 @@ public partial class Main : Node3D
 
     public void ProbeReturnToTitle() => ReturnToTitle();
 
+    public bool NewGardenConfirmOpen => _newGardenConfirm is not null;
+    public bool ArchiveAvailable => Saves.HasArchive;
+    public string ProbeFocusedText =>
+        (GetViewport().GuiGetFocusOwner() as Button)?.Text ?? "";
+    public bool ProbeRequestNewGarden()
+    {
+        StartNewGame();
+        return _newGardenConfirm is not null;
+    }
+
+    public bool ProbeCancelNewGarden()
+    {
+        HideNewGardenConfirmation();
+        return _newGardenConfirm is null;
+    }
+
+    public bool ProbeConfirmNewGarden()
+    {
+        ConfirmNewGarden();
+        return _game is not null;
+    }
+
+    public bool ProbeRestorePreviousGarden()
+    {
+        RestorePreviousGarden();
+        return _game is not null;
+    }
+
+    public long ProbeSaveTick() => Saves.Load().Data?.Tick ?? -1;
+    public long ProbeArchiveTick() => Saves.LoadArchive().Data?.Tick ?? -1;
+
     public GardenClearing? ProbeContinue()
     {
         var result = Saves.Load();
         return result.Success && result.Data is not null ? StartGame(result.Data) : null;
     }
 
-    private void StartNewGame() => StartGame(null);
+    private void StartNewGame()
+    {
+        // A second click while the confirmation is open must never start a game.
+        if (_newGardenConfirm is not null) return;
+        var existing = Saves.Load();
+        if (!Saves.HasAnySave || !existing.Success || existing.Data is null)
+        {
+            StartGame(null);
+            return;
+        }
+        ShowNewGardenConfirmation();
+    }
+
+    private void ShowNewGardenConfirmation()
+    {
+        if (_newGardenConfirm is not null) return;
+        var root = new Control
+        {
+            Name = "NewGardenConfirm",
+            MouseFilter = Control.MouseFilterEnum.Stop,
+            Theme = UiKit.CreateTheme()
+        };
+        UiKit.FullRect(root);
+        _titleLayer.AddChild(root);
+        var dim = new ColorRect
+        {
+            Color = new Color(0.04f, 0.09f, 0.07f, 0.68f),
+            MouseFilter = Control.MouseFilterEnum.Stop
+        };
+        UiKit.FullRect(dim);
+        root.AddChild(dim);
+        var centre = new CenterContainer();
+        UiKit.FullRect(centre);
+        root.AddChild(centre);
+        var panel = new PanelContainer { CustomMinimumSize = new Vector2(660, 0) };
+        centre.AddChild(panel);
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 10);
+        panel.AddChild(column);
+
+        var title = UiKit.Label("Start a new garden?", 34, UiKit.Pine);
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        column.AddChild(title);
+        column.AddChild(UiKit.Label(
+            "You already have a saved garden. Starting a new one replaces it, but the old garden is kept in the garden archive so you can restore it from the title screen.",
+            19, UiKit.Pine, true));
+        column.AddChild(UiKit.Label(
+            "Nothing is deleted until you choose Start New Garden.", 17, UiKit.TealDark, true));
+        column.AddChild(UiKit.Spacer(6));
+
+        var cancel = UiKit.Button("Cancel", 300, 58, true);
+        cancel.Pressed += HideNewGardenConfirmation;
+        column.AddChild(cancel);
+        var start = UiKit.Button("Start New Garden", 300, 54);
+        start.Pressed += ConfirmNewGarden;
+        column.AddChild(start);
+
+        _newGardenConfirm = root;
+        // Cancel is the default, safe choice.
+        cancel.CallDeferred(Control.MethodName.GrabFocus);
+    }
+
+    private void HideNewGardenConfirmation()
+    {
+        if (_newGardenConfirm is null) return;
+        _newGardenConfirm.QueueFree();
+        _newGardenConfirm = null;
+    }
+
+    private void ConfirmNewGarden()
+    {
+        if (_newGardenConfirm is null) return;
+        if (Saves.HasAnySave && !Saves.ArchiveExisting(out var archiveMessage))
+        {
+            ShowMessage(archiveMessage, UiKit.Coral);
+            return;
+        }
+        HideNewGardenConfirmation();
+        StartGame(null);
+    }
+
+    private void RestorePreviousGarden()
+    {
+        var result = Saves.LoadArchive();
+        if (!result.Success || result.Data is null)
+        {
+            ShowMessage(result.Message, UiKit.Coral);
+            RefreshContinue();
+            return;
+        }
+        StartGame(result.Data);
+    }
 
     public GardenClearing StartGame(SaveGameData? data)
     {
+        HideNewGardenConfirmation();
         HideHelp();
         _settingsDialog.Close();
         _titleRoot.Visible = false;
@@ -467,6 +606,12 @@ public partial class Main : Node3D
         if (_helpOverlay is not null)
         {
             HideHelp();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (_newGardenConfirm is not null)
+        {
+            HideNewGardenConfirmation();
             GetViewport().SetInputAsHandled();
         }
     }

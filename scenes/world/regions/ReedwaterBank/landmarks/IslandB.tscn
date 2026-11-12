@@ -1,0 +1,58 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MossIslandMedium.tscn" id="1_island"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/PondAnchorPost.tscn" id="2_post"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/ExposedRootAnchor.tscn" id="3_root"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MarshGrassTuft.tscn" id="4_grass"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/WaterLilyOpen.tscn" id="5_lily"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/LilyPadLarge.tscn" id="6_pad"]
+
+[node name="IslandB" type="Node3D"]
+
+[node name="MossIsland" parent="." instance=ExtResource("1_island")]
+position = Vector3(-3.4, 0, 1.6)
+rotation_degrees = Vector3(0, 14, 0)
+scale = Vector3(0.95, 0.95, 0.95)
+
+[node name="IslandPost" parent="." instance=ExtResource("2_post")]
+position = Vector3(-3.9, 0, 2.4)
+rotation_degrees = Vector3(0, -12, 0)
+
+[node name="LilyRootA" parent="." instance=ExtResource("3_root")]
+position = Vector3(-4.8, 0.12, 1.8)
+rotation_degrees = Vector3(0, 72, 0)
+scale = Vector3(0.72, 0.8, 0.72)
+
+[node name="LilyRootB" parent="." instance=ExtResource("3_root")]
+position = Vector3(-2.0, 0.12, 1.8)
+rotation_degrees = Vector3(0, -48, 0)
+scale = Vector3(0.72, 0.8, 0.72)
+
+[node name="IslandGrass" parent="." instance=ExtResource("4_grass")]
+position = Vector3(-3.2, 0.14, 2.2)
+rotation_degrees = Vector3(0, 18, 0)
+
+[node name="IslandLily" parent="." instance=ExtResource("5_lily")]
+position = Vector3(-3.8, 0.14, 0.9)
+rotation_degrees = Vector3(0, 28, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="ShorePad" parent="." instance=ExtResource("6_pad")]
+position = Vector3(-1.4, 0.02, 0.9)
+rotation_degrees = Vector3(0, -15, 0)
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="Anchor_rw_island_b_post" type="Marker3D" parent="."]
+position = Vector3(-3.0, 0.55, 1.8)
+
+[node name="Anchor_rw_lily_a" type="Marker3D" parent="."]
+position = Vector3(-4.8, 1.35, 1.8)
+
+[node name="Anchor_rw_lily_b" type="Marker3D" parent="."]
+position = Vector3(-2.0, 1.35, 1.8)
+
+[node name="FirstDestinationPoint" type="Marker3D" parent="."]
+position = Vector3(-3.4, 0.15, 1.6)
+
+[node name="BridgeGround_rw_island_b_post" type="Marker3D" parent="."]
+position = Vector3(-2.7, 0.15, 2.7)

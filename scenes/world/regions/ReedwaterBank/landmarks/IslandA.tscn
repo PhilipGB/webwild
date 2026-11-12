@@ -1,0 +1,39 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MossIslandSmall.tscn" id="1_island"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/PondAnchorPost.tscn" id="2_post"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MarshGrassTuft.tscn" id="3_grass"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/CattailSingle.tscn" id="4_cattail"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/LilyPadSmall.tscn" id="5_lily"]
+
+[node name="IslandA" type="Node3D"]
+
+[node name="MossIsland" parent="." instance=ExtResource("1_island")]
+position = Vector3(1.0, 0, 5.8)
+rotation_degrees = Vector3(0, -18, 0)
+scale = Vector3(0.95, 0.95, 0.95)
+
+[node name="IslandPost" parent="." instance=ExtResource("2_post")]
+position = Vector3(0.6, 0, 4.9)
+rotation_degrees = Vector3(0, 18, 0)
+
+[node name="IslandGrass" parent="." instance=ExtResource("3_grass")]
+position = Vector3(0.7, 0.14, 5.2)
+rotation_degrees = Vector3(0, 30, 0)
+scale = Vector3(0.85, 0.85, 0.85)
+
+[node name="IslandReed" parent="." instance=ExtResource("4_cattail")]
+position = Vector3(1.5, 0.14, 6.4)
+rotation_degrees = Vector3(0, 52, 0)
+scale = Vector3(0.8, 0.8, 0.8)
+
+[node name="IslandLily" parent="." instance=ExtResource("5_lily")]
+position = Vector3(2.1, 0.02, 4.9)
+rotation_degrees = Vector3(0, 15, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="Anchor_rw_island_a_post" type="Marker3D" parent="."]
+position = Vector3(1.4, 0.55, 5.6)
+
+[node name="BridgeGround_rw_island_a_post" type="Marker3D" parent="."]
+position = Vector3(2.2, 0.15, 6.4)

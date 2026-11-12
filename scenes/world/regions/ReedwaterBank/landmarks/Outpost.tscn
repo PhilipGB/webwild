@@ -1,0 +1,57 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/colony/leaf_nursery.glb" id="1_nursery"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/CattailCluster.tscn" id="3_cattail"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/ExposedRootAnchor.tscn" id="4_root"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/MarshGrassTuft.tscn" id="5_grass"]
+[ext_resource type="PackedScene" path="res://scenes/world/reedwater/props/WaterLilyOpen.tscn" id="6_lily"]
+
+[node name="Outpost" type="Node3D"]
+
+[node name="NurseryLeaf" parent="." instance=ExtResource("1_nursery")]
+position = Vector3(11.0, 0.05, 5.8)
+rotation_degrees = Vector3(0, -24, 0)
+scale = Vector3(1.25, 1.25, 1.25)
+
+[node name="world" parent="NurseryLeaf" index="0"]
+
+[node name="Cradle" parent="NurseryLeaf/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Egg_0" parent="NurseryLeaf/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Egg_1" parent="NurseryLeaf/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Egg_2" parent="NurseryLeaf/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Egg_3" parent="NurseryLeaf/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Stem" parent="NurseryLeaf/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="OutpostReeds" parent="." instance=ExtResource("3_cattail")]
+position = Vector3(9.4, 0, 5.2)
+rotation_degrees = Vector3(0, 42, 0)
+scale = Vector3(1.1, 1.1, 1.1)
+
+[node name="OutpostRoot" parent="." instance=ExtResource("4_root")]
+position = Vector3(12.2, 0, 4.7)
+rotation_degrees = Vector3(0, -61, 0)
+scale = Vector3(0.82, 0.86, 0.82)
+
+[node name="OutpostGrass" parent="." instance=ExtResource("5_grass")]
+position = Vector3(10.2, 0, 4.4)
+rotation_degrees = Vector3(0, 19, 0)
+
+[node name="OutpostLily" parent="." instance=ExtResource("6_lily")]
+position = Vector3(12.6, 0.02, 6.8)
+rotation_degrees = Vector3(0, 22, 0)
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="NurseryPoint" type="Marker3D" parent="."]
+position = Vector3(11.0, 0.1, 5.8)

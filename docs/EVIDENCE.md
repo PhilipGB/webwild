@@ -540,8 +540,9 @@ $ xvfb-run -a -s "-screen 0 1280x720x24" \
   `ec1077f4d343e0c07635ccb087b34130e1aca0519b7405c131312e9759e07afd`
 - `Webwild-v0.2.0-windows-x64.zip` — SHA-256
   `a44cc84f6e423cb9c6ecfb6d0638d2c6c592c5557e791d9c201cdd5f21bafd3b`
-- Linux archive re-download test: passed after extraction, 51/51 scene checks
-  and 236/236 runtime checks headless and rendered.
+- Published GitHub release asset (`gh release download v0.2.0`) re-verified:
+  archive SHA-256 matched, extracted, and passed 51/51 scene checks and 236/236
+  runtime checks headless and rendered.
 - Windows archive: built; runtime **NOT VERIFIED** (no Windows host).
 
 ### Delivery record
@@ -550,8 +551,12 @@ $ xvfb-run -a -s "-screen 0 1280x720x24" \
 - Exact PR-head CI:
   https://github.com/PhilipGB/webwild/actions/runs/43213927486
 - Merge commit: `2ef1b8d66592d4f698ecd73f075f1b8ce39f092c`
-- Final merged-main CI:
+- Code-merge main CI:
   https://github.com/PhilipGB/webwild/actions/runs/43214216887
+- Release-record docs PR: https://github.com/PhilipGB/webwild/pull/14
+- Final release-commit main CI:
+  https://github.com/PhilipGB/webwild/actions/runs/43214827728
+- Annotated tag `v0.2.0` on `8c65d88db2e8735e4da85098fce24cc15f68d267`
 - Release: https://github.com/PhilipGB/webwild/releases/tag/v0.2.0
 - Repository visibility checked before and after: **PRIVATE**.
 

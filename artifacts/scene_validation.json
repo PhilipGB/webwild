@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T03:29:18.9082294Z",
+  "generatedUtc": "2026-11-12T11:46:58.6980839Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "headless",
-  "passes": 47,
+  "passes": 51,
   "failures": 0,
   "checks": [
     {
@@ -139,6 +139,26 @@
       "name": "region-registry",
       "pass": true,
       "detail": "garden_clearing,reedwater_bank"
+    },
+    {
+      "name": "bridge-parts-exist",
+      "pass": true,
+      "detail": "11/11 parts; meshes=68; "
+    },
+    {
+      "name": "bridge-asset-gallery",
+      "pass": true,
+      "detail": "children=11 meshes=68"
+    },
+    {
+      "name": "bridge-vertex-colour-material",
+      "pass": true,
+      "detail": "path=res://art/materials/vertex_color_material.tres"
+    },
+    {
+      "name": "bridge-no-legacy-ribbon",
+      "pass": true,
+      "detail": "legacy flat ribbon builder is gone"
     },
     {
       "name": "rw-bank-scene",

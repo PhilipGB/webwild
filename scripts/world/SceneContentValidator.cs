@@ -56,6 +56,13 @@ public static class SceneContentValidator
         ("Outpost", "res://scenes/world/regions/ReedwaterBank/landmarks/Outpost.tscn")
     };
 
+    private static readonly string[] BridgeParts =
+    {
+        "BarkPlankA", "BarkPlankB", "BarkPlankC",
+        "SilkCinchKnot", "SilkDoubleHitch", "WoodenEyelet", "ForkedRailFixture",
+        "SilkWrappedSupport", "SilkCrossLashing", "BraidedSilkSegment", "WovenSilkPanel"
+    };
+
     public static IReadOnlyList<SceneValidationCheck> Validate(Node root)
     {
         var checks = new List<SceneValidationCheck>();
@@ -267,6 +274,7 @@ public static class SceneContentValidator
             RegionCatalog.All.Count,
             string.Join(",", RegionCatalog.All.Select(region => region.Id)));
 
+        ValidateBridgeAssets(Check);
         return checks;
     }
 
@@ -441,6 +449,61 @@ public static class SceneContentValidator
             "Reedwater scenery is authored, not generated in C#");
 
         return checks;
+    }
+
+    private static void ValidateBridgeAssets(Action<string, bool, string> check)
+    {
+        var failures = new List<string>();
+        var instances = new List<Node3D>();
+        var meshInstances = 0;
+        foreach (var part in BridgeParts)
+        {
+            var path = $"res://scenes/building/bridge/parts/{part}.tscn";
+            var scene = GD.Load<PackedScene>(path);
+            if (scene is null)
+            {
+                failures.Add($"{part}: scene missing");
+                continue;
+            }
+            var instance = scene.Instantiate<Node3D>();
+            instances.Add(instance);
+            var meshes = Descendants(instance).OfType<MeshInstance3D>().ToList();
+            meshInstances += meshes.Count;
+            // Imported material_override properties can be dropped from exported
+            // PCKs for nested GLB children. BridgeVisualAssembler applies the
+            // authored vertex-colour material at runtime; here we prove the
+            // wrapper still supplies real meshes and no collision.
+            if (meshes.Count == 0 || meshes.Any(mesh => mesh.Mesh is null))
+                failures.Add($"{part}: mesh missing");
+            if (Descendants(instance).Any(node => node is CollisionShape3D or StaticBody3D or Area3D))
+                failures.Add($"{part}: unexpected collision");
+        }
+        check("bridge-parts-exist", failures.Count == 0,
+            $"{instances.Count}/{BridgeParts.Length} parts; meshes={meshInstances}; {string.Join("; ", failures.Take(6))}");
+        foreach (var instance in instances) instance.Free();
+
+        var gallery = GD.Load<PackedScene>("res://scenes/building/bridge/BridgeAssetGallery.tscn");
+        var galleryInstances = gallery?.Instantiate<Node3D>();
+        var galleryMeshes = galleryInstances is null
+            ? 0
+            : Descendants(galleryInstances).OfType<MeshInstance3D>().Count();
+        check("bridge-asset-gallery",
+            galleryInstances is not null && galleryInstances.GetChildCount() == BridgeParts.Length &&
+            galleryMeshes > 0,
+            galleryInstances is null
+                ? "gallery scene missing"
+                : $"children={galleryInstances.GetChildCount()} meshes={galleryMeshes}");
+        galleryInstances?.Free();
+
+        var material = GD.Load<StandardMaterial3D>("res://art/materials/vertex_color_material.tres");
+        check("bridge-vertex-colour-material",
+            material is not null && material.VertexColorUseAsAlbedo,
+            material is null ? "resource missing" : $"path={material.ResourcePath}");
+        check("bridge-no-legacy-ribbon",
+            !Godot.FileAccess.FileExists("res://scripts/visual/WebMeshFactory.cs") ||
+            !Godot.FileAccess.GetFileAsString("res://scripts/visual/WebMeshFactory.cs")
+                .Contains("BuildBridge(", StringComparison.Ordinal),
+            "legacy flat ribbon builder is gone");
     }
 
     public static void ValidateReedwaterOrThrow(Node root)

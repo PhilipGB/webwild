@@ -236,6 +236,15 @@ public static class SaveValidator
             error = "Event history is invalid.";
             return false;
         }
+        if (data.Counters.ClaimedSupplyCaches.Count > 20 ||
+            data.Counters.ClaimedSupplyCaches.Any(string.IsNullOrWhiteSpace) ||
+            data.Counters.ClaimedSupplyCaches.Any(id => !RegionIds.IsKnown(id)) ||
+            data.Counters.ClaimedSupplyCaches.Distinct(StringComparer.Ordinal).Count() !=
+            data.Counters.ClaimedSupplyCaches.Count)
+        {
+            error = "Supply cache history is invalid.";
+            return false;
+        }
         var regional = data.RegionalObjectives ?? new RegionalObjectiveSave();
         if (regional.ActiveObjectiveIndex < 0 || regional.ActiveObjectiveIndex > 3 ||
             regional.Progress.Count > 3 || regional.Completed.Count > 3 ||

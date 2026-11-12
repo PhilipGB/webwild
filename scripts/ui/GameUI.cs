@@ -30,6 +30,9 @@ public partial class GameUI : CanvasLayer
     private Label _contextLabel = null!;
     private Label _toastLabel = null!;
     private PanelContainer _toastPanel = null!;
+    private PanelContainer _missionPanel = null!;
+    private VBoxContainer _actionsColumn = null!;
+    private HBoxContainer _toolbar = null!;
     private PanelContainer _warningPanel = null!;
     private Label _warningLabel = null!;
     private Button _captureButton = null!;
@@ -65,6 +68,13 @@ public partial class GameUI : CanvasLayer
     public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
     public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
     public bool BlocksWorldInput => IsModalOpen;
+    public bool ProbeToastVisible => _toastPanel.Visible;
+    public string ProbeToastText => _toastLabel.Text;
+    public Rect2 ProbeToastRect => _toastPanel.GetGlobalRect();
+    public Rect2 ProbeMissionRect => _missionPanel.GetGlobalRect();
+    public Rect2 ProbeActionColumnRect => _actionsColumn.GetGlobalRect();
+    public Rect2 ProbeToolbarRect => _toolbar.GetGlobalRect();
+    public Rect2 ProbeStatusRect => _statusLabel.GetGlobalRect();
     public bool IsVictoryOpen => _victoryOpen;
     public bool IsPauseOpen => _pauseOpen;
     public bool IsHelpOpen => _helpOpen;
@@ -100,6 +110,7 @@ public partial class GameUI : CanvasLayer
         // A compact action column keeps the primary build buttons uncluttered
         // while making keyboard actions discoverable by mouse too.
         var actions = new VBoxContainer { Position = new Vector2(22, 82) };
+        _actionsColumn = actions;
         actions.AddThemeConstantOverride("separation", 6);
         _interactButton = ActionButton("E · Interact", "food", () => InteractRequested?.Invoke());
         _dismantleButton = ActionButton("X · Remove web", "web", () => DismantleRequested?.Invoke());
@@ -144,6 +155,7 @@ public partial class GameUI : CanvasLayer
         missionBox.AddChild(_masteryLabel);
         missionPanel.AddChild(missionBox);
         _root.AddChild(missionPanel);
+        _missionPanel = missionPanel;
 
         // Wind forecast banner.
         _warningPanel = new PanelContainer
@@ -197,6 +209,7 @@ public partial class GameUI : CanvasLayer
         bottom.AddChild(_statusLabel);
 
         var toolbar = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        _toolbar = toolbar;
         toolbar.AddThemeConstantOverride("separation", 12);
         toolbar.MouseFilter = Control.MouseFilterEnum.Ignore;
 
@@ -223,25 +236,33 @@ public partial class GameUI : CanvasLayer
         bottom.AddChild(_contextLabel);
         _root.AddChild(bottom);
 
-        // Toasts.
+        // Toasts live in a compact right-hand lane below the mission card. The
+        // lane is deliberately away from the player/camera centre, the left
+        // action column, the status hint and the bottom toolbar. It never
+        // accepts mouse input, so it cannot block building or movement.
         _toastPanel = new PanelContainer
         {
             Visible = false,
-            CustomMinimumSize = new Vector2(520, 0),
+            CustomMinimumSize = new Vector2(330, 0),
             MouseFilter = Control.MouseFilterEnum.Ignore
         };
-        _toastPanel.AnchorLeft = 0.5f;
-        _toastPanel.AnchorRight = 0.5f;
-        _toastPanel.AnchorTop = 0;
-        _toastPanel.AnchorBottom = 0;
-        _toastPanel.OffsetLeft = -260;
-        _toastPanel.OffsetRight = 260;
-        _toastPanel.OffsetTop = 210;
-        _toastPanel.OffsetBottom = 210;
-        _toastPanel.GrowHorizontal = Control.GrowDirection.Both;
-        _toastLabel = UiKit.Label("", 20, UiKit.Pine, true);
-        _toastLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _toastLabel.CustomMinimumSize = new Vector2(470, 0);
+        _toastPanel.AnchorLeft = 1;
+        _toastPanel.AnchorRight = 1;
+        _toastPanel.AnchorTop = 0.38f;
+        _toastPanel.AnchorBottom = 0.38f;
+        _toastPanel.OffsetLeft = -346;
+        _toastPanel.OffsetRight = -16;
+        _toastPanel.OffsetTop = 0;
+        _toastPanel.OffsetBottom = 0;
+        _toastPanel.GrowHorizontal = Control.GrowDirection.Begin;
+        _toastPanel.GrowVertical = Control.GrowDirection.End;
+        _toastPanel.AddThemeStyleboxOverride("panel",
+            UiKit.Panel(new Color(UiKit.Cream, 0.97f), 16, new Color(UiKit.TealDark, 0.35f), 2));
+        _toastLabel = UiKit.Label("", 18, UiKit.Pine, true);
+        _toastLabel.HorizontalAlignment = HorizontalAlignment.Left;
+        _toastLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _toastLabel.CustomMinimumSize = new Vector2(286, 0);
+        _toastLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
         _toastPanel.AddChild(_toastLabel);
         _root.AddChild(_toastPanel);
 
@@ -518,8 +539,8 @@ public partial class GameUI : CanvasLayer
         _toastLabel.AddThemeColorOverride("font_color", color ?? UiKit.Pine);
         _toastPanel.Visible = true;
         _toastPanel.Modulate = Colors.White;
-        _toastTimer = duration;
-        _toastDuration = duration;
+        _toastTimer = Mathf.Clamp(duration, 1.2f, 4.5f);
+        _toastDuration = _toastTimer;
     }
 
     private void UpdateToast(float delta)

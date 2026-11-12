@@ -15,6 +15,22 @@ public static class BridgeGeometry
     public readonly record struct ApproachPoints(Vec3 A, Vec3 B);
 
     /// <summary>
+    /// Shared sag contract for bridge collision and visuals. Keeping this in one
+    /// place prevents a decorative deck from drifting away from the walkable
+    /// surface on long or steep spans.
+    /// </summary>
+    public static double ComputeSag(double spanLength) =>
+        Math.Clamp(spanLength / 16.0, 0.08, 0.42);
+
+    public static Vec3 EvaluateSpan(Vec3 a, Vec3 b, double t, double? sagOverride = null)
+    {
+        var clamped = Math.Clamp(t, 0, 1);
+        var point = Vec3.Lerp(a, b, clamped);
+        var sag = Math.Clamp(sagOverride ?? ComputeSag(Vec3.Distance(a, b)), 0, 2);
+        return new Vec3(point.X, point.Y - Math.Sin(clamped * Math.PI) * sag, point.Z);
+    }
+
+    /// <summary>
     /// Return the ground-side end of the approach ramp for each anchor. When no
     /// authored bank point exists, the ramp runs away from the other anchor by
     /// <paramref name="rampLength"/>, which keeps it independent of selection

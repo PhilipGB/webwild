@@ -12,13 +12,23 @@ public static class ArtMaterials
     private static StandardMaterial3D? _vertexColorMaterial;
     private static StandardMaterial3D? _reedwaterVertexColorMaterial;
 
-    public static StandardMaterial3D VertexColorMaterial => _vertexColorMaterial ??= new StandardMaterial3D
+    public static StandardMaterial3D VertexColorMaterial
     {
-        AlbedoColor = Colors.White,
-        VertexColorUseAsAlbedo = true,
-        Roughness = 0.78f,
-        Metallic = 0.02f
-    };
+        get
+        {
+            if (_vertexColorMaterial is not null) return _vertexColorMaterial;
+            var loaded = ResourceLoader.Load<StandardMaterial3D>(
+                "res://art/materials/vertex_color_material.tres");
+            _vertexColorMaterial = loaded ?? new StandardMaterial3D
+            {
+                AlbedoColor = Colors.White,
+                VertexColorUseAsAlbedo = true,
+                Roughness = 0.78f,
+                Metallic = 0.02f
+            };
+            return _vertexColorMaterial;
+        }
+    }
 
     /// <summary>
     /// Reedwater foliage and dragonfly wings are thin, so the supplied material

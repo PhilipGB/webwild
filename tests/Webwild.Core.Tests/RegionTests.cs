@@ -82,6 +82,44 @@ public class RegionTests
     }
 
     [Fact]
+    public void ReedwaterSupplyCache_SurvivesLedgerHistoryEvictionAndSaveRoundTrip()
+    {
+        var sim = UnlockedSim();
+        var food = sim.Ledger.Food;
+        var silk = sim.Ledger.Silk;
+        Assert.True(sim.TryTravelTo(RegionIds.ReedwaterBank, out var reason), reason);
+        Assert.Equal(food + 6, sim.Ledger.Food);
+        Assert.Equal(silk + 24, sim.Ledger.Silk);
+
+        // Push the one-time grant key out of the bounded 512-key ledger
+        // history. An immediate double-visit does not prove the fix.
+        for (var i = 0; i < ResourceLedger.HistoryRetentionLimit + 90; i++)
+            Assert.True(sim.Ledger.TryGrant(0, 0, $"history-filler-{i}"));
+        Assert.False(sim.Ledger.HasProcessed($"grant:region_supply_{RegionIds.ReedwaterBank}"));
+
+        for (var i = 0; i < 4; i++)
+        {
+            Assert.True(sim.TryTravelTo(RegionIds.GardenClearing, out reason), reason);
+            Assert.True(sim.TryTravelTo(RegionIds.ReedwaterBank, out reason), reason);
+        }
+        Assert.Equal(food + 6, sim.Ledger.Food);
+        Assert.Equal(silk + 24, sim.Ledger.Silk);
+        Assert.Contains(RegionIds.ReedwaterBank, sim.ClaimedSupplyCaches);
+
+        var data = sim.ExportSave(new Vec3(10, 0.5, 8.5), 0, new SettingsData());
+        var restored = GameSimulation.FromSave(data, TestWorld.RichTuning(), MissionsConfig.Defaults());
+        Assert.Contains(RegionIds.ReedwaterBank, restored.ClaimedSupplyCaches);
+        Assert.False(restored.Ledger.HasProcessed(
+            $"grant:region_supply_{RegionIds.ReedwaterBank}"));
+        Assert.True(restored.TryTravelTo(RegionIds.GardenClearing, out reason), reason);
+        Assert.True(restored.TryTravelTo(RegionIds.ReedwaterBank, out reason), reason);
+        Assert.Equal(food + 6, restored.Ledger.Food);
+        Assert.Equal(silk + 24, restored.Ledger.Silk);
+        Assert.True(restored.Ledger.Food >= 0);
+        Assert.True(restored.Ledger.Silk >= 0);
+    }
+
+    [Fact]
     public void ReedwaterBridgeSpansFitTheExistingBridgeRules()
     {
         var anchors = RegionCatalog.Reedwater.Anchors.ToDictionary(anchor => anchor.Id, StringComparer.Ordinal);

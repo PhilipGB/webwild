@@ -64,9 +64,42 @@ public class SaveMigrationTests
     }
 
     [Fact]
-    public void LegacyGameplayState_IsNotRewrittenOrDuplicated()
+    public void P1Schema2ReedwaterSave_SeedsDurableSupplyClaimOnMigration()
     {
-        var data = LoadFixture("save_v0_1_2.json");
+        var data = LoadFixture("save_v0_2_0_p1_reedwater.json");
+        Assert.Equal(SaveGameData.CurrentSchemaVersion, data.SchemaVersion);
+        Assert.Equal(RegionIds.ReedwaterBank, data.ActiveRegionId);
+        Assert.Contains(RegionIds.ReedwaterBank, data.VisitedRegions);
+        Assert.Contains(RegionIds.ReedwaterBank, data.Counters.ClaimedSupplyCaches);
+
+        var sim = GameSimulation.FromSave(data, TestWorld.RichTuning(), MissionsConfig.Defaults());
+        var food = sim.Ledger.Food;
+        var silk = sim.Ledger.Silk;
+        Assert.True(sim.TryTravelTo(RegionIds.GardenClearing, out var reason), reason);
+        Assert.True(sim.TryTravelTo(RegionIds.ReedwaterBank, out reason), reason);
+        Assert.Equal(food, sim.Ledger.Food);
+        Assert.Equal(silk, sim.Ledger.Silk);
+        Assert.Contains(RegionIds.ReedwaterBank, sim.ClaimedSupplyCaches);
+    }
+
+    [Fact]
+    public void P1Schema2GardenSave_MigratesWithoutInventingAClaim()
+    {
+        var data = LoadFixture("save_v0_2_0_p1.json");
+        Assert.Equal(SaveGameData.CurrentSchemaVersion, data.SchemaVersion);
+        Assert.Equal(RegionIds.GardenClearing, data.ActiveRegionId);
+        Assert.DoesNotContain(RegionIds.ReedwaterBank, data.VisitedRegions);
+        Assert.Empty(data.Counters.ClaimedSupplyCaches);
+        Assert.Equal(5, data.Food);
+        Assert.Equal(13, data.Silk);
+        var sim = GameSimulation.FromSave(data, TestWorld.RichTuning(), MissionsConfig.Defaults());
+        Assert.Equal(5, sim.Ledger.Food);
+        Assert.Equal(13, sim.Ledger.Silk);
+    }
+
+    [Fact]
+    public void LegacyGameplayState_IsNotRewrittenOrDuplicated()
+    {        var data = LoadFixture("save_v0_1_2.json");
         Assert.Equal(11, data.Food);
         Assert.Equal(8, data.Silk);
         Assert.Equal(2, data.Missions.Completed.Count);

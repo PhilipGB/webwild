@@ -325,11 +325,18 @@ public sealed class SaveService
 
     public string MainPath { get; }
     public string BackupPath { get; }
+    /// <summary>
+    /// Durable copy of the garden that was replaced by a confirmed New Garden.
+    /// Normal autosaves never touch it, so it survives the new garden's entire
+    /// life. The rotating .bak cannot promise that.
+    /// </summary>
+    public string ArchivePath { get; }
 
     public SaveService(string mainPath, string? backupPath = null, ISaveFileSystem? fs = null, int maxBytes = SaveValidator.MaxFileBytes)
     {
         MainPath = mainPath;
         BackupPath = backupPath ?? mainPath + ".bak";
+        ArchivePath = mainPath + ".previous";
         _fs = fs ?? new DefaultSaveFileSystem();
         _maxBytes = maxBytes;
     }
@@ -423,6 +430,74 @@ public sealed class SaveService
     }
 
     public bool HasAnySave => _fs.FileExists(MainPath) || _fs.FileExists(BackupPath);
+
+    public bool HasArchive
+    {
+        get
+        {
+            if (!_fs.FileExists(ArchivePath)) return false;
+            return ReadRaw(ArchivePath, out _) is not null;
+        }
+    }
+
+    /// <summary>
+    /// Keep the current garden as a durable previous-garden archive before a
+    /// confirmed New Garden replaces it. Returns false when there is no valid
+    /// save to keep, so the caller can refuse to discard anything.
+    /// </summary>
+    public bool ArchiveExisting(out string message)
+    {
+        message = "";
+        string? source = null;
+        if (_fs.FileExists(MainPath) && ReadRaw(MainPath, out _) is not null) source = MainPath;
+        if (source is null && _fs.FileExists(BackupPath) && ReadRaw(BackupPath, out _) is not null)
+            source = BackupPath;
+        if (source is null)
+        {
+            message = "There is no saved garden to keep.";
+            return false;
+        }
+
+        string? temp = null;
+        try
+        {
+            var directory = Path.GetDirectoryName(ArchivePath);
+            if (!string.IsNullOrWhiteSpace(directory) && !_fs.DirectoryExists(directory))
+                _fs.CreateDirectory(directory);
+            var bytes = _fs.ReadAllBytes(source);
+            temp = ArchivePath + ".tmp-" + Guid.NewGuid().ToString("N");
+            _fs.WriteAllBytes(temp, bytes);
+            if (SaveValidator.Deserialize(_fs.ReadAllBytes(temp), out var error) is null)
+            {
+                _fs.Delete(temp);
+                message = "Couldn't keep the previous garden. " + error;
+                return false;
+            }
+            _fs.Move(temp, ArchivePath, true);
+            temp = null;
+            message = "Your previous garden is safe in the garden archive.";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            if (temp is not null)
+            {
+                try { if (_fs.FileExists(temp)) _fs.Delete(temp); } catch { }
+            }
+            message = "Couldn't keep the previous garden. " + ex.Message;
+            return false;
+        }
+    }
+
+    public LoadResult LoadArchive()
+    {
+        if (!_fs.FileExists(ArchivePath))
+            return LoadResult.Fail("No previous garden is saved.");
+        var archived = ReadRaw(ArchivePath, out var error);
+        return archived is not null
+            ? LoadResult.Ok(archived, false)
+            : LoadResult.Fail("The previous garden could not be read.", error);
+    }
 
     private SaveGameData? ReadRaw(string path, out string? error)
     {

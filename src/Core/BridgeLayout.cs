@@ -10,9 +10,9 @@ public static class BridgeLayout
 {
     public const double PlankSpacing = 0.225;
     public const double DeckHalfWidth = 0.34;
-    public const double RailLateral = 0.36;
+    public const double RailLateral = 0.70;
     public const double RailHeight = 0.36;
-    public const double SupportInset = 0.30;
+    public const double SupportInset = 0.55;
 
     public static BridgeDeckPlan Build(
         Vec3 anchorA,
@@ -20,10 +20,13 @@ public static class BridgeLayout
         Vec3? authoredGroundA,
         Vec3? authoredGroundB,
         string bridgeId,
-        double plankSpacing = PlankSpacing)
+        double plankSpacing = PlankSpacing,
+        bool resolveGround = true)
     {
-        var approach = BridgeGeometry.ComputeApproachPoints(
-            anchorA, anchorB, authoredGroundA, authoredGroundB);
+        var approach = resolveGround || authoredGroundA is null || authoredGroundB is null
+            ? BridgeGeometry.ComputeApproachPoints(
+                anchorA, anchorB, authoredGroundA, authoredGroundB)
+            : new BridgeGeometry.ApproachPoints(authoredGroundA.Value, authoredGroundB.Value);
         var span = Vec3.Distance(anchorA, anchorB);
         var sag = BridgeGeometry.ComputeSag(span);
         var horizontalSpan = new Vec3(anchorB.X - anchorA.X, 0, anchorB.Z - anchorA.Z).HorizontalLength;

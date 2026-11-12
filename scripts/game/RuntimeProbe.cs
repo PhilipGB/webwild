@@ -610,6 +610,46 @@ public partial class RuntimeProbe : Node
         await Frames(8);
         Check("bridge-regression-quit", _main.TitleVisible, "Fresh bridge-regression garden leaves cleanly");
 
+        // New Garden must never silently replace an existing save.
+        var saveTickBefore = _main.ProbeSaveTick();
+        var archiveTickBefore = _main.ProbeArchiveTick();
+        Check("new-garden-confirm-opens", _main.ProbeRequestNewGarden() && _main.TitleVisible &&
+            _main.NewGardenConfirmOpen, "Existing save asks before replacing");
+        await Frames(4);
+        await Capture("30-new-garden-confirm");
+        Check("new-garden-confirm-default-safe", _main.ProbeFocusedText.Contains("Cancel"),
+            $"focused='{_main.ProbeFocusedText}'");
+        Check("new-garden-repeat-click-stays-confirming", _main.ProbeRequestNewGarden() &&
+            _main.NewGardenConfirmOpen && _main.TitleVisible,
+            "A second click cannot bypass the confirmation");
+        Check("new-garden-cancel", _main.ProbeCancelNewGarden() && !_main.NewGardenConfirmOpen &&
+            _main.ProbeSaveTick() == saveTickBefore && _main.ProbeArchiveTick() == archiveTickBefore,
+            $"save={_main.ProbeSaveTick()} archive={_main.ProbeArchiveTick()}");
+        Check("new-garden-confirm-archives-previous", _main.ProbeRequestNewGarden() &&
+            _main.ProbeConfirmNewGarden() && _main.Game is not null &&
+            _main.Game.Simulation.Missions.CompletedMissions.Count == 0 &&
+            _main.ProbeArchiveTick() == saveTickBefore,
+            $"archive={_main.ProbeArchiveTick()} expected={saveTickBefore}");
+        if (_main.Game is { } freshGame)
+        {
+            freshGame.ProbeAdvance(40);
+            Check("new-garden-autosave", freshGame.ProbeSave(), freshGame.LastSaveError);
+            Check("new-garden-autosave-keeps-archive",
+                _main.ProbeArchiveTick() == saveTickBefore,
+                $"archive={_main.ProbeArchiveTick()} expected={saveTickBefore}");
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(8);
+        Check("restore-previous-available", _main.ArchiveAvailable, "Title offers the kept garden");
+        var restoredPrevious = _main.ProbeRestorePreviousGarden();
+        await Frames(8);
+        Check("restore-previous-garden",
+            restoredPrevious && _main.Game is not null &&
+            _main.Game.Simulation.TickCount >= saveTickBefore,
+            $"restoredTick={_main.Game?.Simulation.TickCount} archived={saveTickBefore}");
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;
@@ -684,6 +724,14 @@ public partial class RuntimeProbe : Node
             $"anchors={game.VisibleAnchorCount}");
         Check("reedwater-insects-visible", game.VisibleInsectCount == 3,
             $"insects={game.VisibleInsectCount}");
+        // Hatch at the outpost while the arrival supply cache still covers the
+        // cost; later walking/time-based silk production must not make this
+        // deterministic feature check depend on a race.
+        var hatchCheck = sim.CanHatch();
+        var hatched = game.ProbeHatch();
+        Check("reedwater-helper-hatched", hatched,
+            hatchCheck.CanHatch ? "Outpost hatch uses shared colony resources" : hatchCheck.Reason);
+        await Frames(6);
         await Capture("21-reedwater-arrival");
 
         var startDry = new Vec3(7.0, 0.55, 8.5);
@@ -793,20 +841,62 @@ public partial class RuntimeProbe : Node
         game.ProbeTeleport(new Vec3(7.6, 0.55, 7.6));
         await Frames(2);
 
-        // Actual player traversal over the two bridge decks and ramps.
-        game.ProbeSetSafePosition(new Vec3(7.6, 0.55, 7.6));
-        game.ProbeTeleport(new Vec3(7.6, 0.55, 7.6));
-        game.ProbeLookAt(new Vec3(6.6, 0.6, 7.0));
-        await Frames(3);
-        Input.ActionPress("move_forward");
-        await PhysicsFrames(28);
-        game.ProbeLookAt(new Vec3(1.4, 0.8, 5.6));
-        await PhysicsFrames(230);
-        Input.ActionRelease("move_forward");
-        await PhysicsFrames(20);
-        Check("player-crosses-reedwater-bridge", game.PlayerPosition.X < 2.7f,
-            $"x={game.PlayerPosition.X:0.00}");
+        // Real walking traversal. Every run starts on legitimate bank/island
+        // ground; the player is never placed on or above a deck.
+        var toIslandA = await WalkRoute(game, new Vec3(9.2f, 0.55f, 8.6f),
+            ReedwaterToIslandA, 0.7f, 40f);
+        Check("player-walks-bank-onto-bridge-one",
+            toIslandA.Reached && toIslandA.End.X < 2.6f && !toIslandA.EnteredWater,
+            $"reached={toIslandA.Reached} end={toIslandA.End} seconds={toIslandA.Seconds:0.0}");
+        Check("player-walks-bridge-one-to-island-a", toIslandA.Reached &&
+            Mathf.Abs(toIslandA.End.Z - 6.4f) < 0.9f,
+            $"end={toIslandA.End}");
         await Capture("24-reedwater-crossing");
+
+        var toIslandB = await WalkRoute(game, toIslandA.End,
+            ReedwaterIslandAToIslandB, 0.7f, 40f);
+        Check("player-walks-island-a-onto-bridge-two",
+            toIslandB.Reached && toIslandB.End.X < -2.2f && !toIslandB.EnteredWater,
+            $"reached={toIslandB.Reached} end={toIslandB.End}");
+
+        var backToIslandA = await WalkRoute(game, toIslandB.End,
+            Reverse(ReedwaterIslandAToIslandB), 0.7f, 40f);
+        Check("player-walks-bridge-two-back-to-island-a", backToIslandA.Reached,
+            $"end={backToIslandA.End} seconds={backToIslandA.Seconds:0.0}");
+        var backToBank = await WalkRoute(game, backToIslandA.End,
+            Reverse(ReedwaterToIslandA), 0.7f, 40f);
+        Check("player-walks-bridge-one-back-to-bank",
+            backToBank.Reached && backToBank.End.X > 8.2f && !backToBank.EnteredWater,
+            $"end={backToBank.End} seconds={backToBank.Seconds:0.0}");
+
+        // Stop and restart on the ramp/anchor joint, then turn around mid-deck.
+        var stopped = await WalkRoute(game, new Vec3(9.2f, 0.55f, 8.6f),
+            ReedwaterToIslandA, 0.7f, 40f, stopAtWaypoint: 2, stopFrames: 60);
+        Check("player-stops-and-resumes-at-deck-joint", stopped.Reached,
+            $"end={stopped.End}");
+        var midDeck = await WalkRoute(game, new Vec3(9.2f, 0.55f, 8.6f),
+            new[]
+            {
+                new Vec3(7.6, 0, 7.6), new Vec3(6.6, 0.55, 7.0),
+                new Vec3(4.0, 0.25, 6.3)
+            }, 0.55f, 30f);
+        var midX = game.PlayerPosition.X;
+        game.ProbeLookAt(new Vec3(9.2, 0.6, 8.6));
+        await Frames(2);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(14);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(6);
+        var turnedBackX = game.PlayerPosition.X;
+        game.ProbeLookAt(new Vec3(1.4, 0.6, 5.6));
+        await Frames(2);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(16);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(6);
+        Check("player-turns-around-on-bridge",
+            midDeck.Reached && turnedBackX > midX + 0.25f && game.PlayerPosition.X < turnedBackX - 0.25f,
+            $"mid={midX:0.00} back={turnedBackX:0.00} forward={game.PlayerPosition.X:0.00}");
 
         // Capture the straightforward reed flyway and catch three insects.
         Check("reed-capture-web-built", game.ProbeBuildWeb(ReedwaterLayout.EasyA,
@@ -837,15 +927,23 @@ public partial class RuntimeProbe : Node
         // route; the worker must use bridge edges, not teleport.
         Check("bridge-three-built", game.ProbeBuildWeb(ReedwaterLayout.IslandBPost,
             ReedwaterLayout.FarPost, WebType.Bridge), "Root island to far bank");
+        var toFarBank = await WalkRoute(game, new Vec3(-2.7f, 0.15f, 2.7f),
+            ReedwaterIslandBToFarBank, 0.7f, 40f);
+        Check("player-walks-island-b-onto-bridge-three",
+            toFarBank.Reached && toFarBank.End.X < -8.4f && !toFarBank.EnteredWater,
+            $"reached={toFarBank.Reached} end={toFarBank.End}");
+        var farBankBack = await WalkRoute(game, toFarBank.End,
+            Reverse(ReedwaterIslandBToFarBank), 0.7f, 40f);
+        Check("player-walks-bridge-three-back-to-island-b",
+            farBankBack.Reached && farBankBack.End.X > -3.5f,
+            $"end={farBankBack.End} seconds={farBankBack.Seconds:0.0}");
+        await Capture("24b-reedwater-far-bank-walk");
+
         var firstReedwaterBridge = sim.RegionWebs.FirstOrDefault(web => web.Type == WebType.Bridge);
         if (firstReedwaterBridge is not null)
             CheckBridgeVisual(game, firstReedwaterBridge.Id, "reedwater-bridge");
         Check("far-capture-web-built", game.ProbeBuildWeb(ReedwaterLayout.FarA,
             ReedwaterLayout.FarB, WebType.Capture), "Far-bank capture web");
-        var hatchCheck = sim.CanHatch();
-        var hatched = game.ProbeHatch();
-        Check("reedwater-helper-hatched", hatched,
-            hatchCheck.CanHatch ? "Outpost hatch uses shared colony resources" : hatchCheck.Reason);
         var workerCrossed = false;
         var regionComplete = false;
         for (var i = 0; i < 100 && !regionComplete; i++)
@@ -907,6 +1005,10 @@ public partial class RuntimeProbe : Node
             Check("reload-reedwater-objectives",
                 reloadedRegion.Simulation.RegionalObjectives.CompletedObjectives.Count == completed,
                 $"completed={completed}");
+            var reloadWalk = await WalkRoute(reloadedRegion, new Vec3(9.2f, 0.55f, 8.6f),
+                ReedwaterToIslandA, 0.7f, 40f);
+            Check("reload-reedwater-bridge-walk", reloadWalk.Reached && !reloadWalk.EnteredWater,
+                $"end={reloadWalk.End} seconds={reloadWalk.Seconds:0.0}");
             var reloadedBridge = reloadedRegion.Simulation.RegionWebs.FirstOrDefault(web => web.Type == WebType.Bridge);
             if (reloadedBridge is not null)
                 CheckBridgeVisual(reloadedRegion, reloadedBridge.Id, "reload-reedwater-bridge");
@@ -983,6 +1085,77 @@ public partial class RuntimeProbe : Node
     private async Task PhysicsFrames(int count)
     {
         for (var i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+    }
+
+    /// <summary>
+    /// Walk a route with ordinary forward input, steering toward one waypoint at
+    /// a time. The start point must be legitimate walkable ground; the helper
+    /// never places the player on a bridge deck.
+    /// </summary>
+    private async Task<(bool Reached, float Seconds, Vec3 End, bool EnteredWater)> WalkRoute(
+        GardenClearing game, Vec3 start, IReadOnlyList<Vec3> route, float tolerance,
+        float seconds, int stopAtWaypoint = -1, int stopFrames = 0)
+    {
+        game.ProbeSetSafePosition(start);
+        game.ProbeTeleport(start);
+        await Frames(3);
+        var began = Time.GetTicksMsec();
+        var deadline = began + (ulong)(seconds * 1000);
+        var index = 0;
+        var water = false;
+        while (index < route.Count && Time.GetTicksMsec() < deadline)
+        {
+            var target = GardenClearing.ToVector3(route[index]);
+            var position = game.PlayerPosition;
+            var dx = target.X - position.X;
+            var dz = target.Z - position.Z;
+            if (Mathf.Sqrt(dx * dx + dz * dz) <= tolerance)
+            {
+                if (index == stopAtWaypoint && stopFrames > 0)
+                {
+                    Input.ActionRelease("move_forward");
+                    await PhysicsFrames(stopFrames);
+                }
+                index++;
+                continue;
+            }
+            if (game.ProbeWaterHazardAt(new Vec3(position.X, position.Y, position.Z))) water = true;
+            game.ProbeLookAt(route[index]);
+            Input.ActionPress("move_forward");
+            await PhysicsFrames(3);
+        }
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(12);
+        var elapsed = (Time.GetTicksMsec() - began) / 1000f;
+        var end = game.PlayerPosition;
+        return (index >= route.Count && !water, elapsed, new Vec3(end.X, end.Y, end.Z), water);
+    }
+
+    private static readonly Vec3[] ReedwaterToIslandA =
+    {
+        new(9.2, 0.55, 8.6), new(7.6, 0.0, 7.6), new(6.6, 0.55, 7.0),
+        new(5.0, 0.3, 6.6), new(3.4, 0.22, 6.1), new(2.0, 0.4, 5.7),
+        new(1.4, 0.55, 5.6), new(2.2, 0.15, 6.4)
+    };
+
+    private static readonly Vec3[] ReedwaterIslandAToIslandB =
+    {
+        new(2.2, 0.15, 6.4), new(1.4, 0.55, 5.6), new(0.0, 0.3, 4.4),
+        new(-1.6, 0.25, 3.2), new(-3.0, 0.55, 1.8), new(-2.7, 0.15, 2.7)
+    };
+
+    private static readonly Vec3[] ReedwaterIslandBToFarBank =
+    {
+        new(-2.7, 0.15, 2.7), new(-3.0, 0.55, 1.8), new(-4.4, 0.3, 0.9),
+        new(-5.8, 0.25, 0.0), new(-7.4, 0.55, -1.0), new(-8.8, 0.0, -1.9),
+        new(-9.4, 0.0, -2.4)
+    };
+
+    private static Vec3[] Reverse(Vec3[] route)
+    {
+        var copy = (Vec3[])route.Clone();
+        Array.Reverse(copy);
+        return copy;
     }
 
     private async Task MouseMove(Vector2 position)

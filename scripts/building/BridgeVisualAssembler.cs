@@ -34,6 +34,10 @@ public partial class BridgeVisualAssembler : Node3D
     private int _railTriangles;
     private int _variantMask;
     private float _damageRatio = 1;
+    private Vector3 _localAnchorA;
+    private Vector3 _localAnchorB;
+    private Vector3? _localGroundA;
+    private Vector3? _localGroundB;
 
     public BridgeDeckPlan? Plan => _plan;
 
@@ -74,6 +78,10 @@ public partial class BridgeVisualAssembler : Node3D
     {
         _mode = mode;
         _damageRatio = Mathf.Clamp(damageRatio, 0, 1);
+        _localAnchorA = anchorA;
+        _localAnchorB = anchorB;
+        _localGroundA = groundA;
+        _localGroundB = groundB;
         _plankCount = _panelCount = _detailCount = _railTriangles = 0;
         _variantMask = 0;
         _meshes.Clear();
@@ -86,9 +94,11 @@ public partial class BridgeVisualAssembler : Node3D
             ToCore(anchorA), ToCore(anchorB),
             groundA is { } ga ? ToCore(ga) : null,
             groundB is { } gb ? ToCore(gb) : null,
-            bridgeId);
+            bridgeId,
+            resolveGround: groundA is null || groundB is null);
 
         BuildPlanks();
+        BuildSilkDeckMat(groundA, groundB);
         BuildUnderlay();
         BuildSilkRails();
         if (mode == BridgeVisualMode.Constructed) BuildDetails();
@@ -109,9 +119,52 @@ public partial class BridgeVisualAssembler : Node3D
         ApplyGhostMaterial();
     }
 
-    private void BuildPlanks()
+    private void BuildSilkDeckMat(Vector3? groundA, Vector3? groundB)
     {
-        if (_plan is null) return;
+        // The collision strip is 1.5 m wide so a child can walk it comfortably.
+        // Show the same width as a woven silk mat so the walkable deck is real,
+        // not an invisible tolerance around narrow planks.
+        // The caller passes ground points that were already resolved in world
+        // space. Re-resolving local coordinates would lose the ground height, so
+        // use them directly when both are present.
+        var approach = groundA is { } ga && groundB is { } gb
+            ? new BridgeGeometry.ApproachPoints(ToCore(ga), ToCore(gb))
+            : BridgeGeometry.ComputeApproachPoints(
+                ToCore(_localAnchorA), ToCore(_localAnchorB));
+        var surface = BridgeGeometry.BuildWalkwaySurface(
+            ToCore(_localAnchorA), ToCore(_localAnchorB), approach.A, approach.B);
+        if (surface.Vertices.Count == 0 || surface.Indices.Count == 0) return;
+
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        var cream = new Color(0.94f, 0.95f, 0.86f);
+        var sage = new Color(0.85f, 0.91f, 0.83f);
+        // One colour per quad gives a subtle woven stripe without textures.
+        for (var i = 0; i + 2 < surface.Indices.Count; i += 6)
+        {
+            var colour = (i / 6) % 2 == 0 ? cream : sage;
+            for (var k = 0; k < 6 && i + k < surface.Indices.Count; k++)
+            {
+                var point = ToVector(surface.Vertices[surface.Indices[i + k]]);
+                st.SetColor(colour);
+                st.AddVertex(point - Vector3.Up * 0.045f);
+            }
+        }
+        st.GenerateNormals();
+        var mesh = st.Commit();
+        var mat = new MeshInstance3D
+        {
+            Name = "SilkDeckMat",
+            Mesh = mesh,
+            MaterialOverride = RopeMaterial,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+        };
+        _partsRoot.AddChild(mat);
+        _meshes.Add(mat);
+    }
+
+    private void BuildPlanks()
+    {        if (_plan is null) return;
         var variants = new[] { "BarkPlankA", "BarkPlankB", "BarkPlankC" };
         foreach (var placement in _plan.Planks)
         {

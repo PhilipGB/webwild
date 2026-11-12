@@ -116,6 +116,38 @@ section once its gates are complete.
 
 # Changelog
 
+## Webwild v0.2.2 — gameplay reliability and usability hardening (unreleased)
+
+Follow-up to the six-mission real-input playtest. No new region or mechanics.
+
+### PR 1 — bridge traversal and save safety
+
+- Replaced the segmented box collision on every modular bridge with a single
+  triangle-strip walkway built from the same centerline and sag as the visible
+  deck. The old box end caps formed a ~60° wall at each ramp/deck joint, which
+  wedged the 0.72 m player capsule; the surface has no end caps.
+- Widened the walkable deck to 1.5 m (0.75 m each side) and rendered the same
+  width as a woven silk mat under the authored bark planks, with the silk rails
+  moved to the deck edge. The visual bridge and the walkable width now agree.
+- Made approach ramps continue away from their span instead of doubling back
+  under a shared island post. Authored bank-level ground points still always
+  win; elevated island landings are used only when they point away from the deck.
+- Moved two decorative Reedwater posts off the bridge centreline (mossy island A
+  and the far bank) that were physically blocking the deck.
+- Added step-friendly floor tolerances and kept the player from needing a jump
+  at any joint.
+- New Garden now asks before replacing a saved garden, defaults to **Cancel**,
+  and keeps the replaced garden in a durable `.previous` archive that normal
+  autosaves never touch. The title screen offers **Restore previous garden**
+  while that archive is valid.
+- Added deterministic geometry tests (width, upward faces, continuity, reversed
+  anchor order, sag, degenerate spans) and bridge walking checks that start on
+  bank or island ground and walk naturally in both directions, including
+  stopping, resuming and turning on the deck, after save/reload, and as a worker.
+- Verification: 115/115 .NET tests, 55/55 scene checks, 264/264 headless and
+  264/264 rendered runtime checks.
+
+
 ## Webwild v0.2.0 P1 — Reedwater Bank second region (unreleased milestone)
 
 Expands the scene-first world into a connected two-region colony game. The

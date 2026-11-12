@@ -67,9 +67,64 @@ public class SaveTests : IDisposable
     }
 
     [Fact]
-    public void CorruptMain_RecoversHealthyBackup_AndReportsClearly()
+    public void ArchiveExisting_KeepsPreviousGardenAcrossLaterAutosaves()
     {
-        var (service, main, backup) = NewService();
+        var (service, _, _) = NewService();
+        var sim = TestWorld.NewSim();
+        var first = sim.ExportSave(Vec3.Zero, 0, new SettingsData());
+        first.Tick = 11;
+        Assert.True(service.Save(first).Success);
+
+        Assert.True(service.ArchiveExisting(out var message), message);
+        Assert.True(service.HasArchive);
+        Assert.True(File.Exists(service.ArchivePath));
+
+        // The new garden autosaves repeatedly; none may overwrite the archive.
+        for (var tick = 22; tick <= 44; tick += 11)
+        {
+            var later = sim.ExportSave(Vec3.Zero, 0, new SettingsData());
+            later.Tick = tick;
+            Assert.True(service.Save(later).Success);
+        }
+
+        var archived = service.LoadArchive();
+        Assert.True(archived.Success, archived.Error);
+        Assert.Equal(11, archived.Data!.Tick);
+        Assert.Equal(44, service.Load().Data!.Tick);
+    }
+
+    [Fact]
+    public void ArchiveExisting_WithoutAnySave_KeepsNothing()
+    {
+        var (service, _, _) = NewService();
+        Assert.False(service.ArchiveExisting(out var message));
+        Assert.False(service.HasArchive);
+        Assert.Contains("no saved garden", message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ArchiveExisting_UsesHealthyBackupWhenMainIsCorrupt()
+    {
+        var (service, main, _) = NewService();
+        var sim = TestWorld.NewSim();
+        var healthy = sim.ExportSave(Vec3.Zero, 0, new SettingsData());
+        healthy.Tick = 7;
+        Assert.True(service.Save(healthy).Success);
+        // A second save rotates the healthy first save into .bak.
+        var newer = sim.ExportSave(Vec3.Zero, 0, new SettingsData());
+        newer.Tick = 9;
+        Assert.True(service.Save(newer).Success);
+        File.WriteAllText(main, "{ not a save");
+
+        Assert.True(service.ArchiveExisting(out var message), message);
+        var archived = service.LoadArchive();
+        Assert.True(archived.Success, archived.Error);
+        Assert.Equal(7, archived.Data!.Tick);
+    }
+
+    [Fact]
+    public void CorruptMain_RecoversHealthyBackup_AndReportsClearly()
+    {        var (service, main, backup) = NewService();
         var sim = TestWorld.NewSim();
         var first = sim.ExportSave(Vec3.Zero, 0, new SettingsData());
         first.Tick = 11;

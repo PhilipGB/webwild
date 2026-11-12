@@ -16,7 +16,7 @@ rotation_degrees = Vector3(0, -32, 0)
 scale = Vector3(0.82, 0.85, 0.82)
 
 [node name="FarPost" parent="." instance=ExtResource("2_post")]
-position = Vector3(-8.0, 0, -1.8)
+position = Vector3(-8.5, 0, -0.9)
 rotation_degrees = Vector3(0, -20, 0)
 
 [node name="FarRootA" parent="." instance=ExtResource("3_root")]

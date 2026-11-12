@@ -127,7 +127,7 @@ public class BridgeLayoutTests
         Assert.All(plan.Supports, support =>
         {
             AssertFrameIsFiniteAndOrthonormal(support);
-            Assert.InRange(Math.Abs(support.Position.Z), 0.25, BridgeLayout.DeckHalfWidth + 0.02);
+            Assert.InRange(Math.Abs(support.Position.Z), 0.25, BridgeLayout.SupportInset + 0.02);
         });
         Assert.True(plan.RailFrames.Count >= 10);
         Assert.All(plan.RailFrames, frame =>

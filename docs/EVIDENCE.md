@@ -341,11 +341,14 @@ After restoring the authored position, validation returned to 24/24 and exit 0.
 
 ## v0.2.0 P1 — Reedwater Bank second region
 
-- Branch: `feat/v0.2.0-p1-reedwater-bank`
+- Branch: `feat/v0.2.0-p1-reedwater-bank` (merged to `main` as `a7aa3f6`)
 - Baseline: `main` at `09b9c72`
 - PR: https://github.com/PhilipGB/webwild/pull/12
-- Implementation head `9e190cb` exact-head CI:
-  https://github.com/PhilipGB/webwild/actions/runs/43148773493 — both checks green
+- PR exact-head CI on `1fe3eac`:
+  https://github.com/PhilipGB/webwild/actions/runs/43148964267 — both checks green
+- Merge commit on `main`: `a7aa3f6`
+- Merged `main` CI: https://github.com/PhilipGB/webwild/actions/runs/43149123206 —
+  success
 - No v0.2.0 release is published; this is milestone P1.
 - Region architecture: stable `RegionIds` and `RegionCatalog` in `Webwild.Core`;
   authored `ReedwaterBank.tscn` root with a `World` + 10 sockets + travel markers;

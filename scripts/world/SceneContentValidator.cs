@@ -408,6 +408,67 @@ public static class SceneContentValidator
                 area.GetNodeOrNull<CollisionShape3D>("CollisionShape3D")?.Shape is BoxShape3D),
             $"water areas={waterAreas.Count}");
 
+        var pondWater = terrain?.GetNodeOrNull<MeshInstance3D>("PondWater");
+        var shoreShelf = terrain?.GetNodeOrNull<MeshInstance3D>("ShoreShelf");
+        var pondBed = terrain?.GetNodeOrNull<MeshInstance3D>("PondBed");
+        var startBankMesh = startBank?.GetNodeOrNull<MeshInstance3D>("StartBankMesh");
+        var farBankMesh = farBank?.GetNodeOrNull<MeshInstance3D>("FarBankMesh");
+        var waterBounds = pondWater is null ? new Aabb() : MeshWorldAabb(pondWater);
+        var shelfBounds = shoreShelf is null ? new Aabb() : MeshWorldAabb(shoreShelf);
+        var bedBounds = pondBed is null ? new Aabb() : MeshWorldAabb(pondBed);
+        var startBounds = startBankMesh is null ? new Aabb() : MeshWorldAabb(startBankMesh);
+        var farBounds = farBankMesh is null ? new Aabb() : MeshWorldAabb(farBankMesh);
+
+        var authoredWater = pondWater?.Mesh is ArrayMesh &&
+            (pondWater.Mesh.ResourcePath ?? "").StartsWith("res://art/meshes/reedwater_", StringComparison.Ordinal) &&
+            shoreShelf?.Mesh is ArrayMesh &&
+            (shoreShelf.Mesh.ResourcePath ?? "").StartsWith("res://art/meshes/reedwater_", StringComparison.Ordinal) &&
+            pondBed?.Mesh is ArrayMesh &&
+            (pondBed.Mesh.ResourcePath ?? "").StartsWith("res://art/meshes/reedwater_", StringComparison.Ordinal);
+        Check("rw-water-surface-authored", authoredWater,
+            $"water={pondWater?.Mesh?.ResourcePath ?? "missing"}; shelf={shoreShelf?.Mesh?.ResourcePath ?? "missing"}; bed={pondBed?.Mesh?.ResourcePath ?? "missing"}");
+
+        var waterTop = waterBounds.End.Y;
+        var bankTop = Math.Max(startBounds.End.Y, farBounds.End.Y);
+        var waterBelowBanks = pondWater is not null &&
+            waterTop <= bankTop - 0.01f &&
+            shelfBounds.End.Y <= bankTop - 0.005f &&
+            bedBounds.End.Y < shelfBounds.End.Y;
+        Check("rw-water-below-banks", waterBelowBanks,
+            $"waterTop={waterTop:0.000} bankTop={bankTop:0.000} shelfTop={shelfBounds.End.Y:0.000} bedTop={bedBounds.End.Y:0.000}");
+
+        // The old 24 x 20 plane extended metres over both banks. The authored
+        // surface may tuck a little under a bank so there is no seam, but it
+        // must not emerge above the grass.
+        const float underlap = 0.8f;
+        var shoreBoundsOk = pondWater is not null && shoreShelf is not null &&
+            waterBounds.Position.X >= farBounds.End.X - underlap &&
+            waterBounds.End.X <= startBounds.Position.X + underlap &&
+            shelfBounds.Position.X <= waterBounds.Position.X + 0.01f &&
+            shelfBounds.End.X >= waterBounds.End.X - 0.01f &&
+            shelfBounds.Position.Z <= waterBounds.Position.Z + 0.01f &&
+            shelfBounds.End.Z >= waterBounds.End.Z - 0.01f;
+        Check("rw-water-shore-bounds", shoreBoundsOk,
+            $"waterX={waterBounds.Position.X:0.00}..{waterBounds.End.X:0.00} " +
+            $"banksX={farBounds.End.X:0.00}..{startBounds.Position.X:0.00} " +
+            $"shelfX={shelfBounds.Position.X:0.00}..{shelfBounds.End.X:0.00} " +
+            $"shelfZ={shelfBounds.Position.Z:0.00}..{shelfBounds.End.Z:0.00}");
+
+        var hazardBounds = waterAreas
+            .Select(area => area.GetNodeOrNull<CollisionShape3D>("CollisionShape3D"))
+            .Where(shape => shape?.Shape is BoxShape3D)
+            .Select(shape => ShapeWorldAabb(shape!))
+            .ToList();
+        var hazardsInsideShore = pondWater is not null && hazardBounds.Count == waterAreas.Count &&
+            hazardBounds.All(bounds =>
+                bounds.Position.X >= waterBounds.Position.X - 0.25f &&
+                bounds.End.X <= waterBounds.End.X + 0.25f &&
+                bounds.Position.Z >= waterBounds.Position.Z - 0.25f &&
+                bounds.End.Z <= waterBounds.End.Z + 0.25f);
+        Check("rw-water-hazard-within-shoreline", hazardsInsideShore,
+            $"hazards={hazardBounds.Count} " +
+            string.Join(" ", hazardBounds.Select(b => $"({b.Position.X:0.0}..{b.End.X:0.0},{b.Position.Z:0.0}..{b.End.Z:0.0})")));
+
         var solidBodies = Descendants(world).OfType<StaticBody3D>().ToList();
         Check("rw-solid-collision-contract",
             solidBodies.Count >= 8 && solidBodies.All(body =>
@@ -520,6 +581,46 @@ public static class SceneContentValidator
         if (failures.Count == 0) return;
         var lines = string.Join("\n", failures.Select(check => $" - {check.Name}: {check.Detail}"));
         throw new InvalidOperationException($"Authored garden scene validation failed:\n{lines}");
+    }
+
+    private static Aabb MeshWorldAabb(MeshInstance3D mesh)
+    {
+        var local = mesh.GetAabb();
+        var transform = mesh.GlobalTransform;
+        var min = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+        var max = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+        for (var i = 0; i < 8; i++)
+        {
+            var corner = local.Position + new Vector3(
+                (i & 1) == 0 ? 0 : local.Size.X,
+                (i & 2) == 0 ? 0 : local.Size.Y,
+                (i & 4) == 0 ? 0 : local.Size.Z);
+            var world = transform * corner;
+            min = new Vector3(Math.Min(min.X, world.X), Math.Min(min.Y, world.Y), Math.Min(min.Z, world.Z));
+            max = new Vector3(Math.Max(max.X, world.X), Math.Max(max.Y, world.Y), Math.Max(max.Z, world.Z));
+        }
+        return new Aabb(min, max - min);
+    }
+
+    private static Aabb ShapeWorldAabb(CollisionShape3D shapeNode)
+    {
+        var box = (BoxShape3D)shapeNode.Shape;
+        var half = box.Size * 0.5f;
+        var local = new Aabb(-half, box.Size);
+        var transform = shapeNode.GlobalTransform;
+        var min = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+        var max = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+        for (var i = 0; i < 8; i++)
+        {
+            var corner = local.Position + new Vector3(
+                (i & 1) == 0 ? 0 : local.Size.X,
+                (i & 2) == 0 ? 0 : local.Size.Y,
+                (i & 4) == 0 ? 0 : local.Size.Z);
+            var world = transform * corner;
+            min = new Vector3(Math.Min(min.X, world.X), Math.Min(min.Y, world.Y), Math.Min(min.Z, world.Z));
+            max = new Vector3(Math.Max(max.X, world.X), Math.Max(max.Y, world.Y), Math.Max(max.Z, world.Z));
+        }
+        return new Aabb(min, max - min);
     }
 
     private static BoxShape3D? BoxShapeOf(StaticBody3D? body) =>

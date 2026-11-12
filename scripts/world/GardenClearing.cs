@@ -1671,17 +1671,54 @@ public partial class GardenClearing : Node3D
     public bool ProbeInWater()
     {
         if (_player is null || _activeRegionId != RegionIds.ReedwaterBank) return false;
+        return ProbeWaterVolumeAt(new Vec3(_player.GlobalPosition.X, _player.GlobalPosition.Y, _player.GlobalPosition.Z));
+    }
+
+    /// <summary>True when the probe sphere at a point intersects an authored water volume.</summary>
+    public bool ProbeWaterVolumeAt(Vec3 position)
+    {
+        var value = ToVector3(position);
         var space = GetWorld3D().DirectSpaceState;
         var query = new PhysicsShapeQueryParameters3D
         {
             Shape = new SphereShape3D { Radius = 0.2f },
-            Transform = new Transform3D(Basis.Identity, _player.GlobalPosition + new Vector3(0, 0.25f, 0))
+            Transform = new Transform3D(Basis.Identity, value + new Vector3(0, 0.25f, 0))
         };
         query.CollideWithAreas = true;
         query.CollideWithBodies = false;
         query.CollisionMask = 8;
         return space.IntersectShape(query, 8)
             .Any(hit => hit["collider"].AsGodotObject() is Area3D area && area.IsInGroup("water"));
+    }
+
+    /// <summary>Same water/ground decision used by UpdateWaterHazard at an arbitrary point.</summary>
+    public bool ProbeWaterHazardAt(Vec3 position)
+    {
+        var value = ToVector3(position);
+        var space = GetWorld3D().DirectSpaceState;
+        var query = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new SphereShape3D { Radius = 0.2f },
+            Transform = new Transform3D(Basis.Identity, value + new Vector3(0, 0.25f, 0))
+        };
+        query.CollideWithAreas = true;
+        query.CollideWithBodies = false;
+        query.CollisionMask = 8;
+        var inWater = space.IntersectShape(query, 8)
+            .Any(hit => hit["collider"].AsGodotObject() is Area3D area && area.IsInGroup("water"));
+        if (!inWater) return false;
+        var groundQuery = PhysicsRayQueryParameters3D.Create(
+            value + new Vector3(0, 0.05f, 0),
+            value + new Vector3(0, -1.0f, 0), 1);
+        groundQuery.CollideWithAreas = false;
+        groundQuery.CollideWithBodies = true;
+        return space.IntersectRay(groundQuery).Count == 0;
+    }
+
+    public void ProbeSetCameraZoom(float length)
+    {
+        if (_player is null) return;
+        _player.SpringArm.SpringLength = Mathf.Clamp(length, 5.5f, 15f);
     }
 
     public void ProbeOpenTravel() => OpenTravelDialog();

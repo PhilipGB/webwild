@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T11:46:58.6980839Z",
+  "generatedUtc": "2026-11-12T13:45:28.5477468Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "headless",
-  "passes": 51,
+  "passes": 55,
   "failures": 0,
   "checks": [
     {
@@ -236,6 +236,26 @@
       "detail": "water areas=4"
     },
     {
+      "name": "rw-water-surface-authored",
+      "pass": true,
+      "detail": "water=res://art/meshes/reedwater_water_surface.tres; shelf=res://art/meshes/reedwater_shore_shelf.tres; bed=res://art/meshes/reedwater_pond_bed.tres"
+    },
+    {
+      "name": "rw-water-below-banks",
+      "pass": true,
+      "detail": "waterTop=-0.030 bankTop=0.000 shelfTop=-0.080 bedTop=-1.450"
+    },
+    {
+      "name": "rw-water-shore-bounds",
+      "pass": true,
+      "detail": "waterX=-7.13..6.20 banksX=-7.00..6.00 shelfX=-7.54..6.61 shelfZ=-9.40..11.73"
+    },
+    {
+      "name": "rw-water-hazard-within-shoreline",
+      "pass": true,
+      "detail": "hazards=4 (-6.9..5.9,-8.8..10.8) (3.0..5.7,-8.7..10.7) (-1.8..-0.1,-8.7..10.7) (-6.7..-5.0,-8.7..10.7)"
+    },
+    {
       "name": "rw-solid-collision-contract",
       "pass": true,
       "detail": "bodies=21"
@@ -248,7 +268,7 @@
     {
       "name": "rw-model-resources",
       "pass": true,
-      "detail": "models=66 meshes=397 "
+      "detail": "models=66 meshes=396 "
     },
     {
       "name": "rw-insect-routes",

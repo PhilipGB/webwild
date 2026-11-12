@@ -190,6 +190,27 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Earned mastery survives save/load | PASS | `CleverCrossing_SurvivesSaveAndReload` |
 | The mission card explains the challenge and the current bridge count | PASS | `☆ Clever Crossing` line in `22h-reedwater-build-anchors.png` |
 
+## v0.2.2 PR 3 — guidance, pacing and feedback
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Status follows the active step and clears stale prompts | PASS | `status-clears-after-objective`; `GameUI.UpdateHud` live hint |
+| Catch/collect feedback names the insect species | PASS | `dragonfly-named-correctly`, `player-collection-names-species`; real-input toasts |
+| Worker collections are attributed and visibly marked | PASS | `worker-attributed-collection`, `worker-activity-glow`; `Pip collected a dragonfly · +4 food` in the real-input region-complete frame |
+| Far-bank delivery has explicit feedback | PASS | `far-bank-delivery-feedback`; "… from the far bank" toast |
+| R02 guidance adapts to the nearest flyway | PASS | `UpdateReedwaterSuggestions` compares reed and lily distances; real run used the lily flyway |
+| R03 guidance matches a reachable/remote-build goal | PASS | `GetRegionObjectiveHint` explains building the far web from the root island |
+| Wind guidance describes shelter then repair | PASS | `GetHint`, `data/missions.json` M03 hint, HUD warning label |
+| E chooses the nearer outpost interaction | PASS | `TryInteract` travel/nursery distance check; real-input return opened the travel dialog |
+| Reedwater respawns support regular progress | PASS | `ReedwaterInsectRespawns_StayWithinAChildFriendlyWindow` (10 s); `R02_ProgressesWithinOneMinuteAfterTheCaptureWeb`; `R03_DeliveryDoesNotStallForOverAMinute` |
+| First helper patrol reliably demonstrates a bridge crossing | PASS | `FirstHelperPatrol_CrossesABridgeWithoutWaitingForRandomLuck` (≤15 s) |
+| Far-bank delivery counts even when the helper is already there | PASS | `FarBankDelivery_CountsWhenTheHelperIsAlreadyOnTheFarBank`; real-input R03 completed |
+| Optional reed trail reduces post-R03 backtracking | PASS | `far-bank-trail-visible`, `far-bank-return-shortcut`; `29-reed-trail.png` |
+| Bridge construction has a short restrained effect | PASS | `bridge-build-animation-starts`, `bridge-build-animation-finishes`; rendered frames |
+| Reduced motion skips the construction effect | PASS | `bridge-animation-respects-reduced-motion` |
+| Existing tests remain green | PASS | 124/124 tests; 55/55 scene; 305/305 headless; 306/306 rendered |
+| Fresh real-input six-mission acceptance | PASS | New Garden→M03→Reedwater→R03→return→save/quit/continue with no probes or teleports; 0 failures in 447 s. Key timings: M02 helper crossing 18.2 s, longest R02 gap 29.6 s, R03 delivery 13.2 s. |
+
 ## Sign-off
 
 | Area | Result |

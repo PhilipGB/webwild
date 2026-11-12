@@ -158,6 +158,8 @@ public partial class AnchorNode : Area3D
         $"alpha={_glow?.Modulate.A ?? 0:0.00};suggested={IsSuggested};selected={IsSelected};" +
         $"hovered={IsHovered};distance={_playerDistance:0.0}";
 
+    internal static Texture2D RadialTexture => GetRadialTexture();
+
     private static Texture2D GetRadialTexture()
     {
         if (_radial is not null) return _radial;

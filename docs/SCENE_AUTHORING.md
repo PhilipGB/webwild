@@ -210,16 +210,38 @@ godot --headless --path . -- --scene-validate
 godot --headless --path . -- --runtime-probe
 ```
 
-`--scene-validate` checks **47 contracts** across both regions: the garden
+`--scene-validate` checks **51 contracts** across both regions: the garden
 composition, eight landmarks, 12 anchors and markers, ravine/collision contracts,
 123 model instances and 934 meshes, plus Reedwater's authored world groups, five
 landmarks, 10 anchors and markers, bridge bank points, bank/water collision,
 66 model instances and 397 meshes, its three insect routes, required
-`reedwater_vertex_color_material.tres`, and transition-registry checks.
+`reedwater_vertex_color_material.tres`, all eleven modular bridge wrappers and
+their material/gallery contract, and transition-registry checks.
 
-The runtime probe includes the same 47 checks plus the full gameplay acceptance
-flow, including water blocking, bridge construction/traversal, Reedwater
-objectives, worker crossing, return travel and in-region save/load.
+The runtime probe includes the same 51 checks plus the full gameplay acceptance
+flow, including water blocking, bridge construction/traversal, modular bridge
+assembly, Reedwater objectives, worker crossing, return travel, in-region
+save/load and the notification lane at all UI scales.
+
+## Modular bridge art
+
+Bridge deck visuals are runtime-assembled from authored assets; the collision is
+still the existing walkable collision in `WebVisual.BuildBridgeCollision()`.
+
+- Authored parts live under `scenes/building/bridge/parts/` and wrap the original
+  `art/models/bridge/*.glb` meshes with the shared vertex-colour material.
+  `BridgeAssetGallery.tscn` is an editor-only composition for checking scale and
+  materials. None of these wrappers contains collision.
+- `src/Core/BridgeLayout.cs` is the pure placement contract: sagging centreline,
+  authored bank ramps, arc-length plank spacing, tangent/across/up frames and
+  deterministic detail offsets. `BridgeGeometry` owns the shared sag function.
+- `scripts/building/BridgeVisualAssembler.cs` consumes that plan and instances
+  planks, woven underlays, supports, eyelets, forks, knots, lashings and
+  generated silk rails. Constructed bridges and previews use the same assembler.
+- If the Godot importer changes the nested node names inside a GLB, update the
+  corresponding wrapper `.tscn`. Scene validation loads every wrapper and
+  reports missing meshes; runtime vertex-colour application covers exported
+  builds where nested material overrides may be dropped.
 
 ## Adding a future region
 

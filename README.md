@@ -7,8 +7,8 @@ Webwild is an original, offline 3D game built with **Godot 4.7.2 .NET**, **C#** 
 catch flying insects, build silk bridges, hatch helper spiders, weather a gust of
 wind and complete three short story goals.
 
-This repository is the first-playable vertical slice plus the v0.2.0 P0/P1
-scene-authoring foundation and second region. The deterministic game rules live
+This repository is the first-playable vertical slice plus the v0.2.0 P0/P1/P2
+scene-authoring foundation, second region and modular bridge polish. The deterministic game rules live
 in `src/Core` with no `Godot.*` dependency. Both regions are authored in reusable
 Godot `.tscn` scenes; C# adapts those rules to 3D presentation, physics, input and
 UI.
@@ -27,7 +27,7 @@ dotnet build -warnaserror
 dotnet test
 ```
 
-Final verified result: **93 passed, 0 failed, 0 skipped**.
+Final verified result: **106 passed, 0 failed, 0 skipped**.
 
 ## Run from source
 
@@ -56,8 +56,9 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 The probe writes `artifacts/runtime_probe.json` and real PNGs in
 `artifacts/screenshots/` when run from the project. Final verified result:
-**168 passed, 0 failed**. The scene contract validation passes **47/47** across
-both regions. The exported Linux build is re-tested for this milestone.
+**236 passed, 0 failed**. The scene contract validation passes **51/51** across
+both regions, including the eleven modular bridge parts. The exported Linux build
+is re-tested for this milestone.
 
 ## How to play
 
@@ -104,6 +105,13 @@ silk bridges.
   costs, cancellation, dismantling and walkable bridge ramps/deck collision.
 - Bridge approach ramps follow the real span and authored bank points, so they
   stay on solid ground for either anchor selection order and for Z-axis spans.
+- Constructed and preview bridges use the supplied modular bark-plank, knot,
+  eyelet, support and woven-panel assets plus generated ivory silk rails. A pure
+  `BridgeLayout` plan keeps plank spacing, tangents, sag and bank ramps aligned
+  with the existing walkable collision; previews are green/coral ghosts with no
+  collision, and damage adds a restrained coral tint without changing physics.
+- Brief toasts occupy a compact right-hand notification lane below the mission
+  card, clear of the player, left action column, status hint and bottom toolbar.
 - Four authored insect routes with swept-segment capture, exactly-once rewards
   and respawns.
 - Nursery hatching up to five spiders, named autonomous workers that collect,
@@ -118,6 +126,8 @@ silk bridges.
 - Versioned JSON save with bounded, order-preserving histories, validation,
   atomic write, healthy backup recovery, save-failed quit confirmation and
   explicit failure messages. Failed settings writes clean up their temp file.
+  Schema v3 stores durable one-time supply-cache claims so Reedwater's +24 silk
+  and +6 food can never be replayed after the 512-key ledger history is evicted.
 - Accessibility: large labelled controls, 100/125/150% UI scale, reduced motion,
   gentle-weather mode, volume controls, camera sensitivity and persisted settings.
 - Original synthesised WAV music/SFX; all gameplay information also appears
@@ -129,6 +139,7 @@ silk bridges.
 - `scenes/world/` — authored garden environment and gameplay composition
 - `scenes/world/regions/ReedwaterBank/` — authored second-region world, water, landmarks and anchors
 - `art/models/reedwater/` — supplied original Reedwater GLB pack with vertex colours
+- `art/models/bridge/` — eleven supplied original modular bridge GLBs and wrappers
 - `scripts/` and other `scenes/` — Godot presentation, input, physics and UI
 - `art/models/` — supplied original low-poly GLB starter assets (see `ATTRIBUTION.md`)
 - `art/audio/` — original synthesised WAV files
@@ -146,7 +157,7 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The Linux export was launched, rendered and passed the 168/168 runtime probe. The
+The Linux export was launched, rendered and passed the 236/236 runtime probe. The
 Windows export built successfully as a PE32+ x86-64 executable, but **Windows
 runtime verification is NOT VERIFIED** because no Windows host was available.
 See `docs/EXPORTS.md` for checksums and exact commands.

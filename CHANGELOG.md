@@ -1,3 +1,65 @@
+## Webwild v0.2.0 P2 — modular silk bridges, reliability and release polish
+
+Final technical hardening and presentation pass after the two-region Reedwater
+Bank implementation. The v0.2.0 release itself is described at the end of this
+section once its gates are complete.
+
+### Durable one-time supply cache
+
+- Fixed a real replay flaw: the Reedwater outpost cache was keyed only through
+  the bounded 512-entry ledger history, so later visits could grant +6 food and
+  +24 silk again after the key was evicted.
+- Schema v3 adds a durable `ClaimedSupplyCaches` set. Claims survive interleaved
+  travel, save/JSON/load, unlimited later transactions and history eviction.
+- Added explicit schema-1 → schema-2 → schema-3 migration. P1 schema-2 saves
+  that already list Reedwater are migrated as already claimed, preventing a
+  duplicate grant; P1 garden saves and all v0.1.x fixtures migrate with an empty
+  claim. Real v0.2.0 P1 fixtures are tested alongside the legacy fixtures.
+- The rolling 512-key ledger retention policy is unchanged.
+
+### Modular silk-and-bark bridges
+
+- Replaced the flat opaque ribbon and yellow walkway boxes with a reusable
+  `BridgeVisualAssembler` built from the supplied 11 original bridge GLBs:
+  three bark planks, two knots, wooden eyelet, forked rail fixture, silk-wrapped
+  support, cross lashing, woven panel and reference braid.
+- Added the pure `Webwild.Core.BridgeLayout` plan. It places alternating planks
+  by arc length, orients local +X along travel and +Z across the bridge, includes
+  authored bank ramps, and keeps visuals on the same sag contract as the
+  existing walkable collision.
+- Generated curved ivory/silver-blue silk rails, lower threads and sparse
+  vertical lashings. Supports, eyelets, forks, cinches, hitches and cross
+  lashings are sparsely instanced; no prop owns collision.
+- Reworked previews to use the same assembler as a translucent green/coral ghost
+  with no walkway collision. Applied the authored vertex-colour material at
+  runtime so colours also appear in the exported Linux build.
+- Damage adds a restrained coral overlay without changing durability, repair,
+  silk costs, worker graph logic or bridge physics.
+- Added bridge-asset scene validation and runtime checks for planks, all three
+  variants, silk rails, detail fixtures, vertex materials, reversed/Z-axis spans,
+  preview validity cues, damage presentation and removal/repair parity.
+
+### Notification lane
+
+- Moved brief toasts out of the player/camera centre into a compact right-hand
+  lane below the mission card. Toasts are width-limited, duration-capped,
+  single-slot, non-interactive and never accept mouse input.
+- Rect-based runtime checks prove the lane avoids the mission card, left action
+  column, status hint and bottom toolbar at 1280×720 with 100%, 125% and 150% UI
+  scale.
+- Long actions remain in the objective/hint UI rather than blocking toasts.
+
+### Verification
+
+- 106 pure .NET tests passed, including history-eviction, P1 migration and
+  bridge-layout direction/orientation tests.
+- Scene contract: 51/51 across both regions, including the eleven bridge parts.
+- Headless, rendered and exported Linux runtime probes: 236/236 checks.
+- Linux x64 export re-run headless and rendered under Xvfb. Windows x64 PE32+
+  export built; Windows runtime remains **NOT VERIFIED**.
+- New real screenshots include modular bridge close-ups, damaged bridge, and
+  100/125/150% toast layouts.
+
 # Changelog
 
 ## Webwild v0.2.0 P1 — Reedwater Bank second region (unreleased milestone)

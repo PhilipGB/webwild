@@ -1,4 +1,4 @@
-# Acceptance — Webwild v0.2.0 P1
+# Acceptance — Webwild v0.2.0 P2
 
 Every row is backed by observed evidence or marked **NOT VERIFIED**. The final
 implementation commit and exact commands are in `docs/EVIDENCE.md`.
@@ -32,22 +32,22 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Consistent input: click select, right-click/Esc cancel, E interact, Esc pause, Tab colony; modals block background | PASS | Runtime checks and `_UnhandledInput`/modal stop handling; `04-help.png`, `05-colony.png` |
 | Contrast, UI scale, reduced motion and volume settings function and persist | PASS (full-screen actual presentation NOT VERIFIED) | `settings-persist`, `ui-scale-applies` (1.25), `ui-scale-150-applies` (1.50), `low-threat-applies`, `low-threat-restores`, `settings-save-error-visible`; `16/17` screenshots. Full-screen toggle persists and calls Godot’s window mode, but no compositor test |
 | Sound and visuals communicate capture, damage, build and success even with audio muted | PASS | Visual toasts/status/icons and web colour changes in screenshots; audio buses and WAVs load (`audio-buses`) |
-| Cohesive authored detail; no prominent untextured placeholder; camera not clipping main quest | PASS (stylised) | Visual inspection of all 19 screenshots; SpringArm collision mask; ground, paths, flora and landmarks are authored `.tscn` content, not unfinished cubes |
+| Cohesive authored detail; no prominent untextured placeholder; camera not clipping main quest | PASS (stylised) | Visual inspection of all 36 screenshots; SpringArm collision mask; ground, paths, flora and landmarks are authored `.tscn` content, not unfinished cubes |
 
 ## Engineering and delivery
 
 | Criterion | Status | Evidence |
 |---|---|---|
 | Godot 4.7.2 .NET + C# / net10.0; clean-checkout launch | PASS | `godot --version`; `godot --headless --path . --editor --quit`; imported and ran from source |
-| Pure deterministic tests for validation, capture, economy, workers, missions, wind, recovery, saves and scene contracts | PASS | `dotnet test`: **71 passed, 0 failed, 0 skipped** |
-| Godot headless import + C# startup + dedicated runtime acceptance smoke | PASS | Headless import exit 0; scene contract **24/24**; headless probe **105/105**; rendered probe **105/105** |
+| Pure deterministic tests for validation, capture, economy, workers, missions, wind, recovery, saves, bridge layout and scene contracts | PASS | `dotnet test`: **106 passed, 0 failed, 0 skipped** |
+| Godot headless import + C# startup + dedicated runtime acceptance smoke | PASS | Headless import exit 0; scene contract **51/51**; headless probe **236/236**; rendered probe **236/236** |
 | Versioned save, validation, atomic write, backup recovery, no false “Saved” | PASS | `SaveTests` roundtrip, corrupt main, invalid schema, failed write; runtime `save-succeeds`, `save-loads`, `reload-*` |
 | Private repo with source, assets/attribution, instructions, tests and evidence | PASS | `PhilipGB/webwild` private; README/ATTRIBUTION/evidence tracked |
 | P0–P8 and v0.1.x hardening recorded with commit/PR links and green checks | PASS | PRs [#1](https://github.com/PhilipGB/webwild/pull/1)–[#10](https://github.com/PhilipGB/webwild/pull/10) merged with green CI; merge commits in `docs/EVIDENCE.md` |
-| Linux x64 playable export produced and launched/tested | PASS | `exports/linux/Webwild.x86_64`; headless and rendered Xvfb probes both 105/105 |
+| Linux x64 playable export produced and launched/tested | PASS | `exports/linux/Webwild.x86_64`; headless and rendered Xvfb probes both 236/236 |
 | Windows x64 export produced; runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | `exports/windows/Webwild.exe` PE32+ x86-64; no Windows host |
 | `v0.2.0` P0 merged only after exact-head checks pass | PASS | Dedicated branch, PR and green CI; no v0.2.0 release is published yet |
-| Screenshots show actual Godot game | PASS | 19 real PNGs in `artifacts/screenshots/`; runtime probe reports renderer X11 |
+| Screenshots show actual Godot game | PASS | 36 real PNGs in `artifacts/screenshots/`; runtime probe reports renderer X11 |
 
 ## v0.1.1 independent-review hardening
 
@@ -108,13 +108,32 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Existing garden tests/checks remain green | PASS | 93/93 unit tests; 168/168 runtime checks including all original garden checks |
 | Rendered screenshots are from the running game | PASS | `20-travel-dialog` through `29-returned-garden`; Xvfb GL renderer |
 
+## v0.2.0 P2 — modular bridge, reliability and polish
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Reedwater +6 food/+24 silk cannot be re-granted after 512+ unrelated ledger keys evict the history entry | PASS | Durable `ClaimedSupplyCaches` in schema v3; unit `ReedwaterSupplyCache_SurvivesLedgerHistoryEvictionAndSaveRoundTrip` pushes 602 filler transactions, repeats travel, exports/reloads and repeats travel |
+| Save/JSON/load and schema-1/P1 schema-2 saves keep economy, colony, missions and region state intact | PASS | Explicit 1→2→3 migration; `tests/fixtures/save_v0_2_0_p1*.json` are real P1 saves; `SaveMigrationTests`; runtime `save-records-supply-claim`, `reenter-supply-not-regranted` |
+| Bridge collision remains unchanged/equally verified on both regions, both anchor orders, X/Z/diagonal spans and ramps | PASS | Shared `BridgeGeometry.EvaluateSpan`/`ComputeSag`; `BridgeLayoutTests`; runtime `bridge-reverse-*`, `bridge-zaxis-*`, `player-crosses-reedwater-bridge`, `bridge-removal-blocks-crossing` |
+| Supplied authored GLBs are actually used with three plank variants, fixtures, knots, supports and panels | PASS | `BridgeVisualAssembler` loads all 11 wrappers; runtime signatures `variants=7`, `details>=16`, `panels>0`; `bridge-parts-exist` scene check |
+| No opaque gold ribbon/box remains visible over the walking deck | PASS | Legacy `WebMeshFactory.BuildBridge` and walkway BoxMesh removed; `bridge-no-legacy-ribbon`; runtime `*-no-solid-ribbon`; `09b-modular-bridge-detail.png` |
+| Planks follow sag/tangent and reversed/Z/diagonal orientation with no NaN or missing geometry | PASS | Pure direction theory tests plus runtime assembled views; generated rails are finite curved tubes |
+| Constructed and preview bridges use the same assembler; preview has no collision and keeps green/coral cues | PASS | `bridge-preview-uses-assembler`, `bridge-preview-has-no-collision`, `bridge-preview-valid-cue`, `bridge-preview-invalid-cue` |
+| Damage presentation is clear without changing physics/repair rules | PASS | `bridge-damage-visual` checks all rendered meshes receive the restrained overlay; `09c-bridge-damaged.png` |
+| Toasts avoid player/camera centre, mission, action column, status hint and toolbar at 100/125/150% | PASS | Rect checks `toast-avoids-*` at all three scales; `16a-ui-toast-100.png`, `16-ui-scale-125.png`, `17-ui-scale-150.png` |
+| Vertex colours work in editor and Linux export | PASS | Runtime `*-vertex-materials` reports zero unstyled meshes in exported build; rendered `23b-reedwater-bridge-detail.png` from exported Linux |
+| Existing scene/gameplay checks retained and expanded | PASS | 51/51 scene checks; 236/236 runtime checks; 106/106 tests |
+| Linux release archive re-downloaded, checksum-matched and run | PASS | See `docs/EXPORTS.md` and `docs/EVIDENCE.md#v020-p2` |
+| Windows x64 export produced; runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | `exports/windows/Webwild.exe` PE32+ x86-64; no Windows host |
+| Repository private; annotated v0.2.0 tag/release only on verified main | PASS | `gh repo view` private; release workflow recorded in `docs/EVIDENCE.md#v020-p2` |
+
 ## Sign-off
 
 | Area | Result |
 |---|---|
-| Automated gameplay acceptance | **PASS** — 168/168 runtime checks, 93/93 unit tests, 47/47 scene contracts |
-| Rendered practical inspection | **PASS** — 19 screenshots and full flow |
-| Linux export | **PASS** — exported, launched, scene 47/47 and probe 168/168 headless and rendered |
+| Automated gameplay acceptance | **PASS** — 236/236 runtime checks, 106/106 unit tests, 51/51 scene contracts |
+| Rendered practical inspection | **PASS** — 36 screenshots and full flow |
+| Linux export | **PASS** — exported, launched, scene 51/51 and probe 236/236 headless and rendered |
 | Windows release | **PARTIAL** — export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no child playtest |
-| Milestone status | v0.2.0 P1 Reedwater Bank second region merged or under exact-head review; no v0.2.0 release published yet. Windows runtime and child playtesting remain documented limitations |
+| Milestone status | v0.2.0 P2 modular bridge/reliability pass verified for release; Windows runtime and child playtesting remain documented limitations |

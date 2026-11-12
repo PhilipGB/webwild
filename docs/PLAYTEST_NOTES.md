@@ -20,16 +20,18 @@ To run a real session:
 
 ## Developer visual inspection
 
-Performed on the rendered game at 1280×720 using Xvfb. Real Godot screenshots
-are in `artifacts/screenshots/`. The capture covers title, garden, pause, help,
-colony, build preview, finished web, trapped insect, nursery, wind warning,
-victory, settings, reloaded save, title with Continue, and UI scales 125% and
-150%.
+Performed on the rendered game at 1280×720 using Xvfb, including the exported
+Linux build. Real Godot screenshots are in `artifacts/screenshots/`. The capture
+covers title, garden, pause, help, colony, build mode, finished web, trapped
+insect, modular bridge close-ups, damaged bridge, nursery, wind warning, victory,
+settings, reloaded save, title with Continue, Reedwater travel and completion,
+and UI scales 100%, 125% and 150% with the notification lane active.
 
 ## Known usability limits found during inspection
 
-- At 150% UI scale the temporary toast can overlap the top of the action column;
-  it fades and does not hide a permanent control.
+- Toasts stay in the right-hand lane below the mission card. At 150% UI scale
+  they cover some world-space labels but no permanent control, the player, the
+  mission card, status hint or toolbar; runtime rectangle checks enforce this.
 - The settings panel scrolls on smaller logical viewports; the **Done** button is
   pinned outside the scroll area.
 - A Windows machine startup was not available; see `docs/EXPORTS.md`.

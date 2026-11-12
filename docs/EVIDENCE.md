@@ -430,6 +430,120 @@ All were captured by the running Godot project under Xvfb.
 - Cached inactive regions disable collision/lights/environment but keep their GPU
   resources loaded for instant switching.
 
+## v0.2.0 P2 — modular bridges, durable cache and notification lane
+
+### Delivered changes
+
+1. **Durable Reedwater supply claim.** Save schema v3 adds
+   `Counters.ClaimedSupplyCaches`. `TryTravelTo` grants +6 food / +24 silk only
+   when the region claim is new. Migration is explicit 1 → 2 → 3; P1 schema-2
+   saves that already list Reedwater seed the claim so they cannot re-grant. The
+   512-key rolling ledger policy remains unchanged.
+2. **Modular bridge visuals.** The flat yellow ribbon and walkway BoxMeshes are
+   gone. `BridgeLayout` (pure core) computes the sagging centreline, bank ramps,
+   arc-length plank placements and deterministic offsets. `BridgeVisualAssembler`
+   instances the supplied planks/panels/fixtures/knots/supports and generated
+   curved ivory/silver-blue silk rails. Previews use the same assembler as
+   green/coral ghosts with zero collision; damage adds a coral overlay without
+   changing physics.
+3. **Notification lane.** Toasts moved to a width-limited right-hand lane below
+   the mission card, with non-interactive mouse filtering, capped duration and a
+   single slot. Runtime rectangle checks cover 100%, 125% and 150% UI scale.
+
+### Model integration list
+
+All eleven supplied modular bridge assets are used by the runtime where
+appropriate: `bark_plank_a/b/c`, `silk_cinch_knot`, `silk_double_hitch`,
+`wooden_eyelet`, `forked_rail_fixture`, `silk_wrapped_support`,
+`silk_cross_lashing`, `woven_silk_panel`, plus `braided_silk_segment` retained as
+an editor/reference part. `examples/bridge_4m_reference_only.glb` remains
+reference-only and is never loaded as gameplay geometry.
+
+### Commands and results
+
+```text
+$ sha256sum -c SHA256SUMS_BRIDGE.txt
+all 48 supplied files: OK
+
+$ dotnet build -warnaserror
+0 warnings, 0 errors
+
+$ dotnet test
+Passed! - Failed: 0, Passed: 106, Skipped: 0, Total: 106
+
+$ godot --headless --path . --editor --quit
+exit 0
+
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=51 failures=0
+
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=236 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=236 failures=0
+
+$ cd exports/linux && ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=51 failures=0
+
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=236 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=236 failures=0
+
+$ unzip -q Webwild-v0.2.0-linux-x64.zip -d fresh
+$ cd fresh/linux && sha256sum -c SHA256SUMS.txt
+Webwild.x86_64: OK
+Webwild.pck: OK
+
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=236 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=236 failures=0
+```
+
+### New regression coverage
+
+- `BridgeLayoutTests` — shared sag, spacing, three-variant cycle, west→east,
+  east→west, north→south and diagonal tangents, authored bank ramps, stable
+  id offsets, supports, rail samples and degenerate/short spans.
+- `RegionTests` — 602 filler transactions evict
+  `grant:region_supply_reedwater_bank`; four round trips still grant nothing;
+  save/export/load and further travel still grant nothing.
+- `SaveMigrationTests` — real P1 schema-2 fixtures (garden and Reedwater-visited)
+  plus the existing v0.1.0/v0.1.1/v0.1.2 fixtures.
+- Runtime bridge checks — planks, all three variants, panels, details, rails,
+  vertex materials, no solid ribbon, reversed/Z spans, preview validity cues,
+  preview without collision, damage overlay, reload persistence.
+- Runtime toast checks — visible, inside viewport, and non-overlapping mission,
+  action column, toolbar and status at 100%, 125% and 150%.
+
+### Real screenshots added
+
+- `artifacts/screenshots/09b-modular-bridge-detail.png` — healthy garden bridge
+  close-up showing planks, rails and supports.
+- `artifacts/screenshots/09c-bridge-damaged.png` — restrained coral damage tint.
+- `artifacts/screenshots/16a-ui-toast-100.png` — toast lane at 100%.
+- `artifacts/screenshots/23b-reedwater-bridge-detail.png` — Reedwater bridge
+  detail from the exported Linux build.
+- Updated `16-ui-scale-125.png` and `17-ui-scale-150.png` show the toast lane
+  with the mission card present.
+
+### Release archive
+
+- `Webwild-v0.2.0-linux-x64.zip` — SHA-256
+  `ec1077f4d343e0c07635ccb087b34130e1aca0519b7405c131312e9759e07afd`
+- `Webwild-v0.2.0-windows-x64.zip` — SHA-256
+  `a44cc84f6e423cb9c6ecfb6d0638d2c6c592c5557e791d9c201cdd5f21bafd3b`
+- Linux archive re-download test: passed after extraction, 51/51 scene checks
+  and 236/236 runtime checks headless and rendered.
+- Windows archive: built; runtime **NOT VERIFIED** (no Windows host).
+
 ## Honest non-results
 
 - Child playtest: **NOT VERIFIED** (`docs/PLAYTEST_NOTES.md`).

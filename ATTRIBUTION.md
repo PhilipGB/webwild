@@ -7,13 +7,15 @@ from the Webwild handoff asset pack. They were procedurally generated for this
 project from original geometry and are used and modified here as project assets.
 No third-party models, textures, music or sound effects are bundled.
 
-- 66 original low-poly GLB models under `art/models/` (creatures, flora, terrain, colony)
+- 81 original low-poly GLB models under `art/models/` (creatures, flora, terrain, colony and the 15-model Reedwater Bank pack)
 - Original SVG HUD icons under `art/ui/icons/`
 - Reference-only concept art, maps and UI mock-ups under `assets/reference/`;
   these are **not** runtime assets and are never presented as game screenshots.
 
-`assets/reference/model_manifest.json` records every model, its source group,
-approximate bounds and intended use.
+`assets/reference/model_manifest.json` records the original garden model set.
+`asset_manifest.json`, `docs/ASSET_CATALOGUE.md` and
+`docs/model_geometry.json` record the supplied Reedwater Bank pack (15 GLBs,
+94 component meshes, 9,513 triangles, vertex colours and scene wrappers).
 
 ## Code and generated content
 

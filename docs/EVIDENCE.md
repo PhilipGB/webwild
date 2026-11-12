@@ -7,7 +7,7 @@ inferred from source alone: every result comes from a command, a runtime check o
 an inspected screenshot.
 
 - Host: Linux x64
-- `dotnet --version` → `10.0.114`
+- `dotnet --version` → `10.0.115`
 - `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
 - Godot .NET export templates 4.7.2 installed
 - GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
@@ -338,6 +338,92 @@ After restoring the authored position, validation returned to 24/24 and exit 0.
 - Windows runtime, supervised child playtesting and real full-screen desktop
   presentation remain **NOT VERIFIED**.
 - The second garden region and v0.2.0 release remain future work.
+
+## v0.2.0 P1 — Reedwater Bank second region
+
+- Branch: `feat/v0.2.0-p1-reedwater-bank`
+- Baseline: `main` at `09b9c72`
+- PR and final commit: recorded after exact-head CI (see PR link below once opened)
+- No v0.2.0 release is published; this is milestone P1.
+- Region architecture: stable `RegionIds` and `RegionCatalog` in `Webwild.Core`;
+  authored `ReedwaterBank.tscn` root with a `World` + 10 sockets + travel markers;
+  `RegionSceneCatalog` maps ids to scenes in the Godot adapter.
+- Region ownership: food/silk, colony population/cap, settings, story and
+  regional objective progress are shared. Webs, insects, workers, player
+  transforms, bridge routes and water state are region-scoped. Workers travel
+  with the colony through the passage and then use the regional bridge graph.
+- Save schema: v2 with explicit schema-1 → 2 migration, region ids on webs,
+  workers and insects, per-region player transforms, regional objective progress,
+  Reedwater counters and opened-route history.
+- Assets: all 15 supplied Reedwater GLBs and 15 scene wrappers imported; region
+  scenes reference `reedwater_vertex_color_material.tres`; runtime material pass
+  chooses the double-sided Reedwater material for those model paths.
+- Scene validation: 47/47 checks (27 garden checks plus 20 Reedwater checks).
+- Region content: 66 model instances / 397 meshes; 5 landmark scenes; 10 anchors;
+  4 water volumes; 3 insect routes including dragonfly paths.
+
+### Commands and results
+
+```text
+$ dotnet build -warnaserror
+0 warnings, 0 errors
+
+$ dotnet test
+Passed! - Failed: 0, Passed: 93, Skipped: 0, Total: 93
+
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=47 failures=0
+
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=168 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=168 failures=0
+```
+
+### New runtime evidence (headless and rendered)
+
+- `reedwater-unlocked`, `travel-dialog-opens`, `travel-to-reedwater`,
+  `reedwater-player-arrival`, `reedwater-anchors-visible`,
+  `reedwater-insects-visible`
+- `water-blocks-without-bridge`, `pond-route-blocked-before-bridges`,
+  `bridge-one-built`, `bridge-two-built`, `pond-route-open-after-bridges`
+- `player-crosses-reedwater-bridge`, `reed-capture-web-built`,
+  `reedwater-insects-collected`, `r01-complete`, `r02-complete`
+- `reedwater-helper-hatched`, `worker-used-reedwater-bridge`, `r03-complete`,
+  `reedwater-completion-feedback`
+- `reedwater-save`, `save-records-active-region`,
+  `save-records-reedwater-webs`, `save-records-reedwater-objectives`,
+  `reload-in-reedwater`, `reload-reedwater-construction`,
+  `reload-reedwater-objectives`
+- `return-to-garden`, `garden-state-preserved`, `reenter-reedwater`,
+  `critical-bridge-breaks-route`, `critical-bridge-rebuilt`,
+  `critical-bridge-restores-route`
+
+### New deterministic tests
+
+- `RegionTests` — region ids/anchors, unlock gate, bridge spans, dry-graph check,
+  R01 and reversed order, removal invalidation, R02, worker no-teleport, R03,
+  save/load persistence and exactly-once supply cache.
+- `SaveMigrationTests` — real schema-1 fixtures for v0.1.0, v0.1.1 and v0.1.2.
+- `SceneAuthoringTests` — Reedwater anchors and markers, water/collision contract,
+  region registry and removal of the `new GardenClearing()` fallback.
+
+### Real screenshots
+
+`artifacts/screenshots/20-travel-dialog.png` through
+`29-returned-garden.png`, including `22b-reedwater-overview`,
+`22c-first-island`, `25-reedwater-capture-trapped` and `26-reedwater-worker`.
+All were captured by the running Godot project under Xvfb.
+
+### Known limitations for this milestone
+
+- Windows export is built but not launched on Windows: **NOT VERIFIED**.
+- No supervised child playtest of Reedwater Bank: **NOT VERIFIED**.
+- Dragonfly is a static GLB used as an insect model; no skeletal animation.
+- Cached inactive regions disable collision/lights/environment but keep their GPU
+  resources loaded for instant switching.
 
 ## Honest non-results
 

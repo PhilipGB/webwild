@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-12T01:35:49.1346205Z",
+  "generatedUtc": "2026-11-12T03:29:47.0318785Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
-  "renderer": "X11",
-  "passes": 105,
+  "renderer": "headless",
+  "passes": 168,
   "failures": 0,
   "checks": [
     {
@@ -108,7 +108,7 @@
     {
       "name": "scene-player-contract",
       "pass": true,
-      "detail": "pos=(-13.5, 0.00027555972, 8.5) layer=2 mask=1"
+      "detail": "pos=(-13.5, 0.03833329, 8.5) layer=2 mask=1"
     },
     {
       "name": "scene-runtime-roots",
@@ -133,7 +133,7 @@
     {
       "name": "scene-model-material-coverage",
       "pass": true,
-      "detail": "baked vertex-colour material on 123 model instances"
+      "detail": "vertex-colour material resolved on 123 model instances"
     },
     {
       "name": "scene-no-procedural-builder",
@@ -144,6 +144,121 @@
       "name": "scene-scene-loads",
       "pass": true,
       "detail": "GardenClearing and TitleBackdrop load"
+    },
+    {
+      "name": "scene-garden-passage-authored",
+      "pass": true,
+      "detail": "passage=res://scenes/world/regions/GardenClearing/GardenPassage.tscn"
+    },
+    {
+      "name": "scene-garden-travel-markers",
+      "pass": true,
+      "detail": "ToReedwaterBank=(16.1, 0, 8.5); FromReedwaterBank=(15.1, 0.45, 8.5)"
+    },
+    {
+      "name": "scene-region-registry",
+      "pass": true,
+      "detail": "garden_clearing,reedwater_bank"
+    },
+    {
+      "name": "scene-rw-bank-scene",
+      "pass": true,
+      "detail": "scene=res://scenes/world/regions/ReedwaterBank/ReedwaterBank.tscn"
+    },
+    {
+      "name": "scene-rw-world-scene-authored",
+      "pass": true,
+      "detail": "scene=res://scenes/world/regions/ReedwaterBank/ReedwaterWorld.tscn"
+    },
+    {
+      "name": "scene-rw-world-group-instances",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "scene-rw-landmark-scenes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "scene-rw-anchor-count",
+      "pass": true,
+      "detail": "scene=10 simulation=10"
+    },
+    {
+      "name": "scene-rw-anchor-ids-unique",
+      "pass": true,
+      "detail": "rw_start_post,rw_island_a_post,rw_island_b_post,rw_far_post,rw_reed_a,rw_reed_b,rw_lily_a,rw_lily_b,rw_far_web_a,rw_far_web_b"
+    },
+    {
+      "name": "scene-rw-anchor-transforms-match-simulation",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "scene-rw-landmark-anchor-markers",
+      "pass": true,
+      "detail": "10 markers; "
+    },
+    {
+      "name": "scene-rw-nursery-marker",
+      "pass": true,
+      "detail": "Outpost/NurseryPoint=(11, 0.1, 5.8)"
+    },
+    {
+      "name": "scene-rw-first-destination-marker",
+      "pass": true,
+      "detail": "IslandB/FirstDestinationPoint=(-3.4, 0.15, 1.6)"
+    },
+    {
+      "name": "scene-rw-far-bank-marker",
+      "pass": true,
+      "detail": "FarBank/FarBankPoint=(-10.5, 0.1, -3.6)"
+    },
+    {
+      "name": "scene-rw-arrival-return-markers",
+      "pass": true,
+      "detail": "ArrivalPoint=(10, 0.55, 8.5); TravelPoint=(12, 0, 8.5)"
+    },
+    {
+      "name": "scene-rw-bridge-bank-markers",
+      "pass": true,
+      "detail": "StartBank/BridgeGround_rw_start_post=(7.6, 0, 7.6); IslandA/BridgeGround_rw_island_a_post=(2.2, 0.15, 6.4); IslandB/BridgeGround_rw_island_b_post=(-2.7, 0.15, 2.7); FarBank/BridgeGround_rw_far_post=(-8.8, 0, -1.9)"
+    },
+    {
+      "name": "scene-rw-bank-collision",
+      "pass": true,
+      "detail": "start L1/M0 far L1/M0"
+    },
+    {
+      "name": "scene-rw-water-collision",
+      "pass": true,
+      "detail": "water areas=4"
+    },
+    {
+      "name": "scene-rw-solid-collision-contract",
+      "pass": true,
+      "detail": "bodies=21"
+    },
+    {
+      "name": "scene-rw-material-resource",
+      "pass": true,
+      "detail": "res://art/materials/reedwater_vertex_color_material.tres"
+    },
+    {
+      "name": "scene-rw-model-resources",
+      "pass": true,
+      "detail": "models=66 meshes=397 "
+    },
+    {
+      "name": "scene-rw-insect-routes",
+      "pass": true,
+      "detail": "rw_reed_fly,rw_dragonfly_lilies,rw_far_dragonfly"
+    },
+    {
+      "name": "scene-rw-no-procedural-scenery",
+      "pass": true,
+      "detail": "Reedwater scenery is authored, not generated in C#"
     },
     {
       "name": "anchors-visible",
@@ -223,7 +338,7 @@
     {
       "name": "climb-stem",
       "pass": true,
-      "detail": "height=3.97"
+      "detail": "height=4.19"
     },
     {
       "name": "build-tool-open",
@@ -293,7 +408,7 @@
     {
       "name": "bridge-enables-player-crossing",
       "pass": true,
-      "detail": "x=11.23"
+      "detail": "x=11.33"
     },
     {
       "name": "hatch-started",
@@ -408,7 +523,7 @@
     {
       "name": "reload-world-scene-authored",
       "pass": true,
-      "detail": "24/24 scene checks after load"
+      "detail": "47/47 scene checks after load"
     },
     {
       "name": "settings-persist",
@@ -456,6 +571,206 @@
       "detail": "Dismantle removes web and refunds silk"
     },
     {
+      "name": "reedwater-unlocked",
+      "pass": true,
+      "detail": "Story victory opens the east passage"
+    },
+    {
+      "name": "travel-dialog-opens",
+      "pass": true,
+      "detail": "Destination and explanation are shown"
+    },
+    {
+      "name": "travel-to-reedwater",
+      "pass": true,
+      "detail": "region=reedwater_bank"
+    },
+    {
+      "name": "reedwater-player-arrival",
+      "pass": true,
+      "detail": "player=(10, 0.49722227, 8.5)"
+    },
+    {
+      "name": "reedwater-anchors-visible",
+      "pass": true,
+      "detail": "anchors=10"
+    },
+    {
+      "name": "reedwater-insects-visible",
+      "pass": true,
+      "detail": "insects=3"
+    },
+    {
+      "name": "water-blocks-without-bridge",
+      "pass": true,
+      "detail": "x=6.85 inWater=False"
+    },
+    {
+      "name": "pond-route-blocked-before-bridges",
+      "pass": true,
+      "detail": "No dry route to the lily island"
+    },
+    {
+      "name": "bridge-one-built",
+      "pass": true,
+      "detail": "Reed post to mossy island"
+    },
+    {
+      "name": "bridge-two-built",
+      "pass": true,
+      "detail": "Mossy island to lily island"
+    },
+    {
+      "name": "pond-route-open-after-bridges",
+      "pass": true,
+      "detail": "Two connected bridge decisions"
+    },
+    {
+      "name": "r01-complete",
+      "pass": true,
+      "detail": "Across the Water"
+    },
+    {
+      "name": "clever-crossing-earned",
+      "pass": true,
+      "detail": "Two bridges for the lily island"
+    },
+    {
+      "name": "player-crosses-reedwater-bridge",
+      "pass": true,
+      "detail": "x=0.12"
+    },
+    {
+      "name": "reed-capture-web-built",
+      "pass": true,
+      "detail": "Capture web across the reed stems"
+    },
+    {
+      "name": "reedwater-insects-collected",
+      "pass": true,
+      "detail": "caught=3"
+    },
+    {
+      "name": "r02-complete",
+      "pass": true,
+      "detail": "The Reed Harvest"
+    },
+    {
+      "name": "bridge-three-built",
+      "pass": true,
+      "detail": "Root island to far bank"
+    },
+    {
+      "name": "far-capture-web-built",
+      "pass": true,
+      "detail": "Far-bank capture web"
+    },
+    {
+      "name": "reedwater-helper-hatched",
+      "pass": true,
+      "detail": "Outpost hatch uses shared colony resources"
+    },
+    {
+      "name": "worker-used-reedwater-bridge",
+      "pass": true,
+      "detail": "Worker crossed a real bridge edge"
+    },
+    {
+      "name": "r03-complete",
+      "pass": true,
+      "detail": "The Far Bank"
+    },
+    {
+      "name": "reedwater-completion-feedback",
+      "pass": true,
+      "detail": "Completion acknowledgement without ending free play"
+    },
+    {
+      "name": "reedwater-save",
+      "pass": true,
+      "detail": "Save while standing in Reedwater Bank"
+    },
+    {
+      "name": "reedwater-save-loads",
+      "pass": true,
+      "detail": "Save loaded"
+    },
+    {
+      "name": "save-records-active-region",
+      "pass": true,
+      "detail": "reedwater_bank"
+    },
+    {
+      "name": "save-records-reedwater-webs",
+      "pass": true,
+      "detail": "webs=5"
+    },
+    {
+      "name": "save-records-reedwater-objectives",
+      "pass": true,
+      "detail": "completed=3"
+    },
+    {
+      "name": "reload-in-reedwater",
+      "pass": true,
+      "detail": "region=reedwater_bank"
+    },
+    {
+      "name": "reload-reedwater-construction",
+      "pass": true,
+      "detail": "webs=5"
+    },
+    {
+      "name": "reload-reedwater-objectives",
+      "pass": true,
+      "detail": "completed=3"
+    },
+    {
+      "name": "return-to-garden",
+      "pass": true,
+      "detail": "region=garden_clearing"
+    },
+    {
+      "name": "garden-state-preserved",
+      "pass": true,
+      "detail": "gardenWebs=2"
+    },
+    {
+      "name": "reenter-reedwater",
+      "pass": true,
+      "detail": "region=reedwater_bank"
+    },
+    {
+      "name": "reenter-reedwater-objectives",
+      "pass": true,
+      "detail": "completed=3"
+    },
+    {
+      "name": "critical-bridge-present",
+      "pass": true,
+      "detail": "Middle bridge exists"
+    },
+    {
+      "name": "critical-bridge-dismantles",
+      "pass": true,
+      "detail": "Dismantled for navigation regression"
+    },
+    {
+      "name": "critical-bridge-breaks-route",
+      "pass": true,
+      "detail": "Worker route invalid without the middle bridge"
+    },
+    {
+      "name": "critical-bridge-rebuilt",
+      "pass": true,
+      "detail": "Rebuilt the middle bridge"
+    },
+    {
+      "name": "critical-bridge-restores-route",
+      "pass": true,
+      "detail": "Navigation restored"
+    },
+    {
       "name": "ui-scale-applies",
       "pass": true,
       "detail": "scale=1.25"
@@ -493,7 +808,7 @@
     {
       "name": "bridge-reverse-enables-crossing",
       "pass": true,
-      "detail": "x=11.23"
+      "detail": "x=11.36"
     },
     {
       "name": "bridge-removal-clears-collision",

@@ -1,4 +1,4 @@
-# Acceptance — Webwild v0.2.0 P0
+# Acceptance — Webwild v0.2.0 P1
 
 Every row is backed by observed evidence or marked **NOT VERIFIED**. The final
 implementation commit and exact commands are in `docs/EVIDENCE.md`.
@@ -86,13 +86,35 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Dev can move a decorative prop and reopen without C# | PASS | Temporary edit moved `HomeCache` from global x −15.2 to −14.85, reopened, then reverted; see `docs/EVIDENCE.md` |
 | Moving an anchor without updating gameplay data fails clearly | PASS | Temporary anchor drift produced two named validation failures and exit 1, then reverted to 24/24 |
 
+## v0.2.0 P1 — Reedwater Bank second region
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Second region is a visually distinct, authored pond/marsh with shoreline, reeds, cattails, lilies, mossy islands and a far bank | PASS | `scenes/world/regions/ReedwaterBank/**`; 47/47 scene checks; `21-reedwater-arrival.png`, `22-reedwater-pond.png`, `22b-reedwater-overview.png`, `24-reedwater-crossing.png` |
+| Supplied Reedwater GLBs and `.tres` material import and render with vertex colours; dragonfly used as an insect model | PASS | Godot editor import exit 0; 66 model instances/397 meshes in region validation; `rw-material-resource`; rendered dragonflies visible in `25-reedwater-capture-trapped.png` |
+| Travel is explicit, discoverable, keyboard/mouse accessible, and works after story completion and after save/load | PASS | `travel-dialog-opens`, `travel-to-reedwater`, `return-to-garden`, `reenter-reedwater`; `20-travel-dialog.png`, `29-returned-garden.png` |
+| No duplicate player/UI/audio/runtime roots; region resources and helpers preserved | PASS | Single session player/UI reused; `garden-state-preserved`, `reload-reedwater-construction`, `reenter-reedwater-objectives` |
+| Water blocks traversal without bridges using real collision | PASS | Four authored `Area3D` water volumes; runtime `water-blocks-without-bridge`; `22-reedwater-pond.png` shows splash feedback |
+| Two bridge decisions connect the bank to the lily island; reversed selection and removal invalidate/restore the route | PASS | `pond-route-blocked-before-bridges`, `bridge-one-built`, `bridge-two-built`, `pond-route-open-after-bridges`, `critical-bridge-breaks-route`, `critical-bridge-restores-route`; unit `ReversedBridgeSelectionOrder_BuildsTheSameRoute`, `RemovingACriticalBridgeInvalidatesTheWorkerRoute` |
+| Player can physically cross using bridge decks/ramps | PASS | `player-crosses-reedwater-bridge` (x=0.12 after crossing); `24-reedwater-crossing.png` |
+| R01, R02 and R03 complete through real gameplay events; R03 requires a worker bridge route | PASS | `r01-complete`, `r02-complete`, `r03-complete`, `worker-used-reedwater-bridge`; unit `WorkerCrossesThreeBridgesAndCompletesR03` |
+| Reed flyways reward placement; one easy and one harder route; dragonfly paths | PASS | Three authored routes in `ReedwaterLayout`; `reedwater-insects-collected`; `25-reedwater-capture-trapped.png`, `25-reedwater-capture.png` |
+| Optional Clever Crossing mastery is deterministic and achievable | PASS | `clever-crossing-earned`; exactly two Reedwater bridge builds; saved idempotently |
+| Completion acknowledgement does not end free play | PASS | `reedwater-completion-feedback`; `27-reedwater-complete.png`; Keep Playing/Save buttons |
+| Shared vs regional state ownership is explicit; no resource duplication on switching | PASS | Shared ledger/population/objectives/settings; region-owned webs/insects/workers/players; unit `ReedwaterSupplyCache_IsGrantedExactlyOnce`, `SavingInReedwater_PreservesRegionsObjectivesAndResources` |
+| Legacy v0.1.0/v0.1.1/v0.1.2 saves load through explicit schema-1→2 migration | PASS | `tests/fixtures/save_v0_*.json`; `SaveMigrationTests`; garden webs/workers/missions preserved |
+| Save in Reedwater records active region and restores construction/objectives | PASS | `save-records-active-region`, `save-records-reedwater-webs`, `save-records-reedwater-objectives`, `reload-in-reedwater` |
+| Both regions validated (`--scene-validate`), no procedural fallback for a missing mandatory scene | PASS | 47/47 scene checks; `Main.StartGame` throws if `GardenClearing.tscn` is missing; pure test rejects `new GardenClearing()` |
+| Existing garden tests/checks remain green | PASS | 93/93 unit tests; 168/168 runtime checks including all original garden checks |
+| Rendered screenshots are from the running game | PASS | `20-travel-dialog` through `29-returned-garden`; Xvfb GL renderer |
+
 ## Sign-off
 
 | Area | Result |
 |---|---|
-| Automated gameplay acceptance | **PASS** — 105/105 runtime checks, 71/71 unit tests, 24/24 scene contracts |
+| Automated gameplay acceptance | **PASS** — 168/168 runtime checks, 93/93 unit tests, 47/47 scene contracts |
 | Rendered practical inspection | **PASS** — 19 screenshots and full flow |
-| Linux export | **PASS** — exported, launched, probe 105/105 |
+| Linux export | **PASS** — exported, launched, scene 47/47 and probe 168/168 headless and rendered |
 | Windows release | **PARTIAL** — export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no child playtest |
-| Milestone status | v0.2.0 P0 scene foundation merged; no v0.2.0 release published yet. Windows runtime and child playtesting remain documented limitations |
+| Milestone status | v0.2.0 P1 Reedwater Bank second region merged or under exact-head review; no v0.2.0 release published yet. Windows runtime and child playtesting remain documented limitations |

@@ -1,5 +1,59 @@
 # Changelog
 
+## Webwild v0.2.0 P1 — Reedwater Bank second region (unreleased milestone)
+
+Expands the scene-first world into a connected two-region colony game. The
+v0.2.0 release itself is still not published.
+
+### Region architecture and travel
+
+- Added stable region ids and an engine-free `RegionCatalog`. The original garden
+  remains the default region; Reedwater Bank is a second authored region with its
+  own anchors, worker graph, water collision and insect routes.
+- Added a discoverable reed passage by the garden's east hedge after the three
+  story missions, with a child-readable travel dialog. Travel is explicit (E),
+  never proximity-only, and works in both directions.
+- Region scenes are cached and switched by `RegionSceneCatalog`; the single
+  player, camera, UI, audio, runtime roots and simulation are reused. Inactive
+  regions have collision, lights and environment disabled rather than deleted.
+- Added safe arrival points, region-specific player position memory, and
+  region-aware save/load.
+
+### Reedwater Bank content
+
+- Added fifteen supplied original GLB models and their scene wrappers, using the
+  double-sided `reedwater_vertex_color_material.tres`. The authored region has a
+  shallow pond with real water volumes, mossy islands, reed beds, cattails, lily
+  pads, water lilies, mossy stones, an outpost and a far bank.
+- Added three new objectives: **R01 Across the Water**, **R02 The Reed Harvest**
+  and **R03 The Far Bank**, plus the optional **Clever Crossing** mastery badge.
+- Added three insect routes, including two dragonfly paths. One straightforward
+  reed flyway suits younger players; the dragonfly routes reward placement and
+  observation.
+- Added a one-time Reedwater outpost supply cache so a child who spent silk on the
+  story can always begin the first bridge; the ledger key prevents duplication.
+- Workers travel with the colony through the marked passage, then must use real
+  bridge edges to reach the far bank. They never walk across open water.
+
+### Save schema
+
+- Save schema v2 adds `activeRegionId`, per-region player transforms, region ids
+  on webs/workers/insects, regional objective progress, Reedwater bridge counters
+  and derived route history.
+- Added an explicit schema-1 → schema-2 migration. All v0.1.0, v0.1.1 and v0.1.2
+  saves restore the garden, resources, webs, workers, missions and settings with
+  safe Reedwater defaults. Real legacy fixtures are tested.
+- Atomic writes, backup recovery, bounded histories and explicit corrupt-save
+  errors continue to work.
+
+### Verification
+
+- 93 pure tests passed.
+- Scene contract 47/47 across both regions.
+- 168/168 headless and rendered runtime checks passed.
+- Linux exported headless and rendered acceptance re-run for this milestone;
+  Windows export built, Windows runtime remains **NOT VERIFIED**.
+
 ## Webwild v0.2.0 P0 — scene-first world (unreleased milestone)
 
 Converts the persistent garden from C#-constructed geometry into reusable,

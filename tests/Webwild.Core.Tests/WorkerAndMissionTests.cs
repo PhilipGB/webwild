@@ -81,6 +81,24 @@ public class WorkerAndMissionTests
     }
 
     [Fact]
+    public void PendingEgg_IsNotCountedAsALivingSpider()
+    {
+        var sim = TestWorld.NewSim();
+        Assert.Equal(1, sim.TotalSpiders);
+        Assert.Equal(0, sim.PendingEggCount);
+        Assert.True(sim.TryStartHatch(out var reason), reason);
+        Assert.Equal(1, sim.TotalSpiders);
+        Assert.Equal(1, sim.PendingEggCount);
+        Assert.Equal(2, sim.SpidersIncludingEggs);
+        Assert.False(sim.CanHatch().CanHatch);
+        Assert.Contains("hatching", sim.CanHatch().Reason, StringComparison.OrdinalIgnoreCase);
+        sim.AdvanceSeconds(4);
+        Assert.Equal(2, sim.TotalSpiders);
+        Assert.Equal(0, sim.PendingEggCount);
+        Assert.Equal(2, sim.SilkProducers);
+    }
+
+    [Fact]
     public void Hatching_StopsAtFiveSpidersIncludingPlayer()
     {
         var sim = TestWorld.NewSim();

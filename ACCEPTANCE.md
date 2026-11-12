@@ -166,6 +166,30 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Previous garden can be restored from the title screen | PASS | `restore-previous-available`, `restore-previous-garden` |
 | Backup recovery still works | PASS | `ArchiveExisting_UsesHealthyBackupWhenMainIsCorrupt`; existing corrupt-main tests |
 
+## v0.2.2 PR 2 — anchor interaction, nursery and progression
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Recommended anchors are strongly highlighted; unrelated anchors are dimmed | PASS | `anchor-recommended-highlight`, `anchor-unrelated-dimmed`; `06-build-mode.png`, `22h-reedwater-build-anchors.png` |
+| Labels appear only for recommended/near/hovered/selected sockets | PASS | `anchor-labels-only-near-or-recommended`; `22h` |
+| Screen-space nearest-target selects the intended overlapping socket | PASS | `anchor-screen-nearest-target`; `PickAnchor` ray + 30 px nearest |
+| Empty space does not select a socket | PASS | `anchor-screen-empty-space-does-not-select` |
+| Foreground bodies block selection | PASS | `PickAnchor` body-distance and occlusion tests; rendered clicks still reach the intended sockets |
+| Second anchor click never spends silk; From → To · cost is shown | PASS | `build-confirm-shows-pair`, `build-confirm-does-not-spend-yet`; `06b-build-confirm.png`, `16b-ui-build-confirm-100.png` |
+| Cancel leaves silk and the world untouched | PASS | `build-cancel-no-charge` |
+| Build/Enter confirms once; repeated confirms cannot double-charge | PASS | `capture-web-built`, `build-confirm-repeated-click-safe`; `Build` button focused |
+| Confirmation fits at 100%, 125% and 150% UI scale | PASS | `build-confirm-inside-viewport-*`, `build-confirm-avoids-mission-*`, `build-confirm-avoids-actions-*` |
+| Nursery progress advances while open | PASS | `nursery-progress-visible`, `nursery-progress-advances`; `10a-nursery-hatching.png` |
+| Nursery shows neutral hatching text and separates the pending egg | PASS | `nursery-neutral-hatching-text`, `nursery-pending-count` |
+| Nursery refreshes after hatching with living-only count | PASS | `nursery-refreshes-after-hatch`, `nursery-counts-living-only`; `10b-nursery-hatched.png` |
+| Living spider count excludes unhatched eggs | PASS | `PendingEgg_IsNotCountedAsALivingSpider` |
+| Completion modals do not stack over the nursery | PASS | `ShowVictory`/`ShowRegionComplete` close an open panel first; code review |
+| Clever Crossing is not awarded by building alone | PASS | `clever-crossing-not-yet-earned`; `TwoBridgesOpenR01_AndPhysicalArrivalAwardsCleverCrossing` |
+| Clever Crossing is awarded on physical island arrival with two bridges | PASS | `clever-crossing-earned-by-arrival`; `24a-clever-crossing-arrival.png` |
+| Three standing bridges prevent the badge | PASS | `CleverCrossing_IsNotAwardedWithThreeStandingBridges` |
+| Earned mastery survives save/load | PASS | `CleverCrossing_SurvivesSaveAndReload` |
+| The mission card explains the challenge and the current bridge count | PASS | `☆ Clever Crossing` line in `22h-reedwater-build-anchors.png` |
+
 ## Sign-off
 
 | Area | Result |

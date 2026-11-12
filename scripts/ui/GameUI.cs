@@ -17,6 +17,8 @@ public partial class GameUI : CanvasLayer
     public event Action? HatchRequested;
     public event Action? RecoveryRequested;
     public event Action? ContinuePlayingRequested;
+    public event Action? BuildConfirmed;
+    public event Action? BuildCancelled;
 
     private Control _root = null!;
     private Label _foodLabel = null!;
@@ -33,6 +35,17 @@ public partial class GameUI : CanvasLayer
     private PanelContainer _missionPanel = null!;
     private VBoxContainer _actionsColumn = null!;
     private HBoxContainer _toolbar = null!;
+    private PanelContainer _buildConfirmPanel = null!;
+    private Label _buildConfirmLabel = null!;
+    private Button _buildConfirmButton = null!;
+    private Button _buildCancelButton = null!;
+    private Label? _nurseryCountLabel;
+    private Label? _nurseryHatchStatus;
+    private Label? _nurseryHatchReason;
+    private ProgressBar? _nurseryBar;
+    private Button? _nurseryHatchButton;
+    private string _nurserySignature = "";
+    private GameSimulation? _nurserySim;
     private PanelContainer _warningPanel = null!;
     private Label _warningLabel = null!;
     private Button _captureButton = null!;
@@ -75,6 +88,13 @@ public partial class GameUI : CanvasLayer
     public Rect2 ProbeActionColumnRect => _actionsColumn.GetGlobalRect();
     public Rect2 ProbeToolbarRect => _toolbar.GetGlobalRect();
     public Rect2 ProbeStatusRect => _statusLabel.GetGlobalRect();
+    public bool BuildConfirmVisible => _buildConfirmPanel.Visible;
+    public string ProbeBuildConfirmText => _buildConfirmLabel.Text;
+    public Rect2 ProbeBuildConfirmRect => _buildConfirmPanel.GetGlobalRect();
+    public bool ProbeNurseryProgressVisible => _nurseryBar?.Visible ?? false;
+    public double ProbeNurseryProgressValue => _nurseryBar?.Value ?? -1;
+    public string ProbeNurseryStatusText => _nurseryHatchStatus?.Text ?? "";
+    public string ProbeNurseryCountText => _nurseryCountLabel?.Text ?? "";
     public bool IsVictoryOpen => _victoryOpen;
     public bool IsPauseOpen => _pauseOpen;
     public bool IsHelpOpen => _helpOpen;
@@ -228,6 +248,29 @@ public partial class GameUI : CanvasLayer
         toolbar.AddChild(_colonyButton);
         bottom.AddChild(toolbar);
 
+        // A reviewed build replaces the toolbar with an explicit From → To ·
+        // cost decision. The pair is never purchased by the second anchor click.
+        _buildConfirmPanel = new PanelContainer
+        {
+            Visible = false,
+            MouseFilter = Control.MouseFilterEnum.Stop
+        };
+        _buildConfirmPanel.AddThemeStyleboxOverride("panel",
+            UiKit.Panel(new Color(UiKit.Cream, 0.98f), 16, UiKit.Gold, 3));
+        var confirmRow = new HBoxContainer();
+        confirmRow.AddThemeConstantOverride("separation", 10);
+        confirmRow.Alignment = BoxContainer.AlignmentMode.Center;
+        _buildConfirmLabel = UiKit.Label("", 20, UiKit.Pine);
+        confirmRow.AddChild(_buildConfirmLabel);
+        _buildConfirmButton = UiKit.Button("Build", 150, 52, true);
+        _buildConfirmButton.Pressed += () => BuildConfirmed?.Invoke();
+        confirmRow.AddChild(_buildConfirmButton);
+        _buildCancelButton = UiKit.Button("Cancel", 150, 52);
+        _buildCancelButton.Pressed += () => BuildCancelled?.Invoke();
+        confirmRow.AddChild(_buildCancelButton);
+        _buildConfirmPanel.AddChild(confirmRow);
+        bottom.AddChild(_buildConfirmPanel);
+
         _contextLabel = UiKit.Label("", 18, UiKit.Cream);
         _contextLabel.AddThemeColorOverride("font_outline_color", UiKit.Pine);
         _contextLabel.AddThemeConstantOverride("outline_size", 6);
@@ -363,6 +406,12 @@ public partial class GameUI : CanvasLayer
     {
         _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen =
             _saveFailedOpen = _travelOpen = _regionCompleteOpen = false;
+        _nurserySignature = "";
+        _nurseryBar = null;
+        _nurseryHatchStatus = null;
+        _nurseryHatchReason = null;
+        _nurseryHatchButton = null;
+        _nurseryCountLabel = null;
         _modalRoot.Visible = false;
         foreach (var child in _modalContent.GetChildren())
         {
@@ -403,20 +452,37 @@ public partial class GameUI : CanvasLayer
         _warningPanel.Visible = warning;
         if (warning)
             _warningLabel.Text = $"Wind in {(int)Math.Ceiling(sim.WeatherRemaining)}s — protect your web!";
-        if (sim.ActiveRegionId == RegionIds.ReedwaterBank && sim.RegionalObjectives.MasteryAwarded)
+        if (sim.ActiveRegionId == RegionIds.ReedwaterBank)
         {
             _masteryLabel.Visible = true;
-            _masteryLabel.Text = "★ Clever Crossing — two bridges";
+            _masteryLabel.Text = sim.RegionalObjectives.MasteryAwarded
+                ? "★ Clever Crossing earned — two bridges"
+                : sim.ReedwaterBridgeCount <= 2
+                    ? "☆ Clever Crossing — reach the lily island with 2 bridges"
+                    : "☆ Clever Crossing — dismantle to 2 bridges, then reach the lily island";
         }
-        else if (sim.ActiveRegionId == RegionIds.GardenClearing && sim.MasteryAwarded)
+        else if (sim.ActiveRegionId == RegionIds.GardenClearing)
         {
-            _masteryLabel.Visible = true;
-            _masteryLabel.Text = "★ Clever Weaver — 3 insects, 2 webs";
+            if (sim.MasteryAwarded)
+            {
+                _masteryLabel.Visible = true;
+                _masteryLabel.Text = "★ Clever Weaver — 3 insects, 2 webs";
+            }
+            else if (sim.CaptureWebsBuilt <= 2)
+            {
+                _masteryLabel.Visible = true;
+                _masteryLabel.Text = "☆ Clever Weaver — collect 3 insects with 2 webs";
+            }
+            else
+            {
+                _masteryLabel.Visible = false;
+            }
         }
         else
         {
             _masteryLabel.Visible = false;
         }
+        if (_nurseryOpen) RefreshNursery(sim);
         UpdateToast((float)GetProcessDeltaTime());
     }
 
@@ -523,6 +589,7 @@ public partial class GameUI : CanvasLayer
         _cancelButton.Visible = type is not null;
         if (type is null)
         {
+            HideBuildConfirmation();
             SetStatus(sim.GetActiveRegionHint());
         }
         else
@@ -531,6 +598,24 @@ public partial class GameUI : CanvasLayer
             if (anchorA is null) SetStatus($"Building {name}: click the first glowing anchor.  Right-click cancels.");
             else SetStatus($"Now click the second anchor.  Right-click cancels.");
         }
+    }
+
+    public void ShowBuildConfirmation(string fromLabel, string toLabel, int silkCost)
+    {
+        _buildConfirmLabel.Text = $"{fromLabel} → {toLabel} · {silkCost} silk";
+        _buildConfirmPanel.Visible = true;
+        _toolbar.Visible = false;
+        _buildConfirmButton.GrabFocus();
+    }
+
+    public void HideBuildConfirmation()
+    {
+        if (_buildConfirmPanel is null || !_buildConfirmPanel.Visible) return;
+        _buildConfirmPanel.Visible = false;
+        _toolbar.Visible = true;
+        var focus = GetViewport().GuiGetFocusOwner();
+        if (focus == _buildConfirmButton || focus == _buildCancelButton)
+            _buildConfirmButton.ReleaseFocus();
     }
 
     public void ShowToast(string text, Color? color = null, float duration = 3.2f)
@@ -664,19 +749,33 @@ public partial class GameUI : CanvasLayer
     {
         OpenModal(sim.ActiveRegion.NurseryLabel, 600);
         ConfigureModalState(nursery: true);
+        _nurserySignature = "";
         RefreshNursery(sim);
     }
 
     private void RefreshNursery(GameSimulation sim)
     {
         if (!_nurseryOpen) return;
+        _nurserySim = sim;
+        var can = sim.CanHatch();
+        var signature = $"{sim.TotalSpiders}/{sim.PendingEggCount}/{sim.Workers.Count}/" +
+                        $"{string.Join(",", sim.Workers.Select(w => $"{w.Name}:{w.DisplayState}"))}/" +
+                        $"{can.CanHatch}/{sim.PendingHatch?.Id}";
+        if (signature == _nurserySignature)
+        {
+            UpdateNurseryLive(sim);
+            return;
+        }
+        _nurserySignature = signature;
+
         // Remove only dynamic content below the title.
         foreach (var child in _modalContent.GetChildren())
         {
             if (child != _modalTitle) child.QueueFree();
         }
         _workerChips.Clear();
-        _modalContent.AddChild(UiKit.IconLabel("nest", $"{sim.TotalSpiders} of {sim.MaxSpiders} spiders live here", 22, UiKit.Pine));
+        _nurseryCountLabel = UiKit.Label(NurseryCountText(sim), 22, UiKit.Pine);
+        _modalContent.AddChild(_nurseryCountLabel);
         var body = UiKit.Label(sim.Workers.Count == 0
             ? "A little egg is waiting for food and silk. Hatch a helper and it will collect and repair on its own."
             : "Your helpers choose useful jobs. They cross silk bridges and keep webs repaired.", 18, new Color(UiKit.Ink, 0.86f), true);
@@ -687,19 +786,31 @@ public partial class GameUI : CanvasLayer
         foreach (var worker in sim.Workers) chips.AddChild(Chip($"{worker.Name}\n{worker.DisplayState}"));
         _modalContent.AddChild(chips);
         _modalContent.AddChild(UiKit.Spacer(6));
-        var can = sim.CanHatch();
-        var hatch = UiKit.Button($"Hatch helper  ·  {sim.Tuning.Nursery.HatchFoodCost} food + {sim.Tuning.Nursery.HatchSilkCost} silk", 480, 60, can.CanHatch);
-        hatch.Disabled = !can.CanHatch;
-        hatch.Pressed += () => HatchRequested?.Invoke();
-        _modalContent.AddChild(hatch);
-        if (!can.CanHatch)
-            _modalContent.AddChild(UiKit.Label(can.Reason, 16, UiKit.Coral, true));
+
+        var cost = $"{sim.Tuning.Nursery.HatchFoodCost} food + {sim.Tuning.Nursery.HatchSilkCost} silk";
+        _nurseryHatchButton = UiKit.Button($"Hatch helper  ·  {cost}", 480, 60, can.CanHatch);
+        _nurseryHatchButton.Pressed += () => HatchRequested?.Invoke();
+        _modalContent.AddChild(_nurseryHatchButton);
+        _nurseryHatchReason = UiKit.Label("", 16, UiKit.Coral, true);
+        _modalContent.AddChild(_nurseryHatchReason);
+
+        _nurseryBar = null;
+        _nurseryHatchStatus = null;
         if (sim.PendingHatch is not null)
         {
-            var bar = new ProgressBar { MaxValue = sim.Tuning.Nursery.HatchTimeSeconds, Value = sim.Tuning.Nursery.HatchTimeSeconds - sim.PendingHatch.Remaining, CustomMinimumSize = new Vector2(480, 24) };
-            _modalContent.AddChild(UiKit.Label("A helper is hatching…", 17, UiKit.TealDark));
-            _modalContent.AddChild(bar);
+            var total = Math.Max(0.1, sim.Tuning.Nursery.HatchTimeSeconds);
+            _nurseryHatchStatus = UiKit.Label("A helper is hatching…", 17, UiKit.TealDark);
+            _modalContent.AddChild(_nurseryHatchStatus);
+            _nurseryBar = new ProgressBar
+            {
+                MaxValue = total,
+                Value = 0,
+                ShowPercentage = false,
+                CustomMinimumSize = new Vector2(480, 24)
+            };
+            _modalContent.AddChild(_nurseryBar);
         }
+
         if (sim.CanUseEmergencyRecovery)
         {
             var rescue = UiKit.Button("Nursery rescue: +4 silk (3 uses)", 480, 54);
@@ -710,7 +821,47 @@ public partial class GameUI : CanvasLayer
         var close = UiKit.Button("Back to the garden", 260, 54);
         close.Pressed += CloseModal;
         _modalContent.AddChild(close);
+        UpdateNurseryLive(sim);
     }
+
+    private void UpdateNurseryLive(GameSimulation sim)
+    {
+        if (!_nurseryOpen) return;
+        if (_nurseryCountLabel is not null) _nurseryCountLabel.Text = NurseryCountText(sim);
+        var can = sim.CanHatch();
+        if (_nurseryHatchButton is not null)
+        {
+            if (sim.PendingHatch is not null)
+            {
+                _nurseryHatchButton.Disabled = true;
+                _nurseryHatchButton.Text = "A helper is hatching…";
+            }
+            else
+            {
+                _nurseryHatchButton.Disabled = !can.CanHatch;
+                _nurseryHatchButton.Text =
+                    $"Hatch helper  ·  {sim.Tuning.Nursery.HatchFoodCost} food + {sim.Tuning.Nursery.HatchSilkCost} silk";
+            }
+        }
+        if (_nurseryHatchReason is not null)
+        {
+            var showReason = sim.PendingHatch is null && !can.CanHatch;
+            _nurseryHatchReason.Visible = showReason;
+            if (showReason) _nurseryHatchReason.Text = can.Reason;
+        }
+        if (sim.PendingHatch is { } pending && _nurseryBar is not null && _nurseryHatchStatus is not null)
+        {
+            var total = Math.Max(0.1, sim.Tuning.Nursery.HatchTimeSeconds);
+            var elapsed = Math.Clamp(total - pending.Remaining, 0, total);
+            _nurseryBar.Value = elapsed;
+            var percent = (int)Math.Round(elapsed / total * 100);
+            _nurseryHatchStatus.Text = $"A helper is hatching… {percent}% · {Math.Max(0, pending.Remaining):0.0}s left";
+        }
+    }
+
+    private static string NurseryCountText(GameSimulation sim) =>
+        $"{sim.TotalSpiders} of {sim.MaxSpiders} spiders live here" +
+        (sim.PendingEggCount > 0 ? " · 1 egg hatching" : "");
 
     private Control Chip(string text)
     {

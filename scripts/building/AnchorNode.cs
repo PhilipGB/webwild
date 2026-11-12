@@ -21,6 +21,7 @@ public partial class AnchorNode : Area3D
     private Label3D _label = null!;
     private bool _buildMode;
     private float _time;
+    private float _playerDistance = 999f;
     private static Texture2D? _radial;
 
     public override void _Ready()
@@ -106,18 +107,37 @@ public partial class AnchorNode : Area3D
         UpdateVisuals();
     }
 
+    /// <summary>Distance from the player, used to keep distant labels readable.</summary>
+    public void SetPlayerDistance(float distance)
+    {
+        _playerDistance = distance;
+        if (_buildMode) UpdateVisuals();
+    }
+
     private void UpdateVisuals()
     {
         if (_glow is null) return;
+        var recommended = IsSuggested;
         _glow.Visible = _buildMode || IsSelected || IsSuggested;
-        _label.Visible = _buildMode;
+        // Every valid socket used to carry a label, which turned overlapping
+        // Reedwater sockets into an unreadable cluster. Only the recommended,
+        // selected or hovered socket shows a label at a distance; nearby sockets
+        // still identify themselves.
+        _label.Visible = _buildMode && (recommended || IsSelected || IsHovered || _playerDistance <= 5.5f);
+        if (_label.Visible)
+        {
+            _label.Text = (recommended ? "★ " : "") + (Definition?.Label ?? "Anchor");
+            _label.FontSize = recommended || IsSelected ? 30 : 24;
+        }
         if (!_buildMode && !IsSelected && !IsSuggested) return;
         var color = IsSelected ? UiKit.Teal
             : IsHovered ? (PreviewValid ? UiKit.FreshLeaf : UiKit.Coral)
-            : IsSuggested && !_buildMode ? UiKit.Gold
-            : UiKit.Gold;
-        _glow.Modulate = new Color(color.R, color.G, color.B, 0.95f);
-        _label.Modulate = color;
+            : recommended ? UiKit.Gold
+            : new Color(UiKit.Cream, 0.85f);
+        var alpha = IsSelected || IsHovered || recommended ? 0.95f : 0.24f;
+        _glow.Modulate = new Color(color.R, color.G, color.B, alpha);
+        _label.Modulate = new Color(color.R, color.G, color.B,
+            IsSelected || IsHovered || recommended ? 1f : 0.62f);
     }
 
     public override void _Process(double delta)
@@ -125,10 +145,18 @@ public partial class AnchorNode : Area3D
         if (!_buildMode && !IsSelected && !IsSuggested) return;
         _time += (float)delta;
         var pulse = 1.0f + Mathf.Sin(_time * 5.2f) * 0.12f;
-        var scale = IsSelected ? 2.15f : IsHovered ? 1.9f : IsSuggested && !_buildMode ? 1.3f : 1.5f;
+        var scale = IsSelected ? 2.15f
+            : IsHovered ? 1.9f
+            : IsSuggested ? 1.75f
+            : 1.05f;
         _glow.Scale = new Vector3(scale * pulse, scale * pulse, 1);
         _glow.Position = new Vector3(0, 0.15f + Mathf.Sin(_time * 2.6f) * 0.06f, 0);
     }
+
+    public string ProbeVisualState =>
+        $"glow={_glow?.Visible == true};label={_label?.Visible == true};" +
+        $"alpha={_glow?.Modulate.A ?? 0:0.00};suggested={IsSuggested};selected={IsSelected};" +
+        $"hovered={IsHovered};distance={_playerDistance:0.0}";
 
     private static Texture2D GetRadialTexture()
     {

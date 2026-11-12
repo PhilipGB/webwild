@@ -57,11 +57,13 @@ public partial class GardenClearing : Node3D
 
     private WebType? _tool;
     private string? _anchorA;
+    private string? _pendingAnchorB;
     private AnchorNode? _hoverAnchor;
     private string _previewSignature = "";
     private double _accumulator;
     private double _autosaveTimer;
     private double _hudTimer;
+    private double _masteryCheckTimer;
     private bool _victoryShown;
     private bool _started;
     private bool _probeMode;
@@ -244,6 +246,8 @@ public partial class GardenClearing : Node3D
         _ui.HatchRequested += TryHatch;
         _ui.RecoveryRequested += TryRecovery;
         _ui.ContinuePlayingRequested += () => _ui.SetStatus(_sim.GetActiveRegionHint());
+        _ui.BuildConfirmed += ConfirmBuild;
+        _ui.BuildCancelled += ClearBuild;
 
         _audio = new AudioDirector { Name = "AudioDirector" };
         AddChild(_audio);
@@ -523,6 +527,14 @@ public partial class GardenClearing : Node3D
         UpdateContext();
         UpdatePreview();
 
+        _masteryCheckTimer += delta;
+        if (_masteryCheckTimer >= 0.2)
+        {
+            _masteryCheckTimer = 0;
+            if (_activeRegionId == RegionIds.ReedwaterBank && _player is not null)
+                _sim.TryAwardCleverCrossingOnArrival(_player.ToCorePosition());
+        }
+
         UpdateWaterHazard();
 
         if (_player is not null && _player.GlobalPosition.Y < -3.1f && !_fallToastShown)
@@ -614,8 +626,12 @@ public partial class GardenClearing : Node3D
     private void UpdateSuggestions()
     {
         if (_sim is null) return;
-        foreach (var anchor in _anchors.Values) anchor.SetSuggested(false);
-        if (_tool is not null) return;
+        foreach (var anchor in _anchors.Values)
+        {
+            anchor.SetSuggested(false);
+            if (_player is not null)
+                anchor.SetPlayerDistance(_player.GlobalPosition.DistanceTo(anchor.GlobalPosition));
+        }
 
         if (_activeRegionId == RegionIds.ReedwaterBank)
         {
@@ -734,50 +750,74 @@ public partial class GardenClearing : Node3D
             RemovePreview();
             return;
         }
-        if (_tool is null || _anchorA is null || _hoverAnchor is null || _hoverAnchor.Definition.Id == _anchorA)
+        if (_tool is null)
         {
             RemovePreview();
-            if (_tool is not null)
+            return;
+        }
+        var targetId = _pendingAnchorB
+            ?? (_hoverAnchor is not null && _hoverAnchor.Definition.Id != _anchorA
+                ? _hoverAnchor.Definition.Id
+                : null);
+        if (_anchorA is null || targetId is null)
+        {
+            RemovePreview();
+            if (_anchorA is null)
             {
-                _ui.SetStatus(_anchorA is null ? "Choose the first glowing anchor." : "Now choose the second glowing anchor.");
+                _ui.SetStatus(_hoverAnchor is null
+                    ? "Choose the first glowing anchor."
+                    : $"Target: {_hoverAnchor.Definition.Label} · click to choose");
+            }
+            else
+            {
+                _ui.SetStatus("Now choose the second glowing anchor.");
             }
             return;
         }
 
-        var result = _sim.Preview(_anchorA, _hoverAnchor.Definition.Id, _tool.Value);
-        foreach (var anchor in _anchors.Values)
+        var result = _sim.Preview(_anchorA, targetId, _tool.Value);
+        if (_pendingAnchorB is null)
         {
-            if (anchor == _hoverAnchor)
-                anchor.SetHovered(true, result.IsValid);
-            else if (anchor.IsHovered)
-                anchor.SetHovered(false);
+            foreach (var anchor in _anchors.Values)
+            {
+                if (anchor.Definition.Id == targetId)
+                    anchor.SetHovered(true, result.IsValid);
+                else if (anchor.IsHovered)
+                    anchor.SetHovered(false);
+            }
         }
-        var signature = $"{_tool}:{_anchorA}:{_hoverAnchor.Definition.Id}:{result.IsValid}";
-        if (signature == _previewSignature)
+        var signature = $"{_tool}:{_anchorA}:{targetId}:{result.IsValid}";
+        if (signature != _previewSignature)
+        {
+            _previewSignature = signature;
+            RemovePreview();
+            var a = _sim.GetAnchor(_anchorA);
+            var b = _sim.GetAnchor(targetId);
+            if (a is not null && b is not null)
+            {
+                var approach = BridgeGeometry.ComputeApproachPoints(
+                    a.Position, b.Position, a.BridgeGroundPoint, b.BridgeGroundPoint);
+                _preview = WebVisual.CreatePreview(
+                    _tool.Value,
+                    ToVector3(a.Position),
+                    ToVector3(b.Position),
+                    result.IsValid,
+                    ToVector3(approach.A),
+                    ToVector3(approach.B));
+                _previewRoot.AddChild(_preview);
+            }
+        }
+        if (_pendingAnchorB is not null)
+        {
+            _ui.SetStatus($"Review {_sim.GetAnchor(_anchorA)?.Label} → " +
+                          $"{_sim.GetAnchor(_pendingAnchorB)?.Label} · {result.SilkCost} silk");
+        }
+        else
         {
             _ui.SetStatus(result.IsValid
-                ? $"Click to build · {result.SilkCost} silk"
+                ? $"Click to review · {result.SilkCost} silk"
                 : result.Reason);
-            return;
         }
-        _previewSignature = signature;
-        RemovePreview();
-        var a = _sim.GetAnchor(_anchorA);
-        var b = _sim.GetAnchor(_hoverAnchor.Definition.Id);
-        if (a is null || b is null) return;
-        var approach = BridgeGeometry.ComputeApproachPoints(
-            a.Position, b.Position, a.BridgeGroundPoint, b.BridgeGroundPoint);
-        _preview = WebVisual.CreatePreview(
-            _tool.Value,
-            ToVector3(a.Position),
-            ToVector3(b.Position),
-            result.IsValid,
-            ToVector3(approach.A),
-            ToVector3(approach.B));
-        _previewRoot.AddChild(_preview);
-        _ui.SetStatus(result.IsValid
-            ? $"Click to build · {result.SilkCost} silk"
-            : result.Reason);
     }
 
     private void RemovePreview()
@@ -895,6 +935,7 @@ public partial class GardenClearing : Node3D
                 _audio.Play("success");
                 _victoryShown = true;
                 SaveGame(false, true);
+                if (_ui.IsModalOpen) _ui.CloseModal();
                 _ui.ShowRegionComplete(_sim);
                 break;
             case "MissionCompleted":
@@ -910,6 +951,7 @@ public partial class GardenClearing : Node3D
                 _audio.Play("success");
                 _victoryShown = true;
                 SaveGame(false, true);
+                if (_ui.IsModalOpen) _ui.CloseModal();
                 _ui.ShowVictory(_sim);
                 break;
         }
@@ -919,6 +961,13 @@ public partial class GardenClearing : Node3D
     {
         if (!_started || _sim is null) return;
         if (_settingsDialog.Visible) return;
+
+        if (_pendingAnchorB is not null && @event.IsActionPressed("ui_accept"))
+        {
+            ConfirmBuild();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
 
         if (@event.IsActionPressed("ui_cancel") || @event.IsActionPressed("cancel"))
         {
@@ -987,7 +1036,7 @@ public partial class GardenClearing : Node3D
             }
             else if (mouse.ButtonIndex == MouseButton.Left && mouse.Pressed && !_ui.BlocksWorldInput)
             {
-                var anchor = RaycastAnchor(mouse.Position);
+                var anchor = PickAnchor(mouse.Position);
                 if (anchor is not null)
                 {
                     OnAnchorClicked(anchor);
@@ -997,9 +1046,9 @@ public partial class GardenClearing : Node3D
         }
         else if (@event is InputEventMouseMotion motion)
         {
-            if (_tool is not null && !_ui.BlocksWorldInput)
+            if (_tool is not null && _pendingAnchorB is null && !_ui.BlocksWorldInput)
             {
-                var anchor = RaycastAnchor(motion.Position);
+                var anchor = PickAnchor(motion.Position);
                 if (anchor != _hoverAnchor)
                 {
                     if (_hoverAnchor is not null) _hoverAnchor.SetHovered(false);
@@ -1015,17 +1064,61 @@ public partial class GardenClearing : Node3D
         }
     }
 
-    private AnchorNode? RaycastAnchor(Vector2 screenPosition)
+    private AnchorNode? PickAnchor(Vector2 screenPosition)
     {
-        if (_player?.Camera is null) return null;
-        var from = _player.Camera.ProjectRayOrigin(screenPosition);
-        var to = from + _player.Camera.ProjectRayNormal(screenPosition) * 90f;
-        var query = PhysicsRayQueryParameters3D.Create(from, to, 4);
+        var camera = _player?.Camera;
+        if (camera is null) return null;
+
+        // Nearest projected socket within a forgiving radius. This is what makes
+        // overlapping Reedwater sockets predictable: the closest label wins.
+        AnchorNode? nearest = null;
+        var nearestPixels = 30f;
+        foreach (var anchor in _anchors.Values)
+        {
+            var world = anchor.GlobalPosition + new Vector3(0, 0.18f, 0);
+            if (camera.IsPositionBehind(world)) continue;
+            var screen = camera.UnprojectPosition(world);
+            var pixels = screen.DistanceTo(screenPosition);
+            if (pixels > nearestPixels) continue;
+            if (IsAnchorOccluded(camera.GlobalPosition, world)) continue;
+            nearest = anchor;
+            nearestPixels = pixels;
+        }
+
+        var from = camera.ProjectRayOrigin(screenPosition);
+        var to = from + camera.ProjectRayNormal(screenPosition) * 90f;
+        var query = PhysicsRayQueryParameters3D.Create(from, to, 5);
         query.CollideWithAreas = true;
-        query.CollideWithBodies = false;
+        query.CollideWithBodies = true;
         var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
+
+        // Screen-space nearest wins over a raw ray hit: overlapping socket
+        // spheres can put a different anchor in front of the cursor.
+        if (nearest is not null)
+        {
+            if (hit.Count > 0 && hit["collider"].AsGodotObject() is not AnchorNode)
+            {
+                var bodyDistance = from.DistanceTo((Vector3)hit["position"]);
+                if (from.DistanceTo(nearest.GlobalPosition) > bodyDistance + 0.15f) return null;
+            }
+            return nearest;
+        }
+
         if (hit.Count == 0) return null;
-        return hit["collider"].AsGodotObject() as AnchorNode;
+        return hit["collider"].AsGodotObject() is AnchorNode direct &&
+               _anchors.ContainsKey(direct.Definition.Id)
+            ? direct
+            : null;
+    }
+
+    private bool IsAnchorOccluded(Vector3 from, Vector3 world)
+    {
+        var query = PhysicsRayQueryParameters3D.Create(from, world, 1);
+        query.CollideWithAreas = false;
+        query.CollideWithBodies = true;
+        var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
+        if (hit.Count == 0) return false;
+        return from.DistanceTo((Vector3)hit["position"]) < from.DistanceTo(world) - 0.2f;
     }
 
     private void OnAnchorClicked(AnchorNode anchor)
@@ -1040,9 +1133,25 @@ public partial class GardenClearing : Node3D
             if (anchor.Definition.Group == "log_shelter") inferred = WebType.Capture;
             SetTool(inferred, silent: true);
         }
+        var id = anchor.Definition.Id;
+        if (_pendingAnchorB is not null)
+        {
+            if (id == _anchorA)
+            {
+                _anchors[_anchorA!].SetSelected(false);
+                _anchorA = null;
+                _pendingAnchorB = null;
+                _ui.HideBuildConfirmation();
+                RemovePreview();
+                _ui.SetStatus("Choose the first glowing anchor.");
+                return;
+            }
+            StageBuildConfirmation(anchor);
+            return;
+        }
         if (_anchorA is null)
         {
-            _anchorA = anchor.Definition.Id;
+            _anchorA = id;
             anchor.SetSelected(true);
             _hoverAnchor = anchor;
             RemovePreview();
@@ -1050,15 +1159,20 @@ public partial class GardenClearing : Node3D
             _audio.Play("click");
             return;
         }
-        if (_anchorA == anchor.Definition.Id)
+        if (_anchorA == id)
         {
             _anchors[_anchorA].SetSelected(false);
             _anchorA = null;
             _ui.SetStatus("Choose the first glowing anchor.");
             return;
         }
+        StageBuildConfirmation(anchor);
+    }
 
-        var result = _sim.Preview(_anchorA, anchor.Definition.Id, _tool!.Value);
+    private void StageBuildConfirmation(AnchorNode anchor)
+    {
+        if (_sim is null || _tool is null || _anchorA is null) return;
+        var result = _sim.Preview(_anchorA, anchor.Definition.Id, _tool.Value);
         if (!result.IsValid)
         {
             _audio.Play("cancel");
@@ -1067,21 +1181,45 @@ public partial class GardenClearing : Node3D
             anchor.SetHovered(true, false);
             return;
         }
+        _pendingAnchorB = anchor.Definition.Id;
+        _hoverAnchor = anchor;
+        foreach (var other in _anchors.Values)
+            if (other != anchor) other.SetHovered(false);
+        anchor.SetHovered(true, true);
+        _previewSignature = "";
+        UpdatePreview();
+        _ui.ShowBuildConfirmation(
+            _sim.GetAnchor(_anchorA)?.Label ?? _anchorA,
+            _sim.GetAnchor(_pendingAnchorB)?.Label ?? _pendingAnchorB,
+            result.SilkCost);
+        _audio.Play("click");
+    }
 
-        if (_sim.TryBuildWeb(_anchorA, anchor.Definition.Id, _tool.Value, out _, out _))
+    private void ConfirmBuild()
+    {
+        if (_sim is null || _tool is null || _anchorA is null || _pendingAnchorB is null) return;
+        var result = _sim.Preview(_anchorA, _pendingAnchorB, _tool.Value);
+        if (!result.IsValid)
         {
-            var tool = _tool.Value;
-            ProcessEvents();
-            ClearBuild();
-            _ui.SetStatus(tool == WebType.Capture ? "Capture web built! Watch for a fly." : "Silk bridge built!");
-            _autosaveTimer = 0;
-            SaveGame(false, true);
+            _audio.Play("cancel");
+            _ui.HideBuildConfirmation();
+            _pendingAnchorB = null;
+            _ui.SetStatus(result.Reason);
+            _ui.ShowToast(result.Reason, UiKit.Coral, 3.4f);
+            return;
         }
-        else
+        if (!_sim.TryBuildWeb(_anchorA, _pendingAnchorB, _tool.Value, out _, out _))
         {
             _audio.Play("cancel");
             _ui.SetStatus(result.Reason);
+            return;
         }
+        var tool = _tool.Value;
+        ProcessEvents();
+        ClearBuild();
+        _ui.SetStatus(tool == WebType.Capture ? "Capture web built! Watch for a fly." : "Silk bridge built!");
+        _autosaveTimer = 0;
+        SaveGame(false, true);
     }
 
     private void SetTool(WebType? type, bool silent = false)
@@ -1094,8 +1232,10 @@ public partial class GardenClearing : Node3D
         }
         _tool = type;
         _anchorA = null;
+        _pendingAnchorB = null;
         _hoverAnchor = null;
         RemovePreview();
+        _ui.HideBuildConfirmation();
         foreach (var anchor in _anchors.Values)
         {
             anchor.SetBuildMode(type is not null);
@@ -1108,19 +1248,21 @@ public partial class GardenClearing : Node3D
         {
             _audio.Play("click");
             _ui.ShowToast(type == WebType.Capture
-                ? "Click two glowing anchors to spin a capture web. Right-click cancels."
-                : "Click two glowing anchors to build a silk bridge. Right-click cancels.", UiKit.TealDark, 4f);
+                ? "Click two glowing anchors to spin a capture web, then choose Build. Right-click cancels."
+                : "Click two glowing anchors to build a silk bridge, then choose Build. Right-click cancels.", UiKit.TealDark, 4f);
         }
         if (type is null) _ui.SetStatus(_sim.GetActiveRegionHint());
     }
 
     private void ClearBuild()
     {
-        if (_tool is null && _anchorA is null) return;
+        if (_tool is null && _anchorA is null && _pendingAnchorB is null) return;
         _tool = null;
         _anchorA = null;
+        _pendingAnchorB = null;
         _hoverAnchor = null;
         RemovePreview();
+        _ui.HideBuildConfirmation();
         foreach (var anchor in _anchors.Values)
         {
             anchor.SetBuildMode(false);
@@ -1519,6 +1661,7 @@ public partial class GardenClearing : Node3D
         ProcessEvents();
         SyncWebViews();
         SyncWorkerViews();
+        _ui.RefreshOpenPanels(_sim);
     }
 
     public void ProbeTeleport(Vec3 position)
@@ -1543,7 +1686,11 @@ public partial class GardenClearing : Node3D
     {
         if (_sim is null) return false;
         var success = _sim.TryStartHatch(out _);
-        if (success) ProcessEvents();
+        if (success)
+        {
+            ProcessEvents();
+            _ui.RefreshOpenPanels(_sim);
+        }
         return success;
     }
 
@@ -1756,5 +1903,34 @@ public partial class GardenClearing : Node3D
         OnAnchorClicked(anchor);
         return true;
     }
+
+    public bool ProbeBuildConfirmVisible => _ui.BuildConfirmVisible;
+    public string ProbeBuildConfirmText => _ui.ProbeBuildConfirmText;
+    public Rect2 ProbeBuildConfirmRect => _ui.ProbeBuildConfirmRect;
+    public bool ProbeNurseryProgressVisible => _ui.ProbeNurseryProgressVisible;
+    public double ProbeNurseryProgressValue => _ui.ProbeNurseryProgressValue;
+    public string ProbeNurseryStatusText => _ui.ProbeNurseryStatusText;
+    public string ProbeNurseryCountText => _ui.ProbeNurseryCountText;
+
+    public void ProbeConfirmBuild() => ConfirmBuild();
+    public void ProbeCancelPendingBuild() => ClearBuild();
+    public void ProbeShowBuildConfirmation() =>
+        _ui.ShowBuildConfirmation("Reed post", "Mossy island post", 5);
+    public void ProbeHideBuildConfirmation() => _ui.HideBuildConfirmation();
+
+    public string ProbePickAnchorAt(Vector2 screenPosition) =>
+        PickAnchor(screenPosition)?.Definition.Id ?? "";
+
+    public string ProbeAnchorVisualState(string anchorId) =>
+        _anchors.TryGetValue(anchorId, out var anchor) ? anchor.ProbeVisualState : "missing";
+
+    public Vector2 ProbeAnchorScreenPosition(string anchorId) =>
+        _anchors.TryGetValue(anchorId, out var anchor)
+            ? _player.Camera.UnprojectPosition(anchor.GlobalPosition + new Vector3(0, 0.18f, 0))
+            : Vector2.Zero;
+
+    public bool ProbeAnchorLabelVisible(string anchorId) =>
+        _anchors.TryGetValue(anchorId, out var anchor) && anchor.ProbeVisualState.Contains("label=True");
+
     public string LastSaveError { get; private set; } = "";
 }

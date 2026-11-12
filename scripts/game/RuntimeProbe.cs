@@ -45,6 +45,8 @@ public partial class RuntimeProbe : Node
         await Frames(10);
         Check("new-game-started", game.Simulation is not null, "Simulation created");
         Check("title-hidden", !_main.TitleVisible, "Title hidden in garden");
+        foreach (var sceneCheck in game.ProbeSceneValidation())
+            Check("scene-" + sceneCheck.Name, sceneCheck.Pass, sceneCheck.Detail);
         Check("anchors-visible", game.VisibleAnchorCount == 12, $"anchors={game.VisibleAnchorCount}");
         Check("insects-visible", game.VisibleInsectCount == 4, $"insects={game.VisibleInsectCount}");
         Check("hud-ready", game.Player is not null, "Player exists");
@@ -375,6 +377,9 @@ public partial class RuntimeProbe : Node
                 $"workers {workerCount}->{reloaded.Simulation.Workers.Count}");
             Check("reload-victory", reloaded.Simulation.Victory, "Victory restored");
             Check("reload-player", reloaded.Player is not null, "Player restored");
+            var reloadSceneChecks = reloaded.ProbeSceneValidation();
+            Check("reload-world-scene-authored", reloadSceneChecks.All(check => check.Pass),
+                $"{reloadSceneChecks.Count(check => check.Pass)}/{reloadSceneChecks.Count} scene checks after load");
             await Capture("14-reloaded");
         }
 

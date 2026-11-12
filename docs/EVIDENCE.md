@@ -10,7 +10,7 @@ an inspected screenshot.
 - `godot --version` → `4.7.2.stable.mono.official.ed1daf0bf`
 - Godot .NET export templates 4.7.2 installed
 - GitHub repository: `PhilipGB/webwild` (private), `https://github.com/PhilipGB/webwild`
-- Final merged implementation commit: `__RELEASE_COMMIT__`
+- Final merged implementation commit: `de26fc3`
 - Release tag: `v0.1.2` (created after the final green checks; see the final report for the tag SHA)
 
 ## Pull requests
@@ -26,7 +26,7 @@ an inspected screenshot.
 | P7 | https://github.com/PhilipGB/webwild/pull/7 | `5c4e83b` |
 | P8 | https://github.com/PhilipGB/webwild/pull/8 | `2ef10d7` |
 | v0.1.1 hardening | https://github.com/PhilipGB/webwild/pull/9 | `b1587b1` |
-| v0.1.2 review hardening | https://github.com/PhilipGB/webwild/pull/10 | `__RELEASE_COMMIT__` |
+| v0.1.2 review hardening | https://github.com/PhilipGB/webwild/pull/10 | `de26fc3` |
 
 All eight PRs had green **Build and pure tests** and **Godot .NET import and
 startup** checks before merge.
@@ -204,6 +204,8 @@ See `docs/EXPORTS.md`.
   - `WorkerAndMissionTests.ReversedBridgeSelection_StillConnectsTheWorkerRoute`
   - Settings partial-write, copy-failure, move-failure, retry and cleanup-failure
     tests in `SaveTests`
+- Exact-head PR CI: https://github.com/PhilipGB/webwild/actions/runs/43130691851 —
+  **Build and pure tests** and **Godot .NET import and startup** both green.
 - Repository visibility remains `PRIVATE`.
 
 ## Honest non-results

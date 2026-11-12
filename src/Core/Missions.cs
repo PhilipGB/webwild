@@ -9,7 +9,8 @@ public sealed record GameplayEvent(
     string? WebType = null,
     bool AfterWind = false,
     int Amount = 0,
-    string? Detail = null);
+    string? Detail = null,
+    string? Region = null);
 
 public sealed record MissionEventResult(
     bool Counted,
@@ -93,6 +94,11 @@ public sealed class MissionTracker
         _seenEvents.Add(evt.Key);
         _seenOrder.Enqueue(evt.Key);
         TrimSeenEvents(SeenEventRetentionLimit);
+
+        // The original story belongs to Garden Clearing. A region-tagged event
+        // from another region must never tick M01-M03.
+        if (evt.Region is not null && evt.Region != RegionIds.GardenClearing)
+            return new MissionEventResult(false, false, null, false);
 
         var mission = ActiveMission;
         var step = ActiveStep;

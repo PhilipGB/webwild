@@ -95,7 +95,8 @@ public class SaveTests : IDisposable
         var (service, main, _) = NewService();
         var data = FreshSave(TestWorld.NewSim());
         var json = JsonSerializer.Serialize(data, SaveValidator.JsonOptions);
-        json = json.Replace("\"schemaVersion\": 1", "\"schemaVersion\": 99");
+        json = System.Text.RegularExpressions.Regex.Replace(json,
+            "\"schemaVersion\"\\s*:\\s*\\d+", "\"schemaVersion\": 99");
         File.WriteAllText(main, json);
 
         var loaded = service.Load();

@@ -13,6 +13,7 @@ public sealed class PlayerSave
 public sealed class WebSave
 {
     public string Id { get; set; } = "";
+    public string Region { get; set; } = RegionIds.GardenClearing;
     public string Type { get; set; } = "capture";
     public string AnchorA { get; set; } = "";
     public string AnchorB { get; set; } = "";
@@ -29,6 +30,7 @@ public sealed class WorkerSave
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Colour { get; set; } = "orange";
+    public string Region { get; set; } = RegionIds.GardenClearing;
     public double X { get; set; }
     public double Y { get; set; }
     public double Z { get; set; }
@@ -49,6 +51,7 @@ public sealed class WorkerSave
 public sealed class InsectSave
 {
     public string Id { get; set; } = "";
+    public string Region { get; set; } = RegionIds.GardenClearing;
     public int Generation { get; set; }
     public string Phase { get; set; } = "Flying";
     public double X { get; set; }
@@ -79,6 +82,25 @@ public sealed class WeatherSave
     public double AftermathRemaining { get; set; }
 }
 
+public sealed class RegionPlayerSave
+{
+    public string Region { get; set; } = RegionIds.GardenClearing;
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Z { get; set; }
+    public double RotationY { get; set; }
+}
+
+public sealed class RegionalObjectiveSave
+{
+    public int ActiveObjectiveIndex { get; set; }
+    public int StepIndex { get; set; }
+    public List<int> Progress { get; set; } = new();
+    public List<string> Completed { get; set; } = new();
+    public List<string> SeenEvents { get; set; } = new();
+    public bool MasteryAwarded { get; set; }
+}
+
 public sealed class SimCountersSave
 {
     public int WebSequence { get; set; }
@@ -86,6 +108,8 @@ public sealed class SimCountersSave
     public int TransactionSequence { get; set; }
     public int CaptureWebsBuilt { get; set; }
     public int BridgeWebsBuilt { get; set; }
+    public int ReedwaterCaptureWebsBuilt { get; set; }
+    public int ReedwaterBridgeWebsBuilt { get; set; }
     public int InsectsCollected { get; set; }
     public int RepairsCompleted { get; set; }
     public int EmergencyUses { get; set; }
@@ -94,8 +118,10 @@ public sealed class SimCountersSave
     public double SilkAccumulator { get; set; }
     public double PendingHatchRemaining { get; set; }
     public string? PendingHatchId { get; set; }
+    public string? PendingHatchRegionId { get; set; }
     public List<string> LedgerKeys { get; set; } = new();
     public List<string> IssuedEventKeys { get; set; } = new();
+    public List<string> OpenedRegionRoutes { get; set; } = new();
 }
 
 public sealed class SettingsData
@@ -122,7 +148,7 @@ public sealed class SettingsData
 
 public sealed class SaveGameData
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public string SaveId { get; set; } = "";
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -130,13 +156,17 @@ public sealed class SaveGameData
     public int Seed { get; set; }
     public long Tick { get; set; }
     public double ElapsedSeconds { get; set; }
+    public string ActiveRegionId { get; set; } = RegionIds.GardenClearing;
     public PlayerSave Player { get; set; } = new();
+    public List<RegionPlayerSave> RegionPlayers { get; set; } = new();
+    public List<string> VisitedRegions { get; set; } = new() { RegionIds.GardenClearing };
     public int Food { get; set; }
     public int Silk { get; set; }
     public List<WebSave> Webs { get; set; } = new();
     public List<WorkerSave> Workers { get; set; } = new();
     public List<InsectSave> Insects { get; set; } = new();
     public MissionSave Missions { get; set; } = new();
+    public RegionalObjectiveSave RegionalObjectives { get; set; } = new();
     public WeatherSave Weather { get; set; } = new();
     public SimCountersSave Counters { get; set; } = new();
     public SettingsData Settings { get; set; } = new();

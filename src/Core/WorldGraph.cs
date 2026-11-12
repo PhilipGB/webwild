@@ -5,6 +5,7 @@ public sealed class WorldNodeDefinition
     public required string Id { get; init; }
     public Vec3 Position { get; init; }
     public string Label { get; init; } = "";
+    public string Region { get; init; } = RegionIds.GardenClearing;
 }
 
 public sealed record RoutePlan(IReadOnlyList<string> Nodes, IReadOnlyList<GroundEdge> Edges, double Cost)
@@ -29,6 +30,13 @@ public sealed class WorldGraph
     public IReadOnlyList<GroundEdge> Edges => _edges;
 
     public bool TryGetNode(string id, out WorldNodeDefinition node) => _nodes.TryGetValue(id, out node!);
+
+    public IEnumerable<string> NodeIdsInRegion(string regionId) =>
+        _nodes.Values.Where(node => node.Region == regionId).Select(node => node.Id);
+
+    public string RegionOfNode(string id) =>
+        _nodes.TryGetValue(id, out var node) ? node.Region : "";
+
 
     public void AddBridge(string webId, string anchorA, string anchorB)
     {

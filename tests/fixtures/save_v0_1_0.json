@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "saveId": "legacy-v010",
+  "createdUtc": "2026-01-02T10:00:00Z",
+  "updatedUtc": "2026-01-02T10:00:00Z",
+  "seed": 27011,
+  "tick": 25,
+  "elapsedSeconds": 5.0,
+  "player": {
+    "x": -13.5,
+    "y": 0.45,
+    "z": 8.5,
+    "rotationY": 0.35
+  },
+  "food": 5,
+  "silk": 20,
+  "webs": [],
+  "workers": [],
+  "insects": [],
+  "missions": {
+    "activeMissionIndex": 0,
+    "stepIndex": 0,
+    "progress": [0, 0, 0],
+    "completed": [],
+    "seenEvents": [],
+    "victoryAwarded": false
+  },
+  "weather": {
+    "phase": "Calm",
+    "remaining": 0,
+    "windStarted": false,
+    "windCompleted": false,
+    "aftermathRemaining": 0
+  },
+  "counters": {
+    "webSequence": 0,
+    "workerSequence": 0,
+    "transactionSequence": 3,
+    "captureWebsBuilt": 0,
+    "bridgeWebsBuilt": 0,
+    "insectsCollected": 0,
+    "repairsCompleted": 0,
+    "emergencyUses": 0,
+    "masteryAwarded": false,
+    "victory": false,
+    "silkAccumulator": 0,
+    "pendingHatchRemaining": 0,
+    "pendingHatchId": null,
+    "ledgerKeys": ["spend:seed"],
+    "issuedEventKeys": ["game_start:0:1"]
+  },
+  "settings": {
+    "masterVolume": 0.85,
+    "musicVolume": 0.55,
+    "sfxVolume": 0.8,
+    "uiScalePercent": 100,
+    "reducedMotion": false,
+    "lowThreat": false,
+    "fullscreen": false,
+    "cameraSensitivity": 1.0,
+    "tutorialPrompts": true
+  }
+}

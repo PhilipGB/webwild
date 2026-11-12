@@ -14,6 +14,7 @@ public sealed class WorkerState
     public required string Id { get; init; }
     public required string Name { get; init; }
     public required string Colour { get; init; }
+    public string Region { get; set; } = RegionIds.GardenClearing;
     public Vec3 Position { get; set; }
     public string CurrentNode { get; set; } = WorldLayout.NurseryNode;
     public WorkerActivity Activity { get; set; } = WorkerActivity.Resting;

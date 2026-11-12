@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "saveId": "legacy-v012",
+  "createdUtc": "2026-03-20T08:15:00Z",
+  "updatedUtc": "2026-03-20T08:15:00Z",
+  "seed": 27011,
+  "tick": 1520,
+  "elapsedSeconds": 304.0,
+  "player": {
+    "x": 8.0,
+    "y": 0.45,
+    "z": 4.0,
+    "rotationY": -0.4
+  },
+  "food": 11,
+  "silk": 8,
+  "webs": [
+    {
+      "id": "capture_001",
+      "type": "capture",
+      "anchorA": "twig_west_a",
+      "anchorB": "twig_west_b",
+      "durability": 100,
+      "maxDurability": 100,
+      "exposure": 0.55,
+      "sheltered": false,
+      "isTutorial": true,
+      "constructedAtTick": 20
+    },
+    {
+      "id": "bridge_002",
+      "type": "bridge",
+      "anchorA": "gap_west",
+      "anchorB": "gap_east",
+      "durability": 100,
+      "maxDurability": 100,
+      "exposure": 0.2,
+      "sheltered": true,
+      "isTutorial": false,
+      "constructedAtTick": 900
+    }
+  ],
+  "workers": [
+    {
+      "id": "worker_1",
+      "name": "Pip",
+      "colour": "orange",
+      "x": 12.0,
+      "y": 0.1,
+      "z": 4.0,
+      "currentNode": "nursery_home",
+      "activity": "Resting",
+      "targetInsectId": null,
+      "targetWebId": null,
+      "targetNode": "nursery_home",
+      "pathNodes": [],
+      "pathEdgeWebIds": [],
+      "pathIndex": 0,
+      "arrivalDelay": 0,
+      "patrolCooldown": 3,
+      "collectCount": 1,
+      "repairCount": 0
+    }
+  ],
+  "insects": [],
+  "missions": {
+    "activeMissionIndex": 2,
+    "stepIndex": 0,
+    "progress": [2, 3, 0],
+    "completed": ["M01", "M02"],
+    "seenEvents": ["game_start:0:1", "web_built_capture_001:20:2", "food_collected_fly_twins_0:120:3", "web_built_bridge_002:900:4", "spider_hatched_worker_1:1450:5", "worker_bridge_worker_1:1490:6"],
+    "victoryAwarded": false
+  },
+  "weather": {
+    "phase": "Warning",
+    "remaining": 14.0,
+    "windStarted": true,
+    "windCompleted": false,
+    "aftermathRemaining": 0
+  },
+  "counters": {
+    "webSequence": 2,
+    "workerSequence": 1,
+    "transactionSequence": 15,
+    "captureWebsBuilt": 1,
+    "bridgeWebsBuilt": 1,
+    "insectsCollected": 1,
+    "repairsCompleted": 0,
+    "emergencyUses": 0,
+    "masteryAwarded": false,
+    "victory": false,
+    "silkAccumulator": 0,
+    "pendingHatchRemaining": 0,
+    "pendingHatchId": null,
+    "ledgerKeys": ["spend:seed", "spend:capture_001", "grant:food:fly_twins:0", "spend:bridge_002"],
+    "issuedEventKeys": ["game_start:0:1", "web_built_capture_001:20:2", "food_collected_fly_twins_0:120:3", "web_built_bridge_002:900:4", "spider_hatched_worker_1:1450:5", "worker_bridge_worker_1:1490:6"]
+  },
+  "settings": {
+    "masterVolume": 0.7,
+    "musicVolume": 0.4,
+    "sfxVolume": 0.7,
+    "uiScalePercent": 125,
+    "reducedMotion": true,
+    "lowThreat": false,
+    "fullscreen": false,
+    "cameraSensitivity": 1.2,
+    "tutorialPrompts": true
+  }
+}

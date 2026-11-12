@@ -1,0 +1,111 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/flora/leaf_pile.glb" id="1_leaves"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/flora/moss_patch.glb" id="3_moss"]
+[ext_resource type="PackedScene" path="res://art/models/terrain/pebble_cluster.glb" id="4_pebbles"]
+
+[node name="ReedwaterPaths" type="Node3D"]
+
+[node name="LeafTrailA" parent="." instance=ExtResource("1_leaves")]
+position = Vector3(9.7, 0.04, 7.2)
+rotation_degrees = Vector3(0, 22, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="LeafTrailA" index="0"]
+
+[node name="Leaf_0" parent="LeafTrailA/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="LeafTrailA/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="LeafTrailA/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_3" parent="LeafTrailA/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_4" parent="LeafTrailA/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_5" parent="LeafTrailA/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_6" parent="LeafTrailA/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="LeafTrailB" parent="." instance=ExtResource("1_leaves")]
+position = Vector3(11.0, 0.04, 8.9)
+rotation_degrees = Vector3(0, -34, 0)
+scale = Vector3(0.8, 0.8, 0.8)
+
+[node name="world" parent="LeafTrailB" index="0"]
+
+[node name="Leaf_0" parent="LeafTrailB/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_1" parent="LeafTrailB/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_2" parent="LeafTrailB/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_3" parent="LeafTrailB/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_4" parent="LeafTrailB/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_5" parent="LeafTrailB/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Leaf_6" parent="LeafTrailB/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="MossTrail" parent="." instance=ExtResource("3_moss")]
+position = Vector3(11.8, 0.03, 7.8)
+rotation_degrees = Vector3(0, 12, 0)
+scale = Vector3(1.1, 0.8, 1.1)
+
+[node name="world" parent="MossTrail" index="0"]
+
+[node name="Moss_0" parent="MossTrail/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_1" parent="MossTrail/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_2" parent="MossTrail/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_3" parent="MossTrail/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_4" parent="MossTrail/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_5" parent="MossTrail/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_6" parent="MossTrail/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Moss_7" parent="MossTrail/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="PebbleTrail" parent="." instance=ExtResource("4_pebbles")]
+position = Vector3(8.9, 0.03, 6.4)
+rotation_degrees = Vector3(0, -20, 0)
+scale = Vector3(0.42, 0.42, 0.42)
+
+[node name="world" parent="PebbleTrail" index="0"]
+
+[node name="Pebble_0" parent="PebbleTrail/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pebble_1" parent="PebbleTrail/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Pebble_2" parent="PebbleTrail/world" index="2"]
+material_override = ExtResource("2_vcol")

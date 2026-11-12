@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "saveId": "legacy-v011",
+  "createdUtc": "2026-02-10T12:30:00Z",
+  "updatedUtc": "2026-02-10T12:30:00Z",
+  "seed": 27011,
+  "tick": 480,
+  "elapsedSeconds": 96.0,
+  "player": {
+    "x": -6.0,
+    "y": 0.45,
+    "z": 5.0,
+    "rotationY": 1.2
+  },
+  "food": 9,
+  "silk": 12,
+  "webs": [
+    {
+      "id": "capture_001",
+      "type": "capture",
+      "anchorA": "twig_west_a",
+      "anchorB": "twig_west_b",
+      "durability": 100,
+      "maxDurability": 100,
+      "exposure": 0.55,
+      "sheltered": false,
+      "isTutorial": true,
+      "constructedAtTick": 20
+    }
+  ],
+  "workers": [],
+  "insects": [],
+  "missions": {
+    "activeMissionIndex": 1,
+    "stepIndex": 0,
+    "progress": [2, 0, 0],
+    "completed": ["M01"],
+    "seenEvents": ["game_start:0:1", "web_built_capture_001:20:2", "food_collected_fly_twins_0:120:3"],
+    "victoryAwarded": false
+  },
+  "weather": {
+    "phase": "Calm",
+    "remaining": 0,
+    "windStarted": false,
+    "windCompleted": false,
+    "aftermathRemaining": 0
+  },
+  "counters": {
+    "webSequence": 1,
+    "workerSequence": 0,
+    "transactionSequence": 7,
+    "captureWebsBuilt": 1,
+    "bridgeWebsBuilt": 0,
+    "insectsCollected": 1,
+    "repairsCompleted": 0,
+    "emergencyUses": 0,
+    "masteryAwarded": false,
+    "victory": false,
+    "silkAccumulator": 0,
+    "pendingHatchRemaining": 0,
+    "pendingHatchId": null,
+    "ledgerKeys": ["spend:seed", "spend:capture_001", "grant:food:fly_twins:0"],
+    "issuedEventKeys": ["game_start:0:1", "web_built_capture_001:20:2", "food_collected_fly_twins_0:120:3"]
+  },
+  "settings": {
+    "masterVolume": 0.85,
+    "musicVolume": 0.55,
+    "sfxVolume": 0.8,
+    "uiScalePercent": 100,
+    "reducedMotion": false,
+    "lowThreat": false,
+    "fullscreen": false,
+    "cameraSensitivity": 1.0,
+    "tutorialPrompts": true
+  }
+}

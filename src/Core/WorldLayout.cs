@@ -3,6 +3,7 @@ namespace Webwild.Core;
 public sealed class InsectRouteDefinition
 {
     public required string Id { get; init; }
+    public string Region { get; init; } = RegionIds.GardenClearing;
     public string Kind { get; init; } = "fly";
     public string Model { get; init; } = "fly";
     public int FoodYield { get; init; } = 2;
@@ -33,6 +34,8 @@ public static class WorldLayout
     public const string StemTop = "stem_overlook";
 
     public static readonly Vec3 PlayerSpawn = new(-13.5, 0.45, 8.5);
+    public static readonly Vec3 TravelPoint = new(16.1, 0, 8.5);
+    public static readonly Vec3 TravelArrivalPoint = new(15.1, 0.45, 8.5);
     public static readonly Vec3 NurseryPosition = new(12.0, 0, 4.0);
     /// <summary>Graph/navigation point for the nursery, matching its authored marker.</summary>
     public static readonly Vec3 NurseryNodePosition = new(12.0, 0.1, 4.0);
@@ -122,11 +125,15 @@ public static class WorldLayout
     public static List<WorldNodeDefinition> CreateNodes()
     {
         var nodes = CreateAnchors()
-            .Select(a => new WorldNodeDefinition { Id = a.Id, Position = a.Position, Label = a.Label })
+            .Select(a => new WorldNodeDefinition
+            {
+                Id = a.Id, Position = a.Position, Label = a.Label, Region = RegionIds.GardenClearing
+            })
             .ToList();
         nodes.Add(new WorldNodeDefinition
         {
-            Id = NurseryNode, Position = NurseryNodePosition, Label = "Leaf nursery"
+            Id = NurseryNode, Position = NurseryNodePosition, Label = "Leaf nursery",
+            Region = RegionIds.GardenClearing
         });
         return nodes;
     }

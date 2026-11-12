@@ -13,6 +13,9 @@ public sealed class AnchorDefinition
     public Vec3 Normal { get; init; } = Vec3.Up;
     public string Surface { get; init; } = "twig";
     public string Group { get; init; } = "garden";
+    public string Region { get; init; } = RegionIds.GardenClearing;
+    /// <summary>Optional authored area inside a region, used by regional objectives.</summary>
+    public string Zone { get; init; } = "";
     public int Capacity { get; init; } = 2;
     public bool Active { get; init; } = true;
     public bool Sheltered { get; init; }
@@ -30,6 +33,7 @@ public sealed class AnchorDefinition
 public sealed class WebState
 {
     public required string Id { get; init; }
+    public string Region { get; init; } = RegionIds.GardenClearing;
     public WebType Type { get; init; }
     public required string AnchorA { get; init; }
     public required string AnchorB { get; init; }
@@ -92,7 +96,9 @@ public sealed class PlacementRules
         if (anchorA == anchorB)
             return PlacementResult.Fail(PlacementCode.SameAnchor, "Choose two different anchors", cost);
         if (!_anchors.TryGetValue(anchorA, out var a) || !_anchors.TryGetValue(anchorB, out var b))
-            return PlacementResult.Fail(PlacementCode.UnknownAnchor, "That anchor is not part of this garden", cost);
+            return PlacementResult.Fail(PlacementCode.UnknownAnchor, "That anchor is not part of this region", cost);
+        if (a.Region != b.Region)
+            return PlacementResult.Fail(PlacementCode.UnknownAnchor, "Choose two anchors in the same region", cost);
         if (!a.Active || !b.Active)
             return PlacementResult.Fail(PlacementCode.InactiveAnchor, "That anchor is resting", cost);
 

@@ -1,0 +1,41 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/reedwater/lily_pad_cluster.glb" id="1_model"]
+[ext_resource type="Material" path="res://art/materials/reedwater_vertex_color_material.tres" id="2_material"]
+
+[node name="LilyPadCluster" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="world" parent="Visual" index="0"]
+
+[node name="Main_leaf" parent="Visual/world" index="0"]
+material_override = ExtResource("2_material")
+
+[node name="Main_edge" parent="Visual/world" index="1"]
+material_override = ExtResource("2_material")
+
+[node name="Main_veins" parent="Visual/world" index="2"]
+material_override = ExtResource("2_material")
+
+[node name="Little_leaf" parent="Visual/world" index="3"]
+material_override = ExtResource("2_material")
+
+[node name="Little_edge" parent="Visual/world" index="4"]
+material_override = ExtResource("2_material")
+
+[node name="Little_veins" parent="Visual/world" index="5"]
+material_override = ExtResource("2_material")
+
+[node name="Side_leaf" parent="Visual/world" index="6"]
+material_override = ExtResource("2_material")
+
+[node name="Side_edge" parent="Visual/world" index="7"]
+material_override = ExtResource("2_material")
+
+[node name="Side_veins" parent="Visual/world" index="8"]
+material_override = ExtResource("2_material")
+
+[node name="Submerged_stalks" parent="Visual/world" index="9"]
+material_override = ExtResource("2_material")
+

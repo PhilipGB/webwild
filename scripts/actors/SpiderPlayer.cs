@@ -14,6 +14,7 @@ public partial class SpiderPlayer : CharacterBody3D
     public bool PhysicsPaused { get; set; }
     public bool ClimbAvailable { get; set; }
     public Vector3 ClimbPoint { get; set; }
+    public Vector3 FallResetPosition { get; set; } = new(-13.5f, 1.0f, 8.5f);
     public bool IsClimbing { get; private set; }
     public float FacingYaw => _visual.Rotation.Y;
     public Camera3D Camera { get; private set; } = null!;
@@ -180,7 +181,7 @@ public partial class SpiderPlayer : CharacterBody3D
 
         if (GlobalPosition.Y < -4)
         {
-            GlobalPosition = new Vector3(-13.5f, 1.0f, 8.5f);
+            GlobalPosition = FallResetPosition;
             Velocity = Vector3.Zero;
         }
         if (GlobalPosition.Y > -1) _lastSafePosition = GlobalPosition;

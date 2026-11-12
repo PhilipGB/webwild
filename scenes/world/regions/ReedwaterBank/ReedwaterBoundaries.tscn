@@ -1,0 +1,220 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/flora/bush.glb" id="1_bush"]
+[ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
+[ext_resource type="PackedScene" path="res://art/models/flora/tall_grass.glb" id="3_grass"]
+[ext_resource type="PackedScene" path="res://art/models/flora/fern.glb" id="4_fern"]
+
+[sub_resource type="BoxShape3D" id="Shape_north"]
+size = Vector3(40, 3.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="Shape_south"]
+size = Vector3(40, 3.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="Shape_west"]
+size = Vector3(0.8, 3.2, 34)
+
+[sub_resource type="BoxShape3D" id="Shape_east"]
+size = Vector3(0.8, 3.2, 34)
+
+[node name="ReedwaterBoundaries" type="Node3D"]
+
+[node name="NorthBankWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 0, -16.6)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NorthBankWall"]
+shape = SubResource("Shape_north")
+position = Vector3(0, 1.6, 0)
+
+[node name="SouthBankWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 0, 16.6)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SouthBankWall"]
+shape = SubResource("Shape_south")
+position = Vector3(0, 1.6, 0)
+
+[node name="WestBankWall" type="StaticBody3D" parent="."]
+position = Vector3(-19.6, 0, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WestBankWall"]
+shape = SubResource("Shape_west")
+position = Vector3(0, 1.6, 0)
+
+[node name="EastBankWall" type="StaticBody3D" parent="."]
+position = Vector3(19.6, 0, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EastBankWall"]
+shape = SubResource("Shape_east")
+position = Vector3(0, 1.6, 0)
+
+[node name="NorthBush" parent="." instance=ExtResource("1_bush")]
+position = Vector3(-12.5, 0, -15.7)
+rotation_degrees = Vector3(0, 21, 0)
+scale = Vector3(0.8, 0.8, 0.8)
+
+[node name="world" parent="NorthBush" index="0"]
+
+[node name="Foliage_0" parent="NorthBush/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="NorthBush/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="NorthBush/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="NorthBush/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="NorthGrass" parent="." instance=ExtResource("3_grass")]
+position = Vector3(6.5, 0, -15.7)
+rotation_degrees = Vector3(0, 45, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="NorthGrass" index="0"]
+
+[node name="Blade_0" parent="NorthGrass/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="NorthGrass/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="NorthGrass/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="NorthGrass/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="NorthGrass/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="NorthGrass/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="NorthGrass/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="NorthGrass/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="SouthFern" parent="." instance=ExtResource("4_fern")]
+position = Vector3(13.0, 0, 15.7)
+rotation_degrees = Vector3(0, -34, 0)
+scale = Vector3(0.9, 0.9, 0.9)
+
+[node name="world" parent="SouthFern" index="0"]
+
+[node name="Core" parent="SouthFern/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_-1" parent="SouthFern/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_0_1" parent="SouthFern/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_-1" parent="SouthFern/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_1_1" parent="SouthFern/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_-1" parent="SouthFern/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_2_1" parent="SouthFern/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_-1" parent="SouthFern/world" index="7"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_3_1" parent="SouthFern/world" index="8"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_-1" parent="SouthFern/world" index="9"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_4_1" parent="SouthFern/world" index="10"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_-1" parent="SouthFern/world" index="11"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_5_1" parent="SouthFern/world" index="12"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_-1" parent="SouthFern/world" index="13"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_6_1" parent="SouthFern/world" index="14"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_-1" parent="SouthFern/world" index="15"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_7_1" parent="SouthFern/world" index="16"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_-1" parent="SouthFern/world" index="17"]
+material_override = ExtResource("2_vcol")
+
+[node name="Frond_8_1" parent="SouthFern/world" index="18"]
+material_override = ExtResource("2_vcol")
+
+[node name="WestBush" parent="." instance=ExtResource("1_bush")]
+position = Vector3(-18.7, 0, 8.0)
+rotation_degrees = Vector3(0, 63, 0)
+scale = Vector3(0.72, 0.72, 0.72)
+
+[node name="world" parent="WestBush" index="0"]
+
+[node name="Foliage_0" parent="WestBush/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_1" parent="WestBush/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_2" parent="WestBush/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Foliage_3" parent="WestBush/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="EastGrass" parent="." instance=ExtResource("3_grass")]
+position = Vector3(18.7, 0, -9.0)
+rotation_degrees = Vector3(0, 12, 0)
+scale = Vector3(0.85, 0.85, 0.85)
+
+[node name="world" parent="EastGrass" index="0"]
+
+[node name="Blade_0" parent="EastGrass/world" index="0"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_1" parent="EastGrass/world" index="1"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_2" parent="EastGrass/world" index="2"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_3" parent="EastGrass/world" index="3"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_4" parent="EastGrass/world" index="4"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_5" parent="EastGrass/world" index="5"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_6" parent="EastGrass/world" index="6"]
+material_override = ExtResource("2_vcol")
+
+[node name="Blade_7" parent="EastGrass/world" index="7"]
+material_override = ExtResource("2_vcol")

@@ -1,0 +1,24 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/ReedwaterWorld.cs" id="1_world_script"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/ReedwaterEnvironment.tscn" id="2_environment"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/ReedwaterTerrain.tscn" id="3_terrain"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/ReedwaterPaths.tscn" id="4_paths"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/ReedwaterLandmarks.tscn" id="5_landmarks"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/ReedwaterFlora.tscn" id="6_flora"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/ReedwaterBoundaries.tscn" id="7_boundaries"]
+
+[node name="ReedwaterWorld" type="Node3D"]
+script = ExtResource("1_world_script")
+
+[node name="Environment" parent="." instance=ExtResource("2_environment")]
+
+[node name="Terrain" parent="." instance=ExtResource("3_terrain")]
+
+[node name="Paths" parent="." instance=ExtResource("4_paths")]
+
+[node name="Landmarks" parent="." instance=ExtResource("5_landmarks")]
+
+[node name="Flora" parent="." instance=ExtResource("6_flora")]
+
+[node name="Boundaries" parent="." instance=ExtResource("7_boundaries")]

@@ -1,0 +1,169 @@
+[gd_scene load_steps=15 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Mat_bank_grass"]
+albedo_color = Color(0.431373, 0.611765, 0.352941, 1)
+roughness = 0.96
+
+[sub_resource type="StandardMaterial3D" id="Mat_bank_soil"]
+albedo_color = Color(0.396078, 0.301961, 0.219608, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_moss"]
+albedo_color = Color(0.352941, 0.529412, 0.290196, 1)
+roughness = 0.98
+
+[sub_resource type="StandardMaterial3D" id="Mat_water"]
+albedo_color = Color(0.239216, 0.65098, 0.694118, 0.64)
+transparency = 1
+roughness = 0.16
+metallic = 0.04
+emission_enabled = true
+emission = Color(0.352941, 0.768627, 0.74902, 1)
+emission_energy_multiplier = 0.18
+
+[sub_resource type="StandardMaterial3D" id="Mat_pond_bed"]
+albedo_color = Color(0.301961, 0.407843, 0.34902, 1)
+roughness = 1.0
+
+[sub_resource type="BoxShape3D" id="Shape_start_bank"]
+size = Vector3(11, 0.6, 20)
+
+[sub_resource type="BoxMesh" id="Mesh_start_bank"]
+material = SubResource("Mat_bank_grass")
+size = Vector3(11, 0.6, 20)
+
+[sub_resource type="BoxShape3D" id="Shape_far_bank"]
+size = Vector3(12, 0.6, 20)
+
+[sub_resource type="BoxMesh" id="Mesh_far_bank"]
+material = SubResource("Mat_bank_grass")
+size = Vector3(12, 0.6, 20)
+
+[sub_resource type="PlaneMesh" id="Mesh_water"]
+material = SubResource("Mat_water")
+size = Vector2(24, 20)
+
+[sub_resource type="PlaneMesh" id="Mesh_pond_bed"]
+material = SubResource("Mat_pond_bed")
+size = Vector2(24, 20)
+
+[sub_resource type="BoxMesh" id="Mesh_detail_box"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_pond_water"]
+size = Vector3(12.5, 1.4, 18)
+
+[sub_resource type="BoxShape3D" id="Shape_east_channel"]
+size = Vector3(3.0, 4.0, 18)
+
+[sub_resource type="BoxShape3D" id="Shape_mid_channel"]
+size = Vector3(1.7, 4.0, 18)
+
+[sub_resource type="BoxShape3D" id="Shape_west_channel"]
+size = Vector3(1.9, 4.0, 16)
+
+[node name="ReedwaterTerrain" type="Node3D"]
+
+[node name="StartBank" type="StaticBody3D" parent="."]
+position = Vector3(11.5, -0.3, 4)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StartBank"]
+shape = SubResource("Shape_start_bank")
+
+[node name="StartBankMesh" type="MeshInstance3D" parent="StartBank"]
+mesh = SubResource("Mesh_start_bank")
+
+[node name="FarBank" type="StaticBody3D" parent="."]
+position = Vector3(-13, -0.3, -2)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FarBank"]
+shape = SubResource("Shape_far_bank")
+
+[node name="FarBankMesh" type="MeshInstance3D" parent="FarBank"]
+mesh = SubResource("Mesh_far_bank")
+
+[node name="PondWater" type="MeshInstance3D" parent="."]
+position = Vector3(-1, 0.02, 1)
+mesh = SubResource("Mesh_water")
+cast_shadow = 0
+
+[node name="PondBed" type="MeshInstance3D" parent="."]
+position = Vector3(-1, -1.45, 1)
+mesh = SubResource("Mesh_pond_bed")
+cast_shadow = 0
+
+[node name="ShoreMossWest" type="MeshInstance3D" parent="."]
+position = Vector3(-7.15, 0.02, -2)
+scale = Vector3(0.7, 0.05, 16)
+mesh = SubResource("Mesh_detail_box")
+material_override = SubResource("Mat_moss")
+
+[node name="ShoreMossEast" type="MeshInstance3D" parent="."]
+position = Vector3(6.05, 0.02, 4)
+scale = Vector3(0.7, 0.05, 16)
+mesh = SubResource("Mesh_detail_box")
+material_override = SubResource("Mat_moss")
+
+[node name="PondWaterVolume" type="Area3D" parent="." groups=["water"]]
+position = Vector3(-1, -0.64, 1)
+collision_layer = 8
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PondWaterVolume"]
+shape = SubResource("Shape_pond_water")
+
+[node name="WaterChannelEast" type="Area3D" parent="." groups=["water"]]
+position = Vector3(4.53, 1.7, 3)
+collision_layer = 8
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WaterChannelEast"]
+shape = SubResource("Shape_east_channel")
+
+[node name="WaterChannelMid" type="Area3D" parent="." groups=["water"]]
+position = Vector3(-0.92, 1.7, 3)
+collision_layer = 8
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WaterChannelMid"]
+shape = SubResource("Shape_mid_channel")
+
+[node name="WaterChannelWest" type="Area3D" parent="." groups=["water"]]
+position = Vector3(-6.02, 1.7, 0)
+collision_layer = 8
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WaterChannelWest"]
+shape = SubResource("Shape_west_channel")
+
+[node name="BankEdgeStones" type="Node3D" parent="."]
+
+[node name="StoneA" type="MeshInstance3D" parent="BankEdgeStones"]
+position = Vector3(5.3, 0.06, 3.2)
+scale = Vector3(0.7, 0.22, 0.5)
+mesh = SubResource("Mesh_detail_box")
+material_override = SubResource("Mat_pond_bed")
+
+[node name="StoneB" type="MeshInstance3D" parent="BankEdgeStones"]
+position = Vector3(5.45, 0.04, 1.1)
+scale = Vector3(0.5, 0.18, 0.8)
+mesh = SubResource("Mesh_detail_box")
+material_override = SubResource("Mat_pond_bed")
+
+[node name="StoneC" type="MeshInstance3D" parent="BankEdgeStones"]
+position = Vector3(-6.9, 0.05, 2.5)
+scale = Vector3(0.65, 0.2, 0.55)
+mesh = SubResource("Mesh_detail_box")
+material_override = SubResource("Mat_pond_bed")

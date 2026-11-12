@@ -10,6 +10,7 @@ namespace Webwild.Game;
 public static class ArtMaterials
 {
     private static StandardMaterial3D? _vertexColorMaterial;
+    private static StandardMaterial3D? _reedwaterVertexColorMaterial;
 
     public static StandardMaterial3D VertexColorMaterial => _vertexColorMaterial ??= new StandardMaterial3D
     {
@@ -19,13 +20,38 @@ public static class ArtMaterials
         Metallic = 0.02f
     };
 
-    public static void ApplyVertexColors(Node root)
+    /// <summary>
+    /// Reedwater foliage and dragonfly wings are thin, so the supplied material
+    /// renders double-sided. Prefer the authored resource; fall back to an
+    /// equivalent material if an exported build omits it.
+    /// </summary>
+    public static StandardMaterial3D ReedwaterVertexColorMaterial
     {
+        get
+        {
+            if (_reedwaterVertexColorMaterial is not null) return _reedwaterVertexColorMaterial;
+            var loaded = ResourceLoader.Load<StandardMaterial3D>(
+                "res://art/materials/reedwater_vertex_color_material.tres");
+            _reedwaterVertexColorMaterial = loaded ?? new StandardMaterial3D
+            {
+                AlbedoColor = Colors.White,
+                VertexColorUseAsAlbedo = true,
+                Roughness = 0.78f,
+                Metallic = 0.02f,
+                CullMode = BaseMaterial3D.CullModeEnum.Disabled
+            };
+            return _reedwaterVertexColorMaterial;
+        }
+    }
+
+    public static void ApplyVertexColors(Node root, bool reedwater = false)
+    {
+        var material = reedwater ? ReedwaterVertexColorMaterial : VertexColorMaterial;
         foreach (var child in root.GetChildren())
         {
             if (child is MeshInstance3D mesh && mesh.Mesh is not null)
-                mesh.MaterialOverride = VertexColorMaterial;
-            ApplyVertexColors(child);
+                mesh.MaterialOverride = material;
+            ApplyVertexColors(child, reedwater);
         }
     }
 
@@ -42,7 +68,7 @@ public static class ArtMaterials
         {
             var scenePath = child.SceneFilePath ?? "";
             if (scenePath.StartsWith("res://art/models/", StringComparison.Ordinal))
-                ApplyVertexColors(child);
+                ApplyVertexColors(child, scenePath.StartsWith("res://art/models/reedwater/", StringComparison.Ordinal));
             ApplyToModelInstances(child);
         }
     }

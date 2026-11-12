@@ -1,0 +1,32 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/reedwater/stepping_stone.glb" id="1_model"]
+[ext_resource type="Material" path="res://art/materials/reedwater_vertex_color_material.tres" id="2_material"]
+
+[sub_resource type="CylinderShape3D" id="1_collision"]
+radius = 0.53
+height = 0.43
+
+[node name="SteppingStone" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="world" parent="Visual" index="0"]
+
+[node name="Pale_rock_body" parent="Visual/world" index="0"]
+material_override = ExtResource("2_material")
+
+[node name="Soft_moss_top" parent="Visual/world" index="1"]
+material_override = ExtResource("2_material")
+
+[node name="Rock_corner" parent="Visual/world" index="2"]
+material_override = ExtResource("2_material")
+
+[node name="Collision" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision"]
+position = Vector3(0, -0.14, 0)
+shape = SubResource("1_collision")
+

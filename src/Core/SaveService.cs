@@ -48,9 +48,34 @@ public static class SaveValidator
             error = "The save file is empty.";
             return false;
         }
-        if (data.SchemaVersion != SaveGameData.CurrentSchemaVersion)
+        if (!SaveMigrator.Migrate(data, out error)) return false;
+        if (!RegionIds.IsKnown(data.ActiveRegionId))
         {
-            error = $"Save version {data.SchemaVersion} is not supported.";
+            error = "The save names an unknown active region.";
+            return false;
+        }
+        if (data.ActiveRegionId == RegionIds.ReedwaterBank && data.Missions.Completed.Count < 3)
+        {
+            error = "The save is inside Reedwater Bank before the garden story is complete.";
+            return false;
+        }
+        if (data.VisitedRegions is null || data.VisitedRegions.Any(id => !RegionIds.IsKnown(id)))
+        {
+            error = "The save contains an unknown visited region.";
+            return false;
+        }
+        if (data.RegionPlayers is null || data.RegionPlayers.Any(entry =>
+                !RegionIds.IsKnown(entry.Region) ||
+                !IsFinite(entry.X, entry.Y, entry.Z) ||
+                Math.Abs(entry.X) > 60 || Math.Abs(entry.Z) > 60 || entry.Y < -3 || entry.Y > 40))
+        {
+            error = "A region player position is invalid.";
+            return false;
+        }
+        if (data.RegionPlayers.Select(entry => entry.Region).Distinct(StringComparer.Ordinal).Count() !=
+            data.RegionPlayers.Count)
+        {
+            error = "A region player position is duplicated.";
             return false;
         }
         if (string.IsNullOrWhiteSpace(data.SaveId) || data.SaveId.Length > 80)
@@ -80,7 +105,9 @@ public static class SaveValidator
             error = "Too many webs in this save.";
             return false;
         }
-        var anchorIds = allowedAnchors ?? WorldLayout.CreateAnchors().Select(a => a.Id).ToHashSet(StringComparer.Ordinal);
+        Dictionary<string, string?> anchorRegions = allowedAnchors is null
+            ? RegionCatalog.AllAnchors.ToDictionary(anchor => anchor.Id, anchor => (string?)anchor.Region, StringComparer.Ordinal)
+            : allowedAnchors.ToDictionary(id => id, _ => (string?)null, StringComparer.Ordinal);
         var webIds = new HashSet<string>(StringComparer.Ordinal);
         var pairs = new HashSet<string>(StringComparer.Ordinal);
         foreach (var web in data.Webs)
@@ -95,9 +122,21 @@ public static class SaveValidator
                 error = "A web has an unknown type.";
                 return false;
             }
-            if (!anchorIds.Contains(web.AnchorA) || !anchorIds.Contains(web.AnchorB) || web.AnchorA == web.AnchorB)
+            if (string.IsNullOrWhiteSpace(web.Region) || !RegionIds.IsKnown(web.Region))
+            {
+                error = "A web names an unknown region.";
+                return false;
+            }
+            if (!anchorRegions.TryGetValue(web.AnchorA, out var regionA) ||
+                !anchorRegions.TryGetValue(web.AnchorB, out var regionB) ||
+                web.AnchorA == web.AnchorB)
             {
                 error = "A web refers to an unknown or identical anchor.";
+                return false;
+            }
+            if (allowedAnchors is null && (regionA != web.Region || regionB != web.Region))
+            {
+                error = "A web spans two regions or the wrong region.";
                 return false;
             }
             if (web.Durability < 0 || web.MaxDurability <= 0 || web.Durability > web.MaxDurability || web.MaxDurability > 1000)
@@ -132,6 +171,11 @@ public static class SaveValidator
                 error = "A worker ID is missing or duplicated.";
                 return false;
             }
+            if (string.IsNullOrWhiteSpace(worker.Region) || !RegionIds.IsKnown(worker.Region))
+            {
+                error = "A worker names an unknown region.";
+                return false;
+            }
             if (!IsFinite(worker.X, worker.Y, worker.Z) || Math.Abs(worker.X) > 60 || Math.Abs(worker.Z) > 60 || worker.Y < -3 || worker.Y > 40)
             {
                 error = "A worker position is invalid.";
@@ -143,8 +187,21 @@ public static class SaveValidator
                 return false;
             }
         }
+        var routeRegions = RegionCatalog.All
+            .SelectMany(region => region.InsectRoutes.Select(route => new { route.Id, Region = region.Id }))
+            .ToDictionary(entry => entry.Id, entry => entry.Region, StringComparer.Ordinal);
         foreach (var insect in data.Insects)
         {
+            if (string.IsNullOrWhiteSpace(insect.Region) || !RegionIds.IsKnown(insect.Region))
+            {
+                error = "An insect names an unknown region.";
+                return false;
+            }
+            if (!routeRegions.TryGetValue(insect.Id, out var routeRegion) || routeRegion != insect.Region)
+            {
+                error = "An insect does not match an authored regional route.";
+                return false;
+            }
             if (!IsFinite(insect.X, insect.Y, insect.Z))
             {
                 error = "An insect position is invalid.";
@@ -173,20 +230,33 @@ public static class SaveValidator
         }
         if (data.Missions.SeenEvents.Any(string.IsNullOrWhiteSpace) ||
             data.Counters.LedgerKeys.Count > 2000 ||
-            data.Counters.IssuedEventKeys.Count > 2000)
+            data.Counters.IssuedEventKeys.Count > 2000 ||
+            data.Counters.OpenedRegionRoutes.Count > 20)
         {
             error = "Event history is invalid.";
             return false;
         }
+        var regional = data.RegionalObjectives ?? new RegionalObjectiveSave();
+        if (regional.ActiveObjectiveIndex < 0 || regional.ActiveObjectiveIndex > 3 ||
+            regional.Progress.Count > 3 || regional.Completed.Count > 3 ||
+            regional.SeenEvents.Count > 2000 ||
+            regional.SeenEvents.Any(string.IsNullOrWhiteSpace))
+        {
+            error = "Regional objective progress is invalid.";
+            return false;
+        }
         if (data.Counters.WebSequence < 0 || data.Counters.WorkerSequence < 0 ||
             data.Counters.CaptureWebsBuilt < 0 || data.Counters.InsectsCollected < 0 ||
+            data.Counters.ReedwaterCaptureWebsBuilt < 0 || data.Counters.ReedwaterBridgeWebsBuilt < 0 ||
             data.Counters.EmergencyUses < 0 || data.Counters.EmergencyUses > 3)
         {
             error = "Game counters are invalid.";
             return false;
         }
         if (!double.IsFinite(data.Counters.SilkAccumulator) || data.Counters.SilkAccumulator < 0 ||
-            !double.IsFinite(data.Counters.PendingHatchRemaining) || data.Counters.PendingHatchRemaining < 0 || data.Counters.PendingHatchRemaining > 60)
+            !double.IsFinite(data.Counters.PendingHatchRemaining) || data.Counters.PendingHatchRemaining < 0 || data.Counters.PendingHatchRemaining > 60 ||
+            (!string.IsNullOrWhiteSpace(data.Counters.PendingHatchRegionId) &&
+             !RegionIds.IsKnown(data.Counters.PendingHatchRegionId)))
         {
             error = "Simulation accumulators are invalid.";
             return false;
@@ -221,6 +291,12 @@ public static class SaveValidator
         {
             using var stream = new MemoryStream(bytes);
             var data = JsonSerializer.Deserialize<SaveGameData>(stream, JsonOptions);
+            if (data is null)
+            {
+                error = "The save file is empty.";
+                return null;
+            }
+            if (!SaveMigrator.Migrate(data, out error)) return null;
             if (!Validate(data, out error)) return null;
             return data;
         }

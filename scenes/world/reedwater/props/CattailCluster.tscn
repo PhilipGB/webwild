@@ -1,0 +1,47 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/reedwater/cattail_cluster.glb" id="1_model"]
+[ext_resource type="Material" path="res://art/materials/reedwater_vertex_color_material.tres" id="2_material"]
+
+[node name="CattailCluster" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="world" parent="Visual" index="0"]
+
+[node name="Tall_cattail_stalk" parent="Visual/world" index="0"]
+material_override = ExtResource("2_material")
+
+[node name="Tall_cattail_seed_head" parent="Visual/world" index="1"]
+material_override = ExtResource("2_material")
+
+[node name="Tall_cattail_seed_texture" parent="Visual/world" index="2"]
+material_override = ExtResource("2_material")
+
+[node name="Tall_cattail_leaves" parent="Visual/world" index="3"]
+material_override = ExtResource("2_material")
+
+[node name="Short_cattail_stalk" parent="Visual/world" index="4"]
+material_override = ExtResource("2_material")
+
+[node name="Short_cattail_seed_head" parent="Visual/world" index="5"]
+material_override = ExtResource("2_material")
+
+[node name="Short_cattail_seed_texture" parent="Visual/world" index="6"]
+material_override = ExtResource("2_material")
+
+[node name="Short_cattail_leaves" parent="Visual/world" index="7"]
+material_override = ExtResource("2_material")
+
+[node name="Back_cattail_stalk" parent="Visual/world" index="8"]
+material_override = ExtResource("2_material")
+
+[node name="Back_cattail_seed_head" parent="Visual/world" index="9"]
+material_override = ExtResource("2_material")
+
+[node name="Back_cattail_seed_texture" parent="Visual/world" index="10"]
+material_override = ExtResource("2_material")
+
+[node name="Back_cattail_leaves" parent="Visual/world" index="11"]
+material_override = ExtResource("2_material")
+

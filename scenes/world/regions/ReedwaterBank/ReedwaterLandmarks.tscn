@@ -1,0 +1,19 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/landmarks/StartBank.tscn" id="1_start"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/landmarks/IslandA.tscn" id="2_islanda"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/landmarks/IslandB.tscn" id="3_islandb"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/landmarks/FarBank.tscn" id="4_farbank"]
+[ext_resource type="PackedScene" path="res://scenes/world/regions/ReedwaterBank/landmarks/Outpost.tscn" id="5_outpost"]
+
+[node name="ReedwaterLandmarks" type="Node3D"]
+
+[node name="StartBank" parent="." instance=ExtResource("1_start")]
+
+[node name="IslandA" parent="." instance=ExtResource("2_islanda")]
+
+[node name="IslandB" parent="." instance=ExtResource("3_islandb")]
+
+[node name="FarBank" parent="." instance=ExtResource("4_farbank")]
+
+[node name="Outpost" parent="." instance=ExtResource("5_outpost")]

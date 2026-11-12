@@ -34,18 +34,19 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 | v0.1.1 | Independent-review hardening: bounded save history, safe failed-save quit, real ravine/bridge traversal, silk food cost, difficulty reset, pause physics, settings retry | DONE | `CHANGELOG.md`; `HardeningTests`; runtime checks `pause-freezes-airborne`, `ravine-blocks-without-bridge`, `bridge-enables-player-crossing`, `failed-save-keeps-session`, `settings-save-error-visible`, `low-threat-restores` |
 | v0.1.2 | Review hardening: order-independent bridge ramps, order-preserving save histories, settings temp-file cleanup | DONE | `CHANGELOG.md`; `BridgeGeometryTests`, `HistoryOrderTests`, settings failure tests; runtime checks `bridge-reverse-*`, `bridge-zaxis-*`, `bridge-removal-*` |
 | v0.2.0 P0 | Scene-first world: reusable environment, terrain, landmark, flora and boundary scenes; anchor/marker coordinate contract; procedural builder removed | DONE (no release yet) | PR [#11](https://github.com/PhilipGB/webwild/pull/11); `CHANGELOG.md`; `docs/SCENE_AUTHORING.md`; `SceneAuthoringTests`; 24 scene checks; runtime `scene-*`; screenshots 01–19 |
+| v0.2.0 P1 | Reedwater Bank second region: pond, islands, reeds, water collision, travel, three regional objectives, dragonflies, worker crossing, schema-v2 migration | DONE (no release yet) | PR [#12](https://github.com/PhilipGB/webwild/pull/12); `docs/EVIDENCE.md#v020-p1`; `RegionTests`, `SaveMigrationTests`, `SceneAuthoringTests`; 47 scene checks; 168 runtime checks; screenshots 20–29 |
 
 ## Verification summary
 
-- `dotnet test`: **71 passed, 0 failed, 0 skipped**.
-- Scene contract validation: **24 passed, 0 failed**.
-- Headless runtime probe: **105 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **105 passed, 0 failed**; 19 real PNGs.
-- Exported Linux build, headless probe: **105 passed, 0 failed**.
-- Exported Linux build, rendered Xvfb probe: **105 passed, 0 failed**.
-- Linux x64 release export: built successfully and launched.
-- Windows x64 release export: built successfully.
-- Windows runtime: **NOT VERIFIED** — no Windows host available.
+- `dotnet test`: **93 passed, 0 failed, 0 skipped**.
+- Scene contract validation: **47 passed, 0 failed** across both regions.
+- Headless runtime probe: **168 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **168 passed, 0 failed**; 29+ real PNGs.
+- Exported Linux build, headless probe: **re-run for this milestone**.
+- Exported Linux build, rendered Xvfb probe: **re-run for this milestone**.
+- Linux x64 export: built successfully and launched.
+- Windows x64 export: built successfully; runtime **NOT VERIFIED** (no Windows host).
+- Legacy saves v0.1.0/v0.1.1/v0.1.2: migration tests pass with real fixtures.
 - Child playtest: **NOT VERIFIED** — see `docs/PLAYTEST_NOTES.md`.
 
 ## Known limitations
@@ -58,8 +59,12 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
   controls remain visible.
 - The game is a deliberately stylised 3D garden, not a photorealistic or
   biologically accurate simulation.
-- The persistent garden is now authored in `.tscn` scenes. Gameplay coordinates
-  remain in `WorldLayout` and are validated against the scene rather than
+- Both regions are authored in `.tscn` scenes. Gameplay coordinates remain in
+  `WorldLayout`/`Regions.cs` and are validated against scenes rather than
   auto-synchronised by an editor plugin.
+- Reedwater scenes are cached after first visit; collision, lights and environment
+  are disabled when inactive, but GPU resources stay loaded for instant switching.
+- The dragonfly is a static model used as an insect; there is no skeletal flight
+  animation.
 - The repository was restored to private visibility during the v0.1.1 hardening
   pass.

@@ -11,6 +11,7 @@ public sealed class PendingHatch
 {
     public double Remaining { get; set; }
     public string Id { get; init; } = "";
+    public string RegionId { get; init; } = RegionIds.GardenClearing;
 }
 
 /// <summary>
@@ -38,13 +39,28 @@ public sealed class GameSimulation
     private bool _windCompleted;
     private bool _masteryAwarded;
     private bool _victory;
+    private bool _regionUnlockedAnnounced;
     private readonly Random _rng;
+    private readonly HashSet<string> _openedRegionRoutes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PlayerRegionPosition> _regionPlayerPositions = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _visitedRegions = new(StringComparer.Ordinal) { RegionIds.GardenClearing };
 
     public Tuning Tuning { get; }
     public MissionsConfig MissionsConfig { get; }
     public ResourceLedger Ledger { get; }
     public MissionTracker Missions { get; }
+    public RegionalObjectiveTracker RegionalObjectives { get; private set; } = new();
     public WorldGraph Graph { get; }
+    public string ActiveRegionId { get; private set; } = RegionIds.GardenClearing;
+    public RegionDefinition ActiveRegion => RegionCatalog.GetRequired(ActiveRegionId);
+    public bool ReedwaterUnlocked => Missions.AllComplete;
+    public bool IsRegionUnlocked(string id) =>
+        RegionCatalog.Get(id) is { } region &&
+        (region.UnlockedByDefault || Missions.AllComplete);
+    public IReadOnlyCollection<string> VisitedRegions => _visitedRegions;
+    public int ReedwaterBridgeWebsBuilt { get; private set; }
+    public int ReedwaterCaptureWebsBuilt { get; private set; }
+    public IReadOnlyCollection<string> OpenedRegionRoutes => _openedRegionRoutes;
     public WeatherPhase WeatherPhase { get; private set; } = WeatherPhase.Calm;
     public double WeatherRemaining => _weatherRemaining;
     public PendingHatch? PendingHatch { get; private set; }
@@ -64,6 +80,15 @@ public sealed class GameSimulation
     public IReadOnlyList<InsectState> Insects => _insects;
     public IReadOnlyList<WorkerState> Workers => _workers;
     public IReadOnlyDictionary<string, AnchorDefinition> Anchors => _anchors;
+
+    public IReadOnlyList<WebState> RegionWebs => _webs.Values
+        .Where(web => web.Region == ActiveRegionId).ToList();
+    public IReadOnlyList<InsectState> RegionInsects => _insects
+        .Where(insect => insect.Definition.Region == ActiveRegionId).ToList();
+    public IReadOnlyList<WorkerState> RegionWorkers => _workers
+        .Where(worker => worker.Region == ActiveRegionId).ToList();
+    public IReadOnlyList<AnchorDefinition> RegionAnchors => _anchors.Values
+        .Where(anchor => anchor.Region == ActiveRegionId).ToList();
     public IReadOnlyList<GameplayEvent> Events => _events;
     public IReadOnlyList<string> OrderedIssuedEventKeys => _issuedEventOrder.ToArray();
     public int TotalSpiders => 1 + _workers.Count + (PendingHatch is not null ? 1 : 0);
@@ -81,11 +106,25 @@ public sealed class GameSimulation
         MissionsConfig = missions ?? MissionsConfig.Defaults();
         Missions = new MissionTracker(MissionsConfig);
         Ledger = new ResourceLedger(Tuning.Initial.Food, Tuning.Initial.Silk);
-        _anchors = (anchors ?? WorldLayout.CreateAnchors()).ToDictionary(a => a.Id, StringComparer.Ordinal);
-        Graph = new WorldGraph(WorldLayout.CreateNodes(), WorldLayout.CreateGroundEdges());
+
+        // A custom anchor list is used by focused placement tests. It remains a
+        // garden-only world, exactly like the pre-region simulation. A normal
+        // game loads every registered region's authored definition.
+        var allAnchors = anchors?.ToList() ?? RegionCatalog.AllAnchors.ToList();
+        _anchors = allAnchors.ToDictionary(a => a.Id, StringComparer.Ordinal);
+        var graphNodes = anchors is null
+            ? RegionCatalog.AllNodes.ToList()
+            : WorldLayout.CreateNodes();
+        var graphEdges = anchors is null
+            ? RegionCatalog.AllEdges.ToList()
+            : WorldLayout.CreateGroundEdges();
+        Graph = new WorldGraph(graphNodes, graphEdges);
         _rng = new Random(Tuning.Seed);
 
-        foreach (var route in WorldLayout.CreateInsectRoutes())
+        var routes = anchors is null
+            ? RegionCatalog.All.SelectMany(region => region.InsectRoutes).ToList()
+            : WorldLayout.CreateInsectRoutes().ToList();
+        foreach (var route in routes)
         {
             var insect = new InsectState
             {
@@ -97,6 +136,8 @@ public sealed class GameSimulation
             AdvanceInsectTo(insect, route.StartProgress * TotalRouteLength(route));
             _insects.Add(insect);
         }
+        foreach (var region in RegionCatalog.All)
+            _regionPlayerPositions[region.Id] = new PlayerRegionPosition(region.PlayerSpawn, 0);
 
         Emit(new GameplayEvent(NextKey("game_start"), "GameStarted", TickCount));
     }
@@ -108,6 +149,79 @@ public sealed class GameSimulation
     public WebState? GetWeb(string id) => _webs.GetValueOrDefault(id);
     public InsectState? GetInsect(string id) => _insects.FirstOrDefault(i => i.Id == id);
     public WorkerState? GetWorker(string id) => _workers.FirstOrDefault(w => w.Id == id);
+
+    public PlayerRegionPosition GetRegionPlayerPosition(string regionId)
+    {
+        if (_regionPlayerPositions.TryGetValue(regionId, out var saved)) return saved;
+        var region = RegionCatalog.Get(regionId);
+        return new PlayerRegionPosition(region?.PlayerSpawn ?? Vec3.Zero, 0);
+    }
+
+    public void SetRegionPlayerPosition(string regionId, Vec3 position, double rotationY)
+    {
+        if (!RegionIds.IsKnown(regionId)) return;
+        if (!position.IsFinite) return;
+        _regionPlayerPositions[regionId] = new PlayerRegionPosition(position, rotationY);
+        _visitedRegions.Add(regionId);
+    }
+
+    /// <summary>
+    /// Explicit travel through the marked garden passage. There is no timer or
+    /// proximity shortcut; the adapter calls this only after the player confirms.
+    /// Workers travel with the colony through that same passage and are never
+    /// moved across water; their regional route still has to exist.
+    /// </summary>
+    public bool TryTravelTo(string regionId, out string reason)
+    {
+        reason = "";
+        var region = RegionCatalog.Get(regionId);
+        if (region is null)
+        {
+            reason = "That place is not part of this garden";
+            return false;
+        }
+        if (regionId == ActiveRegionId)
+        {
+            reason = "You are already here";
+            return false;
+        }
+        if (!IsRegionUnlocked(regionId))
+        {
+            reason = "Finish the garden story to open the Reedwater path";
+            return false;
+        }
+
+        ActiveRegionId = regionId;
+        _visitedRegions.Add(regionId);
+
+        foreach (var worker in _workers)
+        {
+            worker.Region = regionId;
+            worker.CurrentNode = region.NurseryNode;
+            worker.Position = region.NurseryPosition;
+            ReleaseWorkerTask(worker, "Travelled through the garden passage", keepPosition: true);
+            worker.PatrolCooldown = 2;
+        }
+
+        // The first visit to the marshy outpost uncovers a small, exactly-once
+        // colony supply cache. This keeps a child who spent most silk on the
+        // story from arriving with too little to build the first bridge.
+        if (regionId == RegionIds.ReedwaterBank &&
+            Ledger.TryGrant(6, 24, $"region_supply_{regionId}"))
+        {
+            Emit(new GameplayEvent(NextKey($"region_supply_{regionId}"), "RegionSupply",
+                TickCount, regionId, Detail: "Reedwater outpost supply cache",
+                Region: regionId));
+        }
+
+        Emit(new GameplayEvent(NextKey($"region_travel_{regionId}"), "RegionChanged", TickCount,
+            regionId, Detail: region.DisplayName, Region: regionId));
+        return true;
+    }
+
+    public string GetActiveRegionHint() => ActiveRegionId == RegionIds.GardenClearing
+        ? GetHint()
+        : GetRegionObjectiveHint();
     public WebState? GetWebAtAnchor(string anchorId) =>
         _webs.Values.FirstOrDefault(w => w.AnchorA == anchorId || w.AnchorB == anchorId);
 
@@ -121,7 +235,14 @@ public sealed class GameSimulation
     public PlacementResult Preview(string anchorA, string anchorB, WebType type)
     {
         var rules = new PlacementRules(_anchors, _webs, Tuning);
-        return rules.Validate(anchorA, anchorB, type, Ledger.Silk);
+        var result = rules.Validate(anchorA, anchorB, type, Ledger.Silk);
+        if (!result.IsValid) return result;
+        var a = _anchors[anchorA];
+        var b = _anchors[anchorB];
+        if (a.Region != ActiveRegionId || b.Region != ActiveRegionId)
+            return PlacementResult.Fail(PlacementCode.InactiveAnchor,
+                "Travel to that region before building there", result.SilkCost);
+        return result;
     }
 
     public bool TryBuildWeb(string anchorA, string anchorB, WebType type, out WebState? web, out PlacementResult result)
@@ -145,6 +266,7 @@ public sealed class GameSimulation
         web = new WebState
         {
             Id = NextWebId(type),
+            Region = ActiveRegionId,
             Type = type,
             AnchorA = anchorA,
             AnchorB = anchorB,
@@ -156,23 +278,30 @@ public sealed class GameSimulation
             ConstructedAtTick = TickCount
         };
         _webs[web.Id] = web;
-        if (type == WebType.Capture) CaptureWebsBuilt++;
+        if (type == WebType.Capture)
+        {
+            CaptureWebsBuilt++;
+            if (web.Region == RegionIds.ReedwaterBank) ReedwaterCaptureWebsBuilt++;
+        }
         else
         {
             BridgeWebsBuilt++;
+            if (web.Region == RegionIds.ReedwaterBank) ReedwaterBridgeWebsBuilt++;
             Graph.AddBridge(web.Id, anchorA, anchorB);
         }
 
         Emit(new GameplayEvent(NextKey($"web_built_{web.Id}"), "WebBuilt", TickCount,
-            web.Id, type == WebType.Capture ? "capture" : "bridge", _windCompleted, Detail: web.Id));
+            web.Id, type == WebType.Capture ? "capture" : "bridge", _windCompleted,
+            Detail: web.Id, Region: web.Region));
 
         // A newly built shelter after the storm is a valid answer to M03.
         if (_windCompleted && type == WebType.Capture && sheltered)
         {
             Emit(new GameplayEvent(NextKey($"sheltered_{web.Id}"), "WebRestoredOrSheltered", TickCount,
-                web.Id, "capture", true, Detail: "sheltered"));
+                web.Id, "capture", true, Detail: "sheltered", Region: web.Region));
         }
 
+        CheckRegionRoutes();
         CheckMastery();
         return true;
     }
@@ -211,7 +340,7 @@ public sealed class GameSimulation
 
         if (silkRefund > 0) Ledger.TryGrantSilk(silkRefund, NextKey($"dismantle_{webId}"));
         Emit(new GameplayEvent(NextKey($"web_removed_{webId}"), "WebDismantled", TickCount,
-            webId, web.Type == WebType.Capture ? "capture" : "bridge", Detail: reason));
+            webId, web.Type == WebType.Capture ? "capture" : "bridge", Detail: reason, Region: web.Region));
         return true;
     }
 
@@ -220,6 +349,7 @@ public sealed class GameSimulation
         silkRefund = 0;
         reason = "Move closer to a web";
         var web = _webs.Values
+            .Where(w => w.Region == ActiveRegionId)
             .Select(w => (Web: w, Distance: Vec3.Distance(WebCenter(w), position)))
             .Where(x => x.Distance <= radius)
             .OrderBy(x => x.Distance)
@@ -251,11 +381,12 @@ public sealed class GameSimulation
         RepairsCompleted++;
         Emit(new GameplayEvent(NextKey($"web_repaired_{webId}"), "WebRepaired", TickCount,
             webId, web.Type == WebType.Capture ? "capture" : "bridge", _windCompleted,
-            Detail: byWorker ? "worker" : "player"));
+            Detail: byWorker ? "worker" : "player", Region: web.Region));
         if (_windCompleted)
         {
             Emit(new GameplayEvent(NextKey($"restored_{webId}"), "WebRestoredOrSheltered", TickCount,
-                webId, web.Type == WebType.Capture ? "capture" : "bridge", true, Detail: "repaired"));
+                webId, web.Type == WebType.Capture ? "capture" : "bridge", true,
+                Detail: "repaired", Region: web.Region));
         }
         return true;
     }
@@ -264,7 +395,7 @@ public sealed class GameSimulation
     {
         reason = "Move closer to a damaged web";
         var candidate = _webs.Values
-            .Where(w => w.Durability < w.MaxDurability)
+            .Where(w => w.Region == ActiveRegionId && w.Durability < w.MaxDurability)
             .Select(w => (Web: w, Distance: Vec3.Distance(WebCenter(w), position)))
             .Where(x => x.Distance <= radius)
             .OrderBy(x => x.Distance)
@@ -302,11 +433,11 @@ public sealed class GameSimulation
         insect.TrappedWebId = null;
 
         Emit(new GameplayEvent(NextKey($"food_collected_{insect.Id}_{insect.Generation}"), "FoodCollected",
-            TickCount, insect.Id, null, _windCompleted, food, collector));
+            TickCount, insect.Id, null, _windCompleted, food, collector, insect.Definition.Region));
         if (_windCompleted)
         {
             Emit(new GameplayEvent(NextKey($"food_after_wind_{insect.Id}_{insect.Generation}"), "FoodCollectedAfterWind",
-                TickCount, insect.Id, null, true, food, collector));
+                TickCount, insect.Id, null, true, food, collector, insect.Definition.Region));
         }
         foreach (var w in _workers.Where(w => w.TargetInsectId == insect.Id)) ReleaseWorkerTask(w, "Prey collected");
         CheckMastery();
@@ -316,7 +447,7 @@ public sealed class GameSimulation
     public bool TryCollectNearest(Vec3 position, double radius, out InsectState? insect, out int food, out string reason)
     {
         insect = _insects
-            .Where(i => i.CanBeCollected)
+            .Where(i => i.CanBeCollected && i.Definition.Region == ActiveRegionId)
             .Select(i => (Insect: i, Distance: Vec3.Distance(i.Position, position)))
             .Where(x => x.Distance <= radius)
             .OrderBy(x => x.Distance)
@@ -354,7 +485,8 @@ public sealed class GameSimulation
         PendingHatch = new PendingHatch
         {
             Remaining = Math.Max(0.1, Tuning.Nursery.HatchTimeSeconds),
-            Id = $"hatch_{++_workerSequence}"
+            Id = $"hatch_{++_workerSequence}",
+            RegionId = ActiveRegionId
         };
         Emit(new GameplayEvent(NextKey("hatch_started"), "HatchStarted", TickCount,
             PendingHatch.Id, Amount: (int)Math.Ceiling(PendingHatch.Remaining)));
@@ -367,13 +499,15 @@ public sealed class GameSimulation
         var index = _workers.Count + 1;
         var colours = new[] { "orange", "violet", "green", "amber" };
         var names = new[] { "Pip", "Bramble", "Juniper", "Clover" };
+        var hatchRegion = RegionCatalog.Get(PendingHatch.RegionId) ?? RegionCatalog.Garden;
         var worker = new WorkerState
         {
             Id = $"worker_{index}",
             Name = names[Math.Clamp(index - 1, 0, names.Length - 1)],
             Colour = colours[Math.Clamp(index - 1, 0, colours.Length - 1)],
-            Position = new Vec3(12.0, 0.1, 4.0),
-            CurrentNode = WorldLayout.NurseryNode,
+            Region = hatchRegion.Id,
+            Position = hatchRegion.NurseryPosition,
+            CurrentNode = hatchRegion.NurseryNode,
             Activity = WorkerActivity.Resting,
             PatrolCooldown = 2.0
         };
@@ -505,7 +639,9 @@ public sealed class GameSimulation
         var bestT = double.MaxValue;
         WebState? bestWeb = null;
         Vec3 bestHit = default;
-        foreach (var web in _webs.Values.Where(w => w.Type == WebType.Capture && w.CapturesEnabled))
+        foreach (var web in _webs.Values.Where(w =>
+                     w.Type == WebType.Capture && w.CapturesEnabled &&
+                     w.Region == insect.Definition.Region))
         {
             var a = GetAnchor(web.AnchorA);
             var b = GetAnchor(web.AnchorB);
@@ -607,12 +743,14 @@ public sealed class GameSimulation
 
     private void AssignWorkerTask(WorkerState worker)
     {
-        // Priority 1: trapped prey that nobody else is collecting.
-        foreach (var insect in _insects.Where(i => i.Phase == InsectPhase.Trapped))
+        // Priority 1: trapped prey in this worker's own region that nobody else
+        // is collecting. A worker never crosses into another region's graph.
+        foreach (var insect in _insects.Where(i =>
+                     i.Phase == InsectPhase.Trapped && i.Definition.Region == worker.Region))
         {
             if (_workers.Any(w => w != worker && w.TargetInsectId == insect.Id)) continue;
             var web = insect.TrappedWebId is null ? null : GetWeb(insect.TrappedWebId);
-            if (web is null) continue;
+            if (web is null || web.Region != worker.Region) continue;
             var route = BestRouteToWeb(worker.CurrentNode, web);
             if (route is null) continue;
             BeginRoute(worker, route, WorkerActivity.Collecting, insect.Id, web.Id);
@@ -622,7 +760,8 @@ public sealed class GameSimulation
         // Priority 2: accessible damage, if we have repair silk.
         if (Ledger.Silk >= Tuning.Webs.RepairSilkCost)
         {
-            foreach (var web in _webs.Values.Where(w => w.Durability < w.MaxDurability))
+            foreach (var web in _webs.Values.Where(w =>
+                         w.Durability < w.MaxDurability && w.Region == worker.Region))
             {
                 if (_workers.Any(w => w != worker && w.TargetWebId == web.Id && w.Activity == WorkerActivity.Repairing)) continue;
                 var route = BestRouteToWeb(worker.CurrentNode, web);
@@ -633,7 +772,8 @@ public sealed class GameSimulation
         }
 
         // Priority 3: a short patrol, deliberately crossing a bridge when one exists.
-        var destinations = Graph.Nodes.Keys.Where(id => id != worker.CurrentNode).ToList();
+        var destinations = Graph.NodeIdsInRegion(worker.Region)
+            .Where(id => id != worker.CurrentNode).ToList();
         var candidates = destinations
             .Select(id => (Id: id, Route: Graph.FindRoute(worker.CurrentNode, id)))
             .Where(x => x.Route is not null)
@@ -716,11 +856,13 @@ public sealed class GameSimulation
         var edge = worker.PathEdges[edgeIndex];
         if (!edge.UsesBridge) return;
         Emit(new GameplayEvent(NextKey($"worker_bridge_{worker.Id}"), "WorkerUsedBridge", TickCount,
-            worker.Id, "bridge", _windCompleted, Detail: edge.WebId));
+            worker.Id, "bridge", _windCompleted, Detail: edge.WebId, Region: worker.Region));
     }
 
     private void FinishWorkerRoute(WorkerState worker)
     {
+        var targetWeb = worker.TargetWebId is null ? null : GetWeb(worker.TargetWebId);
+        var usedBridge = worker.PathEdges.Any(edge => edge.UsesBridge);
         switch (worker.Activity)
         {
             case WorkerActivity.Collecting:
@@ -728,6 +870,15 @@ public sealed class GameSimulation
                     TryCollectInsect(worker.TargetInsectId, worker.Id, out _, out _))
                 {
                     worker.CollectCount++;
+                    if (worker.Region == RegionIds.ReedwaterBank && usedBridge &&
+                        targetWeb is not null && targetWeb.Region == RegionIds.ReedwaterBank &&
+                        IsFarBankWeb(targetWeb))
+                    {
+                        Emit(new GameplayEvent(
+                            NextKey($"far_bank_delivery_{worker.Id}_{worker.TargetInsectId}"),
+                            "FarBankDelivery", TickCount, worker.Id, "food", _windCompleted,
+                            Detail: ReedwaterLayout.FarBankZone, Region: worker.Region));
+                    }
                 }
                 break;
             case WorkerActivity.Repairing:
@@ -740,6 +891,13 @@ public sealed class GameSimulation
         }
         ReleaseWorkerTask(worker, "Task complete", keepPosition: true);
         worker.PatrolCooldown = 2.5 + _rng.NextDouble() * 2;
+    }
+
+    private bool IsFarBankWeb(WebState web)
+    {
+        var a = GetAnchor(web.AnchorA);
+        var b = GetAnchor(web.AnchorB);
+        return a?.Zone == ReedwaterLayout.FarBankZone || b?.Zone == ReedwaterLayout.FarBankZone;
     }
 
     public void ReleaseWorkerTask(WorkerState worker, string reason, bool keepPosition = false)
@@ -834,6 +992,24 @@ public sealed class GameSimulation
         TickWeather(0.01);
     }
 
+    /// <summary>
+    /// Emit one route-opened event per region/destination. Objective progress
+    /// follows actual worker-graph connectivity, not merely a bridge count.
+    /// </summary>
+    private void CheckRegionRoutes()
+    {
+        foreach (var region in RegionCatalog.All)
+        {
+            if (string.IsNullOrWhiteSpace(region.FirstDestinationNode)) continue;
+            var key = $"{region.Id}:{region.FirstDestinationNode}";
+            if (_openedRegionRoutes.Contains(key)) continue;
+            if (Graph.FindRoute(region.NurseryNode, region.FirstDestinationNode) is null) continue;
+            _openedRegionRoutes.Add(key);
+            Emit(new GameplayEvent(NextKey($"route_opened_{key}"), "RegionRouteOpened", TickCount,
+                region.FirstDestinationNode, Detail: region.FirstDestinationNode, Region: region.Id));
+        }
+    }
+
     private void CheckMastery()
     {
         if (_masteryAwarded) return;
@@ -854,18 +1030,53 @@ public sealed class GameSimulation
         if (_events.Count > 300) _events.RemoveRange(0, 100);
 
         var result = Missions.Record(evt);
-        if (!result.MissionCompleted || result.CompletedMissionId is null) return;
-
-        Emit(new GameplayEvent(NextKey($"mission_done_{result.CompletedMissionId}"), "MissionCompleted",
-            TickCount, result.CompletedMissionId, Detail: result.CompletedMissionId));
-
-        if (result.CompletedMissionId == "M02" && !_windStarted) StartWindWarning();
-
-        if (result.AllComplete && !_victory)
+        if (result.MissionCompleted && result.CompletedMissionId is not null)
         {
-            _victory = true;
-            Missions.MarkVictoryAwarded();
-            Emit(new GameplayEvent(NextKey("victory"), "Victory", TickCount, Detail: "Garden complete"));
+            Emit(new GameplayEvent(NextKey($"mission_done_{result.CompletedMissionId}"), "MissionCompleted",
+                TickCount, result.CompletedMissionId, Detail: result.CompletedMissionId,
+                Region: RegionIds.GardenClearing));
+
+            if (result.CompletedMissionId == "M02" && !_windStarted) StartWindWarning();
+
+            if (result.AllComplete && !_victory)
+            {
+                _victory = true;
+                Missions.MarkVictoryAwarded();
+                Emit(new GameplayEvent(NextKey("victory"), "Victory", TickCount,
+                    Detail: "Garden complete", Region: RegionIds.GardenClearing));
+                if (!_regionUnlockedAnnounced)
+                {
+                    _regionUnlockedAnnounced = true;
+                    Emit(new GameplayEvent(NextKey("region_unlocked_reedwater"), "RegionUnlocked",
+                        TickCount, RegionIds.ReedwaterBank, Detail: "Reedwater Bank",
+                        Region: RegionIds.ReedwaterBank));
+                }
+            }
+        }
+
+        var regional = RegionalObjectives.Record(evt);
+        if (regional.ObjectiveCompleted && regional.CompletedObjectiveId is not null)
+        {
+            Emit(new GameplayEvent(
+                NextKey($"regional_done_{regional.CompletedObjectiveId}"),
+                "RegionalObjectiveCompleted", TickCount, regional.CompletedObjectiveId,
+                Detail: regional.CompletedObjectiveId, Region: ReedwaterLayout.RegionId));
+
+            if (regional.CompletedObjectiveId == "R01" &&
+                RegionalObjectives.TryAwardMastery(ReedwaterBridgeWebsBuilt))
+            {
+                Emit(new GameplayEvent(NextKey("regional_mastery"), "RegionalMasteryEarned",
+                    TickCount, RegionalObjectives.Config.Mastery?.Id ?? "RM01",
+                    Detail: RegionalObjectives.Config.Mastery?.Title ?? "Clever Crossing",
+                    Region: ReedwaterLayout.RegionId));
+            }
+
+            if (regional.AllComplete)
+            {
+                Emit(new GameplayEvent(NextKey("regional_complete"), "RegionalObjectivesCompleted",
+                    TickCount, Detail: "Reedwater Bank complete",
+                    Region: ReedwaterLayout.RegionId));
+            }
         }
     }
 
@@ -884,7 +1095,10 @@ public sealed class GameSimulation
         Ledger.TrimHistory(HistoryRetentionLimit);
         TrimIssuedEvents(HistoryRetentionLimit);
         Missions.TrimSeenEvents(HistoryRetentionLimit);
+        RegionalObjectives.TrimSeenEvents(HistoryRetentionLimit);
+        SetRegionPlayerPosition(ActiveRegionId, playerPosition, playerRotationY);
 
+        var activePlayer = _regionPlayerPositions[ActiveRegionId];
         return new SaveGameData
         {
             SchemaVersion = SaveGameData.CurrentSchemaVersion,
@@ -894,15 +1108,27 @@ public sealed class GameSimulation
             Seed = Tuning.Seed,
             Tick = TickCount,
             ElapsedSeconds = ElapsedSeconds,
+            ActiveRegionId = ActiveRegionId,
             Player = new PlayerSave
             {
-                X = playerPosition.X, Y = playerPosition.Y, Z = playerPosition.Z, RotationY = playerRotationY
+                X = activePlayer.Position.X, Y = activePlayer.Position.Y,
+                Z = activePlayer.Position.Z, RotationY = activePlayer.RotationY
             },
+            RegionPlayers = _regionPlayerPositions.Select(entry => new RegionPlayerSave
+            {
+                Region = entry.Key,
+                X = entry.Value.Position.X,
+                Y = entry.Value.Position.Y,
+                Z = entry.Value.Position.Z,
+                RotationY = entry.Value.RotationY
+            }).ToList(),
+            VisitedRegions = _visitedRegions.ToList(),
             Food = Ledger.Food,
             Silk = Ledger.Silk,
             Webs = _webs.Values.Select(w => new WebSave
             {
                 Id = w.Id,
+                Region = w.Region,
                 Type = w.Type == WebType.Capture ? "capture" : "bridge",
                 AnchorA = w.AnchorA,
                 AnchorB = w.AnchorB,
@@ -915,7 +1141,7 @@ public sealed class GameSimulation
             }).ToList(),
             Workers = _workers.Select(w => new WorkerSave
             {
-                Id = w.Id, Name = w.Name, Colour = w.Colour,
+                Id = w.Id, Name = w.Name, Colour = w.Colour, Region = w.Region,
                 X = w.Position.X, Y = w.Position.Y, Z = w.Position.Z,
                 CurrentNode = w.CurrentNode,
                 Activity = w.Activity.ToString(),
@@ -932,7 +1158,8 @@ public sealed class GameSimulation
             }).ToList(),
             Insects = _insects.Select(i => new InsectSave
             {
-                Id = i.Id, Generation = i.Generation, Phase = i.Phase.ToString(),
+                Id = i.Id, Region = i.Definition.Region,
+                Generation = i.Generation, Phase = i.Phase.ToString(),
                 X = i.Position.X, Y = i.Position.Y, Z = i.Position.Z,
                 WaypointIndex = i.WaypointIndex,
                 TrappedWebId = i.TrappedWebId,
@@ -947,6 +1174,15 @@ public sealed class GameSimulation
                 Completed = Missions.CompletedMissions.ToList(),
                 SeenEvents = Missions.OrderedSeenEventKeys.ToList(),
                 VictoryAwarded = Missions.VictoryAwarded
+            },
+            RegionalObjectives = new RegionalObjectiveSave
+            {
+                ActiveObjectiveIndex = RegionalObjectives.ActiveObjectiveIndex,
+                StepIndex = RegionalObjectives.StepIndex,
+                Progress = RegionalObjectives.StepProgressList.ToList(),
+                Completed = RegionalObjectives.CompletedObjectives.ToList(),
+                SeenEvents = RegionalObjectives.OrderedSeenEventKeys.ToList(),
+                MasteryAwarded = RegionalObjectives.MasteryAwarded
             },
             Weather = new WeatherSave
             {
@@ -963,6 +1199,8 @@ public sealed class GameSimulation
                 TransactionSequence = _transactionSequence,
                 CaptureWebsBuilt = CaptureWebsBuilt,
                 BridgeWebsBuilt = BridgeWebsBuilt,
+                ReedwaterCaptureWebsBuilt = ReedwaterCaptureWebsBuilt,
+                ReedwaterBridgeWebsBuilt = ReedwaterBridgeWebsBuilt,
                 InsectsCollected = InsectsCollected,
                 RepairsCompleted = RepairsCompleted,
                 EmergencyUses = EmergencyRecoveryUses,
@@ -971,8 +1209,10 @@ public sealed class GameSimulation
                 SilkAccumulator = _silkAccumulator,
                 PendingHatchRemaining = PendingHatch?.Remaining ?? 0,
                 PendingHatchId = PendingHatch?.Id,
+                PendingHatchRegionId = PendingHatch?.RegionId,
                 LedgerKeys = Ledger.OrderedProcessedKeys.ToList(),
-                IssuedEventKeys = OrderedIssuedEventKeys.ToList()
+                IssuedEventKeys = OrderedIssuedEventKeys.ToList(),
+                OpenedRegionRoutes = _openedRegionRoutes.ToList()
             },
             Settings = settings
         };
@@ -980,6 +1220,8 @@ public sealed class GameSimulation
 
     public static GameSimulation FromSave(SaveGameData data, Tuning tuning, MissionsConfig missions)
     {
+        if (!SaveMigrator.Migrate(data, out var migrationError))
+            throw new InvalidDataException(migrationError);
         if (!SaveValidator.Validate(data, out var error))
             throw new InvalidDataException(error);
 
@@ -991,6 +1233,16 @@ public sealed class GameSimulation
         sim.Ledger.RestoreProcessed(data.Counters.LedgerKeys);
         sim.TickCount = data.Tick;
         sim.ElapsedSeconds = data.ElapsedSeconds;
+        sim.ActiveRegionId = data.ActiveRegionId;
+        sim._visitedRegions.Clear();
+        foreach (var id in data.VisitedRegions) sim._visitedRegions.Add(id);
+        sim._regionPlayerPositions.Clear();
+        foreach (var entry in data.RegionPlayers)
+            sim._regionPlayerPositions[entry.Region] =
+                new PlayerRegionPosition(new Vec3(entry.X, entry.Y, entry.Z), entry.RotationY);
+        foreach (var region in RegionCatalog.All)
+            if (!sim._regionPlayerPositions.ContainsKey(region.Id))
+                sim._regionPlayerPositions[region.Id] = new PlayerRegionPosition(region.PlayerSpawn, 0);
 
         sim._webs.Clear();
         foreach (var web in data.Webs)
@@ -998,7 +1250,7 @@ public sealed class GameSimulation
             var type = web.Type == "bridge" ? WebType.Bridge : WebType.Capture;
             var state = new WebState
             {
-                Id = web.Id, Type = type, AnchorA = web.AnchorA, AnchorB = web.AnchorB,
+                Id = web.Id, Region = web.Region, Type = type, AnchorA = web.AnchorA, AnchorB = web.AnchorB,
                 Durability = web.Durability, MaxDurability = web.MaxDurability,
                 Exposure = web.Exposure, Sheltered = web.Sheltered, IsTutorial = web.IsTutorial,
                 ConstructedAtTick = web.ConstructedAtTick
@@ -1012,7 +1264,7 @@ public sealed class GameSimulation
         {
             var worker = new WorkerState
             {
-                Id = saved.Id, Name = saved.Name, Colour = saved.Colour,
+                Id = saved.Id, Name = saved.Name, Colour = saved.Colour, Region = saved.Region,
                 Position = new Vec3(saved.X, saved.Y, saved.Z),
                 CurrentNode = saved.CurrentNode,
                 Activity = Enum.TryParse<WorkerActivity>(saved.Activity, true, out var activity) ? activity : WorkerActivity.Resting,
@@ -1041,7 +1293,7 @@ public sealed class GameSimulation
         }
 
         sim._insects.Clear();
-        foreach (var route in WorldLayout.CreateInsectRoutes())
+        foreach (var route in RegionCatalog.All.SelectMany(region => region.InsectRoutes))
         {
             var saved = data.Insects.FirstOrDefault(i => i.Id == route.Id);
             var insect = new InsectState
@@ -1067,6 +1319,14 @@ public sealed class GameSimulation
             data.Missions.SeenEvents,
             data.Missions.VictoryAwarded);
 
+        sim.RegionalObjectives.Restore(
+            data.RegionalObjectives.ActiveObjectiveIndex,
+            data.RegionalObjectives.StepIndex,
+            data.RegionalObjectives.Progress,
+            data.RegionalObjectives.Completed,
+            data.RegionalObjectives.SeenEvents,
+            data.RegionalObjectives.MasteryAwarded);
+
         sim.WeatherPhase = Enum.TryParse<WeatherPhase>(data.Weather.Phase, true, out var weather) ? weather : WeatherPhase.Calm;
         sim._weatherRemaining = data.Weather.Remaining;
         sim._windStarted = data.Weather.WindStarted;
@@ -1077,6 +1337,8 @@ public sealed class GameSimulation
         sim._transactionSequence = data.Counters.TransactionSequence;
         sim.CaptureWebsBuilt = data.Counters.CaptureWebsBuilt;
         sim.BridgeWebsBuilt = data.Counters.BridgeWebsBuilt;
+        sim.ReedwaterCaptureWebsBuilt = data.Counters.ReedwaterCaptureWebsBuilt;
+        sim.ReedwaterBridgeWebsBuilt = data.Counters.ReedwaterBridgeWebsBuilt;
         sim.InsectsCollected = data.Counters.InsectsCollected;
         sim.RepairsCompleted = data.Counters.RepairsCompleted;
         sim.EmergencyRecoveryUses = data.Counters.EmergencyUses;
@@ -1088,7 +1350,10 @@ public sealed class GameSimulation
             sim.PendingHatch = new PendingHatch
             {
                 Id = data.Counters.PendingHatchId,
-                Remaining = data.Counters.PendingHatchRemaining
+                Remaining = data.Counters.PendingHatchRemaining,
+                RegionId = RegionIds.IsKnown(data.Counters.PendingHatchRegionId)
+                    ? data.Counters.PendingHatchRegionId!
+                    : RegionIds.GardenClearing
             };
         }
         foreach (var key in data.Counters.IssuedEventKeys)
@@ -1096,12 +1361,22 @@ public sealed class GameSimulation
             if (string.IsNullOrWhiteSpace(key)) continue;
             if (sim._issuedEventKeys.Add(key)) sim._issuedEventOrder.Enqueue(key);
         }
+        foreach (var key in data.Counters.OpenedRegionRoutes)
+        {
+            if (!string.IsNullOrWhiteSpace(key)) sim._openedRegionRoutes.Add(key);
+        }
+        // A save made during an older transition may contain completed bridges
+        // without the derived route event. Re-derive it once; the event key makes
+        // this idempotent for current saves.
+        sim.CheckRegionRoutes();
         sim.TrimIssuedEvents(HistoryRetentionLimit);
         return sim;
     }
 
     public string GetHint()
-    {        if (_victory) return "Garden complete! Keep exploring, weaving and catching.";
+    {
+        if (ActiveRegionId == RegionIds.ReedwaterBank) return GetRegionObjectiveHint();
+        if (_victory) return "Garden complete! A new path has opened by the east hedge — follow the tall reeds to Reedwater Bank.";
         if (WeatherPhase == WeatherPhase.Warning)
             return $"Wind is coming in {(int)Math.Ceiling(_weatherRemaining)}s. Repair or shelter your web.";
         if (WeatherPhase == WeatherPhase.Aftermath && _webs.Values.Any(w => w.Type == WebType.Capture && w.Durability < w.MaxDurability))
@@ -1127,6 +1402,47 @@ public sealed class GameSimulation
             return "Collect the trapped insect to finish the story.";
         }
         return "Explore the garden. Your webs make a difference.";
+    }
+
+    private string GetRegionObjectiveHint()
+    {
+        var objective = RegionalObjectives.ActiveObjective;
+        if (objective is null)
+            return RegionalObjectives.MasteryAwarded
+                ? "Reedwater Bank is thriving! Keep weaving, or take the trail back to the garden."
+                : "Reedwater Bank is complete. Try the Clever Crossing: reach the lily island with only two bridges.";
+
+        return objective.Id switch
+        {
+            "R01" => RegionalObjectives.StepIndex switch
+            {
+                0 when ReedwaterBridgeWebsBuilt == 0 =>
+                    "Press 2, then click the reed post and the mossy island post to build your first bridge.",
+                0 => "Click the mossy island post, then the root island post, to reach the lily island.",
+                _ => "The lily island is connected! Catch insects near the reeds."
+            },
+            "R02" => RegionalObjectives.StepProgress switch
+            {
+                0 => "Build a capture web across the reed stems, then collect the caught insect with E.",
+                _ => $"The colony needs food. Collect {3 - RegionalObjectives.StepProgress} more insect" +
+                     (3 - RegionalObjectives.StepProgress == 1 ? "." : "s.")
+            },
+            "R03" => !BuildFarBankRoute()
+                ? "Build one more bridge from the root island post to the far bank post."
+                : !_webs.Values.Any(w => w.Region == RegionIds.ReedwaterBank &&
+                                         w.Type == WebType.Capture &&
+                                         w.Connects(ReedwaterLayout.FarA, ReedwaterLayout.FarB))
+                    ? "At the far bank, press 1 and click the two far reed roots to make a capture web."
+                    : "A helper will cross the bridges and collect prey on the far bank. Watch the far reeds!",
+            _ => objective.Hint
+        };
+    }
+
+    private bool BuildFarBankRoute()
+    {
+        var farAnchor = ReedwaterLayout.FarA;
+        var route = Graph.FindRoute(ReedwaterLayout.NurseryNode, farAnchor);
+        return route is not null && route.UsesBridge;
     }
 
     public double WebCenterDistance(WebState web, Vec3 position)

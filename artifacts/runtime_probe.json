@@ -1,5 +1,5 @@
 {
-  "generatedUtc": "2026-11-13T02:51:27.4031532Z",
+  "generatedUtc": "2026-11-13T02:57:05.9590552Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
   "passes": 308,
@@ -583,12 +583,12 @@
     {
       "name": "nursery-progress-visible",
       "pass": true,
-      "detail": "A helper is hatching\u2026 33% \u00B7 2.0s left"
+      "detail": "A helper is hatching\u2026 40% \u00B7 1.8s left"
     },
     {
       "name": "nursery-progress-advances",
       "pass": true,
-      "detail": "value=1.00"
+      "detail": "value=1.20"
     },
     {
       "name": "nursery-pending-count",
@@ -598,7 +598,7 @@
     {
       "name": "nursery-neutral-hatching-text",
       "pass": true,
-      "detail": "A helper is hatching\u2026 33% \u00B7 2.0s left"
+      "detail": "A helper is hatching\u2026 40% \u00B7 1.8s left"
     },
     {
       "name": "nursery-refreshes-after-hatch",
@@ -873,7 +873,7 @@
     {
       "name": "anchor-screen-nearest-target",
       "pass": true,
-      "detail": "pick=rw_island_b_post islandB=(623.78973, 107.53025) lilyB=(645.8906, 83.64538)"
+      "detail": "pick=rw_island_b_post islandB=(623.7899, 107.530426) lilyB=(645.89075, 83.64546)"
     },
     {
       "name": "anchor-screen-empty-space-does-not-select",
@@ -883,7 +883,7 @@
     {
       "name": "player-walks-bank-onto-bridge-one",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=3.2"
+      "detail": "reached=True end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=3.3"
     },
     {
       "name": "player-walks-bridge-one-to-island-a",
@@ -913,17 +913,17 @@
     {
       "name": "player-walks-bridge-two-back-to-island-a",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.7782535552978516, Y = 0.46556806564331055, Z = 6.001576900482178, LengthSquared = 39.39786462307757, Length = 6.276771831369814, HorizontalLength = 6.259481687754244, IsFinite = True } seconds=2.8"
+      "detail": "end=Vec3 { X = 1.778056263923645, Y = 0.4659315049648285, Z = 6.001397132873535, LengthSquared = 39.39534379145959, Length = 6.276571021780889, HorizontalLength = 6.259253280075891, IsFinite = True } seconds=2.8"
     },
     {
       "name": "player-walks-bridge-one-back-to-bank",
       "pass": true,
-      "detail": "end=Vec3 { X = 8.702728271484375, Y = 0.0008244325290434062, Z = 8.306151390075684, LengthSquared = 144.7296309618386, Length = 12.03036287739645, HorizontalLength = 12.030362849147552, IsFinite = True } seconds=1.8"
+      "detail": "end=Vec3 { X = 8.702372550964355, Y = 0.0008243132033385336, Z = 8.305961608886719, LengthSquared = 144.72028694357016, Length = 12.029974519655898, HorizontalLength = 12.029974491414265, IsFinite = True } seconds=1.8"
     },
     {
       "name": "player-stops-and-resumes-at-deck-joint",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.9996455907821655, Y = 0.42760711908340454, Z = 5.959555149078369, LengthSquared = 39.697727911931864, Length = 6.300613296492006, HorizontalLength = 6.286086227824199, IsFinite = True }"
+      "detail": "end=Vec3 { X = 2.0000858306884766, Y = 0.4274909496307373, Z = 5.959786891937256, LengthSquared = 39.70215163944414, Length = 6.300964342022905, HorizontalLength = 6.286445985406059, IsFinite = True }"
     },
     {
       "name": "player-turns-around-on-bridge",
@@ -958,12 +958,12 @@
     {
       "name": "player-walks-island-b-onto-bridge-three",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -8.951723098754883, Y = 0.0008276525768451393, Z = -2.06527042388916, LengthSquared = 84.39868904558182, Length = 9.18687591325701, HorizontalLength = 9.186875875975087, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -9.014447212219238, Y = 0.0008279060130007565, Z = -2.10927414894104, LengthSquared = 85.7092966627065, Length = 9.257931554224545, HorizontalLength = 9.257931517206107, IsFinite = True }"
     },
     {
       "name": "player-walks-bridge-three-back-to-island-b",
       "pass": true,
-      "detail": "end=Vec3 { X = -3.0010242462158203, Y = 0.4983673095703125, Z = 2.265617847442627, LengthSquared = 14.387540732274147, Length = 3.793091184281515, HorizontalLength = 3.7602088714625674, IsFinite = True } seconds=3.8"
+      "detail": "end=Vec3 { X = -3.0198049545288086, Y = 0.51103675365448, Z = 2.1836740970611572, LengthSquared = 14.14881308915831, Length = 3.761490806735849, HorizontalLength = 3.726614351602886, IsFinite = True } seconds=3.8"
     },
     {
       "name": "reedwater-bridge-modular-planks",
@@ -1098,7 +1098,7 @@
     {
       "name": "reload-reedwater-bridge-walk",
       "pass": true,
-      "detail": "end=Vec3 { X = 1.9996455907821655, Y = 0.42760711908340454, Z = 5.959555149078369, LengthSquared = 39.697727911931864, Length = 6.300613296492006, HorizontalLength = 6.286086227824199, IsFinite = True } seconds=4.3"
+      "detail": "end=Vec3 { X = 1.9996697902679443, Y = 0.4276006519794464, Z = 5.959568500518799, LengthSquared = 39.697978300059376, Length = 6.300633166599955, HorizontalLength = 6.286106583767581, IsFinite = True } seconds=4.2"
     },
     {
       "name": "reload-reedwater-bridge-modular-planks",
@@ -1158,7 +1158,7 @@
     {
       "name": "reenter-supply-not-regranted",
       "pass": true,
-      "detail": "claimed=reedwater_bank food=3 silk=11"
+      "detail": "claimed=reedwater_bank food=5 silk=13"
     },
     {
       "name": "critical-bridge-present",
@@ -1248,32 +1248,32 @@
     {
       "name": "toast-visible-125",
       "pass": true,
-      "detail": "Pip collected a fly \u00B7 \u002B2 food"
+      "detail": "A fly is caught! Walk close and press E."
     },
     {
       "name": "toast-inside-viewport-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58)"
+      "detail": "(678, 218.88), (330, 87)"
     },
     {
       "name": "toast-avoids-mission-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (564, 18), (440, 145)"
+      "detail": "(678, 218.88), (330, 87) vs (564, 18), (440, 145)"
     },
     {
       "name": "toast-avoids-actions-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (22, 82), (196, 177)"
+      "detail": "(678, 218.88), (330, 87) vs (22, 82), (196, 177)"
     },
     {
       "name": "toast-avoids-toolbar-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (0, 440), (1024, 62)"
+      "detail": "(678, 218.88), (330, 87) vs (0, 440), (1024, 62)"
     },
     {
       "name": "toast-avoids-status-125",
       "pass": true,
-      "detail": "(678, 218.88), (330, 58) vs (0, 406), (1024, 27)"
+      "detail": "(678, 218.88), (330, 87) vs (0, 406), (1024, 27)"
     },
     {
       "name": "toast-avoids-camera-centre-125",
@@ -1518,12 +1518,12 @@
     {
       "name": "new-garden-cancel",
       "pass": true,
-      "detail": "save=48 archive=48"
+      "detail": "save=47 archive=48"
     },
     {
       "name": "new-garden-confirm-archives-previous",
       "pass": true,
-      "detail": "archive=48 expected=48"
+      "detail": "archive=47 expected=47"
     },
     {
       "name": "new-garden-autosave",
@@ -1533,7 +1533,7 @@
     {
       "name": "new-garden-autosave-keeps-archive",
       "pass": true,
-      "detail": "archive=48 expected=48"
+      "detail": "archive=47 expected=47"
     },
     {
       "name": "restore-previous-available",
@@ -1543,7 +1543,7 @@
     {
       "name": "restore-previous-garden",
       "pass": true,
-      "detail": "restoredTick=51 archived=48"
+      "detail": "restoredTick=50 archived=47"
     }
   ]
 }

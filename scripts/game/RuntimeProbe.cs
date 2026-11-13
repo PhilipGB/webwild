@@ -1177,7 +1177,10 @@ public partial class RuntimeProbe : Node
             workerCrossed |= HasRegionEvent("WorkerUsedBridge", RegionIds.ReedwaterBank);
             var toast = game.ProbeToastText;
             workerAttributed |= toast.Contains("collected a") && !toast.StartsWith("You collected");
-            farBankFeedback |= toast.Contains("from the far bank");
+            // Delivery either appends to a still-visible collection toast or
+            // uses the explicit fallback when that toast has expired.
+            farBankFeedback |= toast.Contains("from the far bank") ||
+                               toast.Contains("brought far-bank prey home");
             dragonflyNamed |= toast.Contains("dragonfly");
             // The halo is visible while collecting/repairing and for three
             // seconds after a collection. Sampling must accept that post-work

@@ -144,7 +144,7 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Existing tests retained and new geometry assertions added | PASS | 106/106 unit tests; 55/55 scene checks; 246/246 runtime checks |
 | Exported Linux rendering inspected | PASS | Exported headless scene 55/55 and runtime 246/246; exported rendered runtime 246/246 |
 | Windows runtime status explicit | PASS for export / **NOT VERIFIED** for runtime | PE32+ export rebuilt; no Windows host |
-| v0.2.1 release status | Not released by instruction | Merged fix only; v0.2.0 remains the published release |
+| v0.2.1 release status | Included in v0.2.2 | No separate v0.2.1 release; the shoreline correction ships in the published v0.2.2 archives |
 
 ## v0.2.2 PR 1 — bridge traversal and save safety
 
@@ -230,4 +230,4 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Linux export | **PASS** — exported, launched, scene 55/55 and probe 307/307 headless, 308/308 rendered |
 | Windows release | **PARTIAL** — PE32+ export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no supervised child playtest |
-| Milestone status | v0.2.2 reliability hardening merged to `main`; v0.2.1 and v0.2.2 are deliberately **not released**. Windows runtime and child playtesting remain documented limitations |
+| Milestone status | **RELEASED as v0.2.2** with Linux and Windows archives. Windows runtime and child playtesting remain documented limitations |

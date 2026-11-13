@@ -116,7 +116,7 @@ section once its gates are complete.
 
 # Changelog
 
-## Webwild v0.2.2 — gameplay reliability and usability hardening (unreleased)
+## Webwild v0.2.2 — gameplay reliability and usability hardening (released 2026-11-13)
 
 Follow-up to the six-mission real-input playtest. No new region or mechanics.
 
@@ -209,6 +209,12 @@ Follow-up to the six-mission real-input playtest. No new region or mechanics.
   the badge. A separate check confirms the bridge approach does not award it.
 - Added focused tests for airborne, bridge-deck, water-level, outside-footprint
   and real island-surface positions.
+- The runtime probe now also accepts the same three-second post-collection
+  worker halo the player sees, removing a sampling flake found during the
+  release-archive rerun. The far-bank walk starts on a clear bridge-three ramp
+  point instead of teleporting into the shared bridge two/three landing, and
+  feedback checks use a short recorded toast history so a message cannot fall
+  between samples. Delivery feedback accepts both explicit messages.
 - Verification: 125/125 .NET tests, 55/55 scene checks, 307/307 headless and
   308/308 rendered runtime checks; exported Linux repeats 55/55, 307/307 and
   308/308.

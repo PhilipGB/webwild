@@ -7,9 +7,8 @@ Webwild is an original, offline 3D game built with **Godot 4.7.2 .NET**, **C#** 
 catch flying insects, build silk bridges, hatch helper spiders, weather a gust of
 wind and complete three short story goals.
 
-This repository is the first-playable vertical slice and the released v0.2.0
-build, plus the merged v0.2.1 Reedwater shoreline correction (not separately
-released): two regions, scene-authored worlds, modular silk-and-bark bridges and
+This repository is the released **v0.2.2** build: two regions, scene-authored
+worlds, modular silk-and-bark bridges, arrival-based mastery and
 release-hardened saves. The deterministic game rules live
 in `src/Core` with no `Godot.*` dependency. Both regions are authored in reusable
 Godot `.tscn` scenes; C# adapts those rules to 3D presentation, physics, input and

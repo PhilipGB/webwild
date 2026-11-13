@@ -1,6 +1,6 @@
 # Exports
 
-## Linux x64 — current v0.2.2 hardening build (not released)
+## Linux x64 — v0.2.2 release build
 
 - Path: `exports/linux/Webwild.x86_64`
 - Payload: `exports/linux/Webwild.pck` and
@@ -22,10 +22,10 @@ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
 
 ```text
 d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
-c5d55f27aa932c286d4489fb5afc6be5a9e03339a1bfd37435316c82f4b41045  Webwild.pck
+9e0d97e96fe47f15e46573ef3b342fcc40faf59ee2c7c812247db9cc7a333ea7  Webwild.pck
 ```
 
-## Windows x64 — current v0.2.2 hardening build (not released)
+## Windows x64 — v0.2.2 release build
 
 - Path: `exports/windows/Webwild.exe`
 - Payload: `exports/windows/Webwild.pck` and
@@ -45,8 +45,21 @@ godot --headless --path . --export-release "Windows" exports/windows/Webwild.exe
 
 ```text
 4760d3b83d01498d13ea6ff66b7867e4bf81fc5016f404c7472a5bc4cdc15647  Webwild.exe
-187e53dfb9297e204c7f80cc0fc232ba1cf1ed4be6d81927fe721af08a9621b2  Webwild.pck
+85cbb41dda91204f7f9c92afe6e0c49a45101743e4fd44278eda25a1ded35b75  Webwild.pck
 ```
+
+## Published v0.2.2 release archives
+
+The v0.2.2 GitHub release carries both archives and a `SHA256SUMS` file.
+
+```text
+21b3b6ac573578e71bf0e8cd5ab3aa20e09a26682a97143343f67ec97990cd6a  Webwild-v0.2.2-linux-x64.zip
+32faec4ec7da3db8cd1e9cb5b964f86f325430dfb8b0213eb1a95873ca8de299  Webwild-v0.2.2-windows-x64.zip
+```
+
+The Linux archive was extracted, checksum-matched and rerun: scene 55/55,
+headless 307/307 and three consecutive rendered runs of 308/308. The Windows
+archive was built and verified as PE32+ but not launched.
 
 ## Linux x64 — v0.2.1 shoreline build (not released)
 

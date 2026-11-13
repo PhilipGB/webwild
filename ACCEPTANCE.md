@@ -211,13 +211,23 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Existing tests remain green | PASS | 124/124 tests; 55/55 scene; 305/305 headless; 306/306 rendered |
 | Fresh real-input six-mission acceptance | PASS | New Garden→M03→Reedwater→R03→return→save/quit/continue with no probes or teleports; 0 failures in 447 s. Key timings: M02 helper crossing 18.2 s, longest R02 gap 29.6 s, R03 delivery 13.2 s. |
 
+## v0.2.2 follow-up — Clever Crossing arrival contact
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| The badge cannot be earned from the bridge approach | PASS | `CleverCrossing_RequiresGroundedIslandSurface`; runtime `clever-crossing-not-awarded-on-bridge` after a real-input walk across both bridges |
+| The badge cannot be earned while airborne or falling past the island | PASS | Ground-contact argument required by `TryAwardCleverCrossingOnArrival`; focused unit cases at centre ± Y |
+| Nearby water is not arrival | PASS | Surface-height and footprint checks reject water-level points; focused unit case |
+| The badge is earned on the island's own walkable surface | PASS | `player-steps-onto-lily-island` walks off the deck; physics raycast reports `IslandB/MossIsland/Collision` at y≈0.13; badge then earned. `24a-clever-crossing-arrival.png` refreshed |
+| Existing coverage remains green | PASS | 125/125 tests; 55/55 scene; 307/307 headless; 308/308 rendered; exported Linux repeats all four |
+
 ## Sign-off
 
 | Area | Result |
 |---|---|
-| Automated gameplay acceptance | **PASS** — 305/305 headless and 306/306 rendered runtime checks; 124/124 unit tests; 55/55 scene contracts |
-| Rendered practical inspection | **PASS** — v0.2.2 screenshots plus a fresh real-input six-mission playthrough with 0 failures in 447 s |
-| Linux export | **PASS** — exported, launched, scene 55/55 and probe 305/305 headless, 306/306 rendered |
+| Automated gameplay acceptance | **PASS** — 307/307 headless and 308/308 rendered runtime checks; 125/125 unit tests; 55/55 scene contracts |
+| Rendered practical inspection | **PASS** — v0.2.2 screenshots; targeted real-input Reedwater crossing and island step-off. The full six-mission real-input run remains the preceding build's 0-failure 447 s record; this change touches only the optional mastery gate |
+| Linux export | **PASS** — exported, launched, scene 55/55 and probe 307/307 headless, 308/308 rendered |
 | Windows release | **PARTIAL** — PE32+ export PASS, runtime **NOT VERIFIED** |
 | Child usability | **NOT VERIFIED** — no supervised child playtest |
-| Milestone status | v0.2.2 reliability hardening merged to `main`; v0.2.0 remains the published release. v0.2.1 and v0.2.2 are deliberately **not released**. Windows runtime and child playtesting remain documented limitations |
+| Milestone status | v0.2.2 reliability hardening merged to `main`; v0.2.1 and v0.2.2 are deliberately **not released**. Windows runtime and child playtesting remain documented limitations |

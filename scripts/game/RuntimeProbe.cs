@@ -1050,12 +1050,27 @@ public partial class RuntimeProbe : Node
         Check("player-walks-island-a-onto-bridge-two",
             toIslandB.Reached && toIslandB.End.X < -2.2f && !toIslandB.EnteredWater,
             $"reached={toIslandB.Reached} end={toIslandB.End}");
+        Check("clever-crossing-not-awarded-on-bridge",
+            !sim.RegionalObjectives.MasteryAwarded,
+            $"bridges={sim.ReedwaterBridgeCount} position={toIslandB.End}");
+
+        // Step off the bridge deck onto the lily island itself. The badge is
+        // only allowed once the spider is grounded inside the island footprint
+        // at its walkable surface height, not while crossing above it.
+        var ontoIsland = await WalkRoute(game, toIslandB.End,
+            new[] { new Vec3(-4.0, 0.15, 0.8) }, 0.4f, 12f);
+        var islandGround = game.ProbeGroundColliderPath();
+        Check("player-steps-onto-lily-island",
+            ontoIsland.Reached && !ontoIsland.EnteredWater &&
+            ReedwaterLayout.IsOnFirstDestinationIsland(ontoIsland.End) &&
+            islandGround.Contains("IslandB/MossIsland/Collision", StringComparison.Ordinal),
+            $"reached={ontoIsland.Reached} end={ontoIsland.End} ground={islandGround}");
         Check("clever-crossing-earned-by-arrival",
             sim.RegionalObjectives.MasteryAwarded,
-            $"bridges={sim.ReedwaterBridgeCount} position={toIslandB.End}");
+            $"bridges={sim.ReedwaterBridgeCount} position={ontoIsland.End}");
         await Capture("24a-clever-crossing-arrival");
 
-        var backToIslandA = await WalkRoute(game, toIslandB.End,
+        var backToIslandA = await WalkRoute(game, ontoIsland.End,
             Reverse(ReedwaterIslandAToIslandB), 0.7f, 40f);
         Check("player-walks-bridge-two-back-to-island-a", backToIslandA.Reached,
             $"end={backToIslandA.End} seconds={backToIslandA.Seconds:0.0}");

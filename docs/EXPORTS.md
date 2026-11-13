@@ -12,17 +12,17 @@ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
 ```
 
 - Scene contract in the exported build: **PASS**, 55/55.
-- Runtime tested headlessly: **PASS**, 305/305 probe checks including the new
+- Runtime tested headlessly: **PASS**, 307/307 probe checks including the new
   bridge walking, build confirmation, nursery, mastery, guidance, worker and
-  construction-animation checks.
-- Runtime tested rendered under Xvfb at 1280×720: **PASS**, 306/306.
+  construction-animation checks, plus the grounded island arrival check.
+- Runtime tested rendered under Xvfb at 1280×720: **PASS**, 308/308.
 - The executable is the unchanged Godot 4.7.2 .NET template; the game code and
   assets are in the new `.pck`.
 - SHA-256:
 
 ```text
 d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
-2be072acde2c725409e0a024e1b2801bf70a754e8417efdb2213f18f060fb883  Webwild.pck
+c5d55f27aa932c286d4489fb5afc6be5a9e03339a1bfd37435316c82f4b41045  Webwild.pck
 ```
 
 ## Windows x64 — current v0.2.2 hardening build (not released)
@@ -45,7 +45,7 @@ godot --headless --path . --export-release "Windows" exports/windows/Webwild.exe
 
 ```text
 4760d3b83d01498d13ea6ff66b7867e4bf81fc5016f404c7472a5bc4cdc15647  Webwild.exe
-ca4592d4f030fbdcf4d858ccf653eabd84accbf41941b976b177f2af95cebc40  Webwild.pck
+187e53dfb9297e204c7f80cc0fc232ba1cf1ed4be6d81927fe721af08a9621b2  Webwild.pck
 ```
 
 ## Linux x64 — v0.2.1 shoreline build (not released)

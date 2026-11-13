@@ -21,7 +21,9 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 [#11](https://github.com/PhilipGB/webwild/pull/11) (v0.2.0 P0 scene-first world),
 [#12](https://github.com/PhilipGB/webwild/pull/12) (v0.2.0 P1 Reedwater Bank) and
 [#13](https://github.com/PhilipGB/webwild/pull/13) (v0.2.0 P2 bridge polish and release),
-[#16](https://github.com/PhilipGB/webwild/pull/16) (v0.2.1 Reedwater shoreline).
+[#16](https://github.com/PhilipGB/webwild/pull/16) (v0.2.1 Reedwater shoreline),
+[#18](https://github.com/PhilipGB/webwild/pull/18), [#19](https://github.com/PhilipGB/webwild/pull/19)
+and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 
 | Phase | Scope | Status | Evidence |
 |---|---|---|---|
@@ -40,13 +42,14 @@ Merged PRs: [#1](https://github.com/PhilipGB/webwild/pull/1),
 | v0.2.0 P1 | Reedwater Bank second region: pond, islands, reeds, water collision, travel, three regional objectives, dragonflies, worker crossing, schema-v2 migration | DONE (no release yet) | PR [#12](https://github.com/PhilipGB/webwild/pull/12); `docs/EVIDENCE.md#v020-p1`; `RegionTests`, `SaveMigrationTests`, `SceneAuthoringTests`; 47 scene checks; 168 runtime checks; screenshots 20–29 |
 | v0.2.0 P2 | Modular bridge art, durable supply-cache claim, non-obstructing toast lane, release polish | RELEASED as v0.2.0 (Windows runtime NOT VERIFIED) | PR [#13](https://github.com/PhilipGB/webwild/pull/13); `docs/EVIDENCE.md#v020-p2`; `BridgeLayoutTests`, `RegionTests`, P1 save fixtures; 51 scene checks; 236 runtime checks; screenshots 09b–09c, 16a, 23b |
 | v0.2.1 | Reedwater shoreline: authored water/shelf/bed meshes, refitted water hazards, shoreline screenshots and checks | DONE, merged PR [#16](https://github.com/PhilipGB/webwild/pull/16) (not released; Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#v021`; 55 scene checks; 246 runtime checks; screenshots 22d–22g |
+| v0.2.2 | Gameplay reliability and usability hardening: continuous bridge collision, safe New Garden, clear anchor/build decisions, live nursery, arrival-based mastery, guidance/pacing/worker feedback | DONE, merged PRs [#18](https://github.com/PhilipGB/webwild/pull/18), [#19](https://github.com/PhilipGB/webwild/pull/19) and [#20](https://github.com/PhilipGB/webwild/pull/20) (not released; Windows runtime NOT VERIFIED) | `docs/prs/v0.2.2.md`; 125 unit tests; 55 scene checks; 307 headless / 308 rendered runtime checks |
 
 ## Verification summary
 
-- `dotnet test`: **106 passed, 0 failed, 0 skipped**.
+- `dotnet test`: **125 passed, 0 failed, 0 skipped**.
 - Scene contract validation: **55 passed, 0 failed** across both regions.
-- Headless runtime probe: **246 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **246 passed, 0 failed**; 44 real PNGs.
+- Headless runtime probe: **307 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **308 passed, 0 failed**.
 - Exported Linux build, headless probe: **re-run for this milestone**.
 - Exported Linux build, rendered Xvfb probe: **re-run for this milestone**.
 - Linux x64 export: built successfully and launched.

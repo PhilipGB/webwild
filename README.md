@@ -58,9 +58,10 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 The probe writes `artifacts/runtime_probe.json` and real PNGs in
 `artifacts/screenshots/` when run from the project. Final verified result:
-**246 passed, 0 failed**. The scene contract validation passes **55/55** across
-both regions, including the authored shoreline and modular bridge parts. The
-exported Linux build is re-tested for this milestone.
+**307 passed, 0 failed** headlessly and **308 passed, 0 failed** rendered. The
+scene contract validation passes **55/55** across both regions, including the
+authored shoreline and modular bridge parts. The exported Linux build is
+re-tested for this milestone.
 
 ## How to play
 

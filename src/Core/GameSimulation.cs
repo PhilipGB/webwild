@@ -230,16 +230,16 @@ public sealed class GameSimulation
     /// <summary>
     /// Award Clever Crossing only when the player physically stands on the lily
     /// island after R01, with at most two bridges currently standing. Graph
-    /// connectivity alone is not enough; a child must make the crossing.
+    /// connectivity alone is not enough; a child must make the crossing. The
+    /// caller supplies ground contact so falling past the island, standing on a
+    /// bridge above it or being pushed into nearby water cannot earn the badge.
     /// </summary>
-    public bool TryAwardCleverCrossingOnArrival(Vec3 playerPosition)
+    public bool TryAwardCleverCrossingOnArrival(Vec3 playerPosition, bool isGrounded)
     {
         if (ActiveRegionId != RegionIds.ReedwaterBank) return false;
         if (RegionalObjectives.MasteryAwarded) return false;
-        var target = ReedwaterLayout.FirstDestinationPosition;
-        var dx = playerPosition.X - target.X;
-        var dz = playerPosition.Z - target.Z;
-        if (Math.Sqrt(dx * dx + dz * dz) > 2.8) return false;
+        if (!isGrounded) return false;
+        if (!ReedwaterLayout.IsOnFirstDestinationIsland(playerPosition)) return false;
         if (ReedwaterBridgeCount > 2) return false;
         if (Graph.FindRoute(ReedwaterLayout.NurseryNode,
                 ReedwaterLayout.FirstDestinationNode) is null) return false;

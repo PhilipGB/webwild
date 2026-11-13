@@ -197,6 +197,22 @@ Follow-up to the six-mission real-input playtest. No new region or mechanics.
   complete 6:11, return/save/continue 7:27. R02's longest catch gap was 29.6 s
   and R03's far-bank delivery took 13.2 s.
 
+### Follow-up — Clever Crossing arrival contact
+
+- Clever Crossing no longer uses a loose 2.8 m centre-radius test. The arrival
+  check now requires ground contact, a position inside the lily island's 1.45 m
+  walkable footprint, and the island's own surface height. It is therefore not
+  awarded while approaching on the bridge, standing on a deck above the island,
+  falling past it, or entering nearby water.
+- The runtime probe now walks off the bridge onto the exposed island top, proves
+  the physics raycast hits `IslandB/MossIsland/Collision`, and only then expects
+  the badge. A separate check confirms the bridge approach does not award it.
+- Added focused tests for airborne, bridge-deck, water-level, outside-footprint
+  and real island-surface positions.
+- Verification: 125/125 .NET tests, 55/55 scene checks, 307/307 headless and
+  308/308 rendered runtime checks; exported Linux repeats 55/55, 307/307 and
+  308/308.
+
 
 ## Webwild v0.2.0 P1 — Reedwater Bank second region (unreleased milestone)
 

@@ -1175,8 +1175,10 @@ public partial class RuntimeProbe : Node
             workerAttributed |= toast.Contains("collected a") && !toast.StartsWith("You collected");
             farBankFeedback |= toast.Contains("from the far bank");
             dragonflyNamed |= toast.Contains("dragonfly");
+            // The halo is visible while collecting/repairing and for three
+            // seconds after a collection. Sampling must accept that post-work
+            // flash too, otherwise a valid glow can fall between ticks.
             workerGlow |= sim.RegionWorkers.Any(worker =>
-                worker.Activity == WorkerActivity.Collecting &&
                 game.ProbeWorkerActivityGlowVisible(worker.Id));
             if (workerGlow && !workerGlowCaptured)
             {

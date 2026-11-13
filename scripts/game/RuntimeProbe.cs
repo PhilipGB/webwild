@@ -1142,13 +1142,17 @@ public partial class RuntimeProbe : Node
         // route; the worker must use bridge edges, not teleport.
         Check("bridge-three-built", game.ProbeBuildWeb(ReedwaterLayout.IslandBPost,
             ReedwaterLayout.FarPost, WebType.Bridge), "Root island to far bank");
-        var toFarBank = await WalkRoute(game, new Vec3(-2.7f, 0.15f, 2.7f),
-            ReedwaterIslandBToFarBank, 0.7f, 40f);
+        // Start where the spider actually stands on the island after earning
+        // the badge, then walk to the shared landing and across bridge three.
+        // Teleporting onto the landing itself could wedge the capsule in the
+        // bridge two/three joint and made the check intermittently time out.
+        var toFarBank = await WalkRoute(game, ontoIsland.End,
+            ReedwaterIslandBToFarBank, 0.7f, 60f);
         Check("player-walks-island-b-onto-bridge-three",
             toFarBank.Reached && toFarBank.End.X < -8.4f && !toFarBank.EnteredWater,
             $"reached={toFarBank.Reached} end={toFarBank.End}");
         var farBankBack = await WalkRoute(game, toFarBank.End,
-            Reverse(ReedwaterIslandBToFarBank), 0.7f, 40f);
+            Reverse(ReedwaterIslandBToFarBank), 0.7f, 60f);
         Check("player-walks-bridge-three-back-to-island-b",
             farBankBack.Reached && farBankBack.End.X > -3.5f,
             $"end={farBankBack.End} seconds={farBankBack.Seconds:0.0}");

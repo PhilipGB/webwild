@@ -549,8 +549,9 @@ public partial class GardenClearing : Node3D
         if (_masteryCheckTimer >= 0.2)
         {
             _masteryCheckTimer = 0;
-            if (_activeRegionId == RegionIds.ReedwaterBank && _player is not null)
-                _sim.TryAwardCleverCrossingOnArrival(_player.ToCorePosition());
+            if (_activeRegionId == RegionIds.ReedwaterBank && _player is not null &&
+                _player.IsOnFloor() && !_player.IsClimbing)
+                _sim.TryAwardCleverCrossingOnArrival(_player.ToCorePosition(), true);
         }
 
         UpdateWaterHazard();
@@ -2041,6 +2042,18 @@ public partial class GardenClearing : Node3D
 
     public bool ProbeAnchorLabelVisible(string anchorId) =>
         _anchors.TryGetValue(anchorId, out var anchor) && anchor.ProbeVisualState.Contains("label=True");
+
+    /// <summary>Physics ground under the player, for asserting the real island surface in the probe.</summary>
+    public string ProbeGroundColliderPath()
+    {
+        if (_player is null) return "";
+        using var query = PhysicsRayQueryParameters3D.Create(
+            _player.GlobalPosition + new Vector3(0, 0.5f, 0),
+            _player.GlobalPosition + new Vector3(0, -2.5f, 0), 1);
+        var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
+        if (hit.Count == 0) return "";
+        return (hit["collider"].AsGodotObject() as Node)?.GetPath().ToString() ?? "";
+    }
 
     public string LastSaveError { get; private set; } = "";
 }

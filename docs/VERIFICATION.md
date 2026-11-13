@@ -109,6 +109,23 @@
 - Exported Linux: scene 55/55, headless 305/305 and rendered 306/306.
 - Exported Windows: PE32+ produced, runtime not launched (no Windows host).
 
+## Integration performed in the v0.2.2 follow-up (Clever Crossing arrival)
+
+- The arrival gate now needs ground contact, a position inside the lily island's
+  authored 1.45 m walkable footprint and the island surface height, instead of a
+  2.8 m centre radius. Bridge approaches, decks above the island, airborne
+  positions and water-level positions are rejected.
+- The rendered and headless probes walk across both bridges, confirm the badge is
+  not awarded on the approach, walk off the deck onto the exposed island top and
+  assert the physics raycast hit `IslandB/MossIsland/Collision` before the badge
+  is expected.
+- Focused unit tests cover airborne, bridge-deck, water-level, outside-footprint
+  and real island-surface positions.
+- `dotnet test`: 125/125; scene contract 55/55; headless 307/307 and rendered
+  308/308 runtime checks.
+- Exported Linux: scene 55/55, headless 307/307 and rendered 308/308.
+- Exported Windows: PE32+ rebuilt; runtime not launched (no Windows host).
+
 ## Not performed
 
 - Windows runtime: no Windows host was available. The v0.2.1 Windows export was

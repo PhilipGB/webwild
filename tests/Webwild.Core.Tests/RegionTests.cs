@@ -167,15 +167,49 @@ public class RegionTests
         Assert.DoesNotContain(sim.Events, e => e.Type == "RegionalMasteryEarned");
 
         // Standing at the outpost is not arrival either.
-        Assert.False(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.NurseryPosition));
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.NurseryPosition, true));
+        Assert.False(sim.RegionalObjectives.MasteryAwarded);
+
+        // A point on the second bridge deck inside the old 2.8 m radius is not
+        // the island's walkable surface.
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(new Vec3(-2.0, 0.35, 2.6), true));
         Assert.False(sim.RegionalObjectives.MasteryAwarded);
 
         // Physically reaching the lily island does.
         Assert.True(sim.TryAwardCleverCrossingOnArrival(
-            ReedwaterLayout.FirstDestinationPosition + new Vec3(1.2, 0, -0.8)));
+            ReedwaterLayout.FirstDestinationPosition + new Vec3(0.9, 0, -0.6), true));
         Assert.True(sim.RegionalObjectives.MasteryAwarded);
         Assert.Contains(sim.Events, e => e.Type == "RegionalMasteryEarned");
-        Assert.False(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(
+            ReedwaterLayout.FirstDestinationPosition, true));
+    }
+
+    [Fact]
+    public void CleverCrossing_RequiresGroundedIslandSurface()
+    {
+        var sim = UnlockedSim();
+        UnlockAndTravel(sim);
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.StartPost, ReedwaterLayout.IslandAPost,
+            WebType.Bridge, out _, out _));
+        Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost,
+            WebType.Bridge, out _, out _));
+        var centre = ReedwaterLayout.FirstDestinationPosition;
+
+        // Being within the island footprint while airborne, falling past the
+        // deck or standing on a bridge above the island must not count.
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(centre, false));
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(centre + new Vec3(0, 1.2, 0), true));
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(centre + new Vec3(0, -0.65, 0), true));
+
+        // Nearby water and the bridge approach stay outside the footprint.
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(
+            centre + new Vec3(1.7, 0, 0), true));
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(new Vec3(-2.0, 0.35, 2.6), true));
+
+        // The centre of the island, with real ground contact, is arrival.
+        Assert.False(sim.RegionalObjectives.MasteryAwarded);
+        Assert.True(sim.TryAwardCleverCrossingOnArrival(centre, true));
+        Assert.True(sim.RegionalObjectives.MasteryAwarded);
     }
 
     [Fact]
@@ -190,7 +224,8 @@ public class RegionTests
         Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandBPost, ReedwaterLayout.FarPost,
             WebType.Bridge, out _, out _));
         Assert.Equal(3, sim.ReedwaterBridgeCount);
-        Assert.False(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
+        Assert.False(sim.TryAwardCleverCrossingOnArrival(
+            ReedwaterLayout.FirstDestinationPosition, true));
         Assert.False(sim.RegionalObjectives.MasteryAwarded);
     }
 
@@ -203,12 +238,14 @@ public class RegionTests
             WebType.Bridge, out _, out _));
         Assert.True(sim.TryBuildWeb(ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost,
             WebType.Bridge, out _, out _));
-        Assert.True(sim.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
+        Assert.True(sim.TryAwardCleverCrossingOnArrival(
+            ReedwaterLayout.FirstDestinationPosition, true));
 
         var data = sim.ExportSave(ReedwaterLayout.FirstDestinationPosition, 0, new SettingsData());
         var restored = GameSimulation.FromSave(data, TestWorld.RichTuning(), MissionsConfig.Defaults());
         Assert.True(restored.RegionalObjectives.MasteryAwarded);
-        Assert.False(restored.TryAwardCleverCrossingOnArrival(ReedwaterLayout.FirstDestinationPosition));
+        Assert.False(restored.TryAwardCleverCrossingOnArrival(
+            ReedwaterLayout.FirstDestinationPosition, true));
     }
 
     [Fact]

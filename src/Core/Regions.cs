@@ -131,6 +131,27 @@ public static class ReedwaterLayout
     public static readonly Vec3 FirstDestinationPosition = new(-3.4, 0.15, 1.6);
     public static readonly Vec3 FarBankPosition = new(-10.5, 0.1, -3.6);
 
+    // The lily island uses the authored MossIslandMedium cylinder: 1.65 m
+    // radius scaled to 0.95 (1.5675 m) with its walkable top at about 0.13 m.
+    // The arrival footprint stays inside that rim so a bridge deck, a lily pad
+    // or open water beside the island cannot count as standing on it.
+    public const double FirstDestinationWalkableRadius = 1.45;
+    public const double FirstDestinationSurfaceY = 0.15;
+    public const double FirstDestinationSurfaceTolerance = 0.2;
+
+    /// <summary>
+    /// Engine-free standing check for the lily island. The Godot adapter also
+    /// supplies <c>IsOnFloor</c>, so a player falling past the island or standing
+    /// on a bridge above it is never treated as an arrival.
+    /// </summary>
+    public static bool IsOnFirstDestinationIsland(Vec3 position)
+    {
+        var dx = position.X - FirstDestinationPosition.X;
+        var dz = position.Z - FirstDestinationPosition.Z;
+        if (Math.Sqrt(dx * dx + dz * dz) > FirstDestinationWalkableRadius) return false;
+        return Math.Abs(position.Y - FirstDestinationSurfaceY) <= FirstDestinationSurfaceTolerance;
+    }
+
     public static readonly Vec3 StartPostGround = new(7.6, 0.0, 7.6);
     public static readonly Vec3 IslandAPostGround = new(2.2, 0.15, 6.4);
     public static readonly Vec3 IslandBPostGround = new(-2.7, 0.15, 2.7);

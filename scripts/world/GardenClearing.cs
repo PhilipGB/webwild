@@ -1876,6 +1876,8 @@ public partial class GardenClearing : Node3D
 
     public bool ProbeToastVisible => _ui.ProbeToastVisible;
     public string ProbeToastText => _ui.ProbeToastText;
+    public IReadOnlyList<string> ProbeToastHistory => _ui.ProbeToastHistory;
+    public void ProbeClearToastHistory() => _ui.ProbeClearToastHistory();
     public Rect2 ProbeToastRect => _ui.ProbeToastRect;
     public Rect2 ProbeMissionRect => _ui.ProbeMissionRect;
     public Rect2 ProbeActionColumnRect => _ui.ProbeActionColumnRect;

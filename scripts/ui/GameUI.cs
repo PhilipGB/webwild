@@ -77,12 +77,15 @@ public partial class GameUI : CanvasLayer
     private string _missionSignature = "";
     private bool _tutorialPrompts = true;
     private readonly List<Button> _workerChips = new();
+    private readonly List<string> _probeToastHistory = new();
 
     public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
     public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
     public bool BlocksWorldInput => IsModalOpen;
     public bool ProbeToastVisible => _toastPanel.Visible;
     public string ProbeToastText => _toastLabel.Text;
+    public IReadOnlyList<string> ProbeToastHistory => _probeToastHistory;
+    public void ProbeClearToastHistory() => _probeToastHistory.Clear();
     public Rect2 ProbeToastRect => _toastPanel.GetGlobalRect();
     public Rect2 ProbeMissionRect => _missionPanel.GetGlobalRect();
     public Rect2 ProbeActionColumnRect => _actionsColumn.GetGlobalRect();
@@ -626,6 +629,7 @@ public partial class GameUI : CanvasLayer
     public void ShowToast(string text, Color? color = null, float duration = 3.2f)
     {
         _toastLabel.Text = text;
+        RecordToast(text);
         _toastLabel.AddThemeColorOverride("font_color", color ?? UiKit.Pine);
         _toastPanel.Visible = true;
         _toastPanel.Modulate = Colors.White;
@@ -640,8 +644,15 @@ public partial class GameUI : CanvasLayer
     {
         if (!_toastPanel.Visible) return;
         _toastLabel.Text += suffix;
+        RecordToast(_toastLabel.Text);
         _toastTimer = Mathf.Min(4.5f, _toastTimer + extraSeconds);
         _toastDuration = Mathf.Max(_toastDuration, _toastTimer);
+    }
+
+    private void RecordToast(string text)
+    {
+        _probeToastHistory.Add(text);
+        if (_probeToastHistory.Count > 64) _probeToastHistory.RemoveAt(0);
     }
 
     private void UpdateToast(float delta)

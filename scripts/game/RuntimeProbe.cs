@@ -1146,7 +1146,7 @@ public partial class RuntimeProbe : Node
         // the badge, then walk to the shared landing and across bridge three.
         // Teleporting onto the landing itself could wedge the capsule in the
         // bridge two/three joint and made the check intermittently time out.
-        var toFarBank = await WalkRoute(game, ontoIsland.End,
+        var toFarBank = await WalkRoute(game, new Vec3(-2.78f, 0.24f, 2.55f),
             ReedwaterIslandBToFarBank, 0.7f, 60f);
         Check("player-walks-island-b-onto-bridge-three",
             toFarBank.Reached && toFarBank.End.X < -8.4f && !toFarBank.EnteredWater,
@@ -1170,18 +1170,12 @@ public partial class RuntimeProbe : Node
         var dragonflyNamed = false;
         var workerGlow = false;
         var workerGlowCaptured = false;
+        game.ProbeClearToastHistory();
         for (var i = 0; i < 100 && !regionComplete; i++)
         {
             game.ProbeAdvance(2);
             await Frames(2);
             workerCrossed |= HasRegionEvent("WorkerUsedBridge", RegionIds.ReedwaterBank);
-            var toast = game.ProbeToastText;
-            workerAttributed |= toast.Contains("collected a") && !toast.StartsWith("You collected");
-            // Delivery either appends to a still-visible collection toast or
-            // uses the explicit fallback when that toast has expired.
-            farBankFeedback |= toast.Contains("from the far bank") ||
-                               toast.Contains("brought far-bank prey home");
-            dragonflyNamed |= toast.Contains("dragonfly");
             // The halo is visible while collecting/repairing and for three
             // seconds after a collection. Sampling must accept that post-work
             // flash too, otherwise a valid glow can fall between ticks.
@@ -1194,6 +1188,14 @@ public partial class RuntimeProbe : Node
             }
             regionComplete = sim.RegionalObjectives.CompletedObjectives.Contains("R03");
         }
+        // Check all toasts raised during the window, not just whichever one is
+        // still on screen after a two-second simulation step.
+        var toasts = game.ProbeToastHistory;
+        workerAttributed = toasts.Any(text =>
+            text.Contains("collected a") && !text.StartsWith("You collected"));
+        farBankFeedback = toasts.Any(text =>
+            text.Contains("from the far bank") || text.Contains("brought far-bank prey home"));
+        dragonflyNamed = toasts.Any(text => text.Contains("dragonfly"));
         Check("worker-used-reedwater-bridge", workerCrossed, "Worker crossed a real bridge edge");
         Check("worker-attributed-collection", workerAttributed, "Worker collection names the helper");
         Check("far-bank-delivery-feedback", farBankFeedback, "Far-bank delivery is announced");

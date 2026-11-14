@@ -29,6 +29,8 @@ public partial class GameUI : CanvasLayer
     private VBoxContainer _stepsBox = null!;
     private Label _masteryLabel = null!;
     private Label _statusLabel = null!;
+    private string? _explorationLocation;
+    private string? _explorationStatus;
     private Label _contextLabel = null!;
     private Label _toastLabel = null!;
     private PanelContainer _toastPanel = null!;
@@ -447,7 +449,7 @@ public partial class GameUI : CanvasLayer
         _lastSim = sim;
         _foodLabel.Text = sim.Ledger.Food.ToString();
         _silkLabel.Text = sim.Ledger.Silk.ToString();
-        _locationLabel.Text = sim.ActiveRegion.DisplayName;
+        _locationLabel.Text = _explorationLocation ?? sim.ActiveRegion.DisplayName;
         _colonyButton.Text = $"Spiders {sim.TotalSpiders}/{sim.MaxSpiders}  [Tab]";
         _captureButton.Text = $"Capture web  [1]  {sim.Tuning.Webs.Capture.SilkCost} silk";
         _bridgeButton.Text = $"Silk bridge  [2]  {sim.Tuning.Webs.Bridge.SilkCost} silk";
@@ -459,7 +461,7 @@ public partial class GameUI : CanvasLayer
         // Keep the status line current with the active step so an old build or
         // collection message can never linger after the objective moved on.
         if (_activeTool is null && !IsModalOpen)
-            SetStatus(sim.GetActiveRegionHint());
+            SetStatus(_explorationStatus ?? sim.GetActiveRegionHint());
         if (sim.ActiveRegionId == RegionIds.ReedwaterBank)
         {
             _masteryLabel.Visible = true;
@@ -586,6 +588,17 @@ public partial class GameUI : CanvasLayer
     public void SetStatus(string text)
     {
         _statusLabel.Text = text;
+    }
+
+    /// <summary>When the spider is between landmarks, the HUD names the wild
+    /// meadows instead of the last authored landmark. Passing null restores
+    /// the active landmark's own labels and hints.</summary>
+    public void SetExploration(string? location, string? status)
+    {
+        _explorationLocation = location;
+        _explorationStatus = status;
+        if (location is not null) _locationLabel.Text = location;
+        if (status is not null) SetStatus(status);
     }
 
     public void SetBuildMode(WebType? type, string? anchorA, GameSimulation sim)

@@ -18,6 +18,7 @@ namespace Webwild.Core;
 public sealed class WorldGenerator
 {
     private readonly TerrainSampler _sampler;
+    private readonly BiomeMap _biomes;
     private readonly int _seed;
 
     /// <summary>Chunks covered by the authored landscape. The authored scenes
@@ -47,10 +48,14 @@ public sealed class WorldGenerator
     /// <summary>The ground height the authored terrain sits at.</summary>
     public const double AuthoredGroundHeight = 0.0;
 
+    /// <summary>Seed of this world; drives terrain, biomes and props.</summary>
+    public int Seed => _seed;
+
     public WorldGenerator(int seed)
     {
         _seed = seed;
         _sampler = new TerrainSampler(seed);
+        _biomes = new BiomeMap(seed);
     }
 
     private static HashSet<ChunkCoordinate> FootprintOf(params WorldRect[] rects)
@@ -81,7 +86,7 @@ public sealed class WorldGenerator
     /// </summary>
     public double HeightAt(double x, double z)
     {
-        var raw = _sampler.HeightAt(x, z);
+        var raw = BaseHeightAt(x, z);
         var t = 1.0;
         foreach (var rect in AuthoredRects)
         {
@@ -91,6 +96,35 @@ public sealed class WorldGenerator
             t = Math.Min(t, Smooth(outside / AuthoredBlendMetres));
         }
         return AuthoredGroundHeight + (raw - AuthoredGroundHeight) * t;
+    }
+
+    /// <summary>Dominant biome name at a world point (diagnostics and probes).</summary>
+    public string BiomeNameAt(double x, double z) => _biomes.WeightsAt(x, z).Dominant switch
+    {
+        BiomeKind.Moss => "moss",
+        BiomeKind.Bloom => "bloom",
+        _ => "meadow"
+    };
+
+    /// <summary>Weight of one named biome at a world point in [0, 1].</summary>
+    public double BiomeWeightAt(double x, double z, string biome)
+    {
+        var weights = _biomes.WeightsAt(x, z);
+        return biome switch
+        {
+            "moss" => weights.Moss,
+            "bloom" => weights.Bloom,
+            "meadow" => weights.Meadow,
+            _ => 0
+        };
+    }
+
+    /// <summary>Noise plus biome height before landmark blending. Exposed for
+    /// tests and for tools that need the generated baseline at a point.</summary>
+    public double BaseHeightAt(double x, double z)
+    {
+        var biome = _biomes.WeightsAt(x, z);
+        return _sampler.HeightAt(x, z) + BiomeMap.HeightOffset(biome);
     }
 
     private static double Smooth(double t)
@@ -107,18 +141,23 @@ public sealed class WorldGenerator
 
         var resolution = WorldChunk.TerrainResolution;
         var heights = new double[resolution, resolution];
+        var biomes = new BiomeWeights[resolution, resolution];
         var originX = coordinate.X * WorldChunk.Size;
         var originZ = coordinate.Z * WorldChunk.Size;
         for (var ix = 0; ix < resolution; ix++)
         for (var iz = 0; iz < resolution; iz++)
-            heights[ix, iz] = HeightAt(
-                originX + ix * WorldChunk.TerrainSpacing,
-                originZ + iz * WorldChunk.TerrainSpacing);
+        {
+            var x = originX + ix * WorldChunk.TerrainSpacing;
+            var z = originZ + iz * WorldChunk.TerrainSpacing;
+            heights[ix, iz] = HeightAt(x, z);
+            biomes[ix, iz] = _biomes.WeightsAt(x, z);
+        }
 
         return new ChunkData
         {
             Coordinate = coordinate,
             Heights = heights,
+            Biomes = biomes,
             Props = GenerateProps(coordinate, originX, originZ, heights)
         };
     }
@@ -135,7 +174,7 @@ public sealed class WorldGenerator
         var props = new List<PropPlacement>();
         if (IsAuthoredChunk(coordinate)) return props;
 
-        const int slots = 14;
+        const int slots = 40;
         for (var slot = 0; slot < slots; slot++)
         {
             var stream = DeterministicHash.RandomFor(_seed, coordinate.X, coordinate.Z, slot);
@@ -146,9 +185,9 @@ public sealed class WorldGenerator
 
             // A broad density mask creates open lawns and thicker patches.
             var density = _sampler.Noise(worldX, worldZ, 31, 3);
-            if (density < 0.34) continue;
+            if (density < 0.16) continue;
 
-            var kind = PickKind(stream, worldX, worldZ);
+            var kind = PickKind(stream, _biomes.WeightsAt(worldX, worldZ));
             if (kind is null) continue;
             var position = new Vec3(
                 worldX,
@@ -171,29 +210,57 @@ public sealed class WorldGenerator
         return props;
     }
 
-    private string? PickKind(Random stream, double worldX, double worldZ)
+    private static string? PickKind(Random stream, BiomeWeights biome)
     {
         var roll = stream.NextDouble();
-        // Meadow dressing, matching the authored garden's flat-shaded flora.
-        if (roll < 0.40) return "grass";
-        if (roll < 0.58) return "clover";
-        if (roll < 0.68) return "tallgrass";
-        if (roll < 0.78)
+        switch (biome.Dominant)
         {
-            var flower = stream.Next(3);
-            return flower switch
-            {
-                0 => "flower_yellow",
-                1 => "flower_pink",
-                _ => "flower_purple"
-            };
+            case BiomeKind.Moss:
+                if (roll < 0.30) return "fern";
+                if (roll < 0.48) return "moss_patch";
+                if (roll < 0.60) return "mushroom";
+                if (roll < 0.72) return "clover";
+                if (roll < 0.86) return "grass";
+                if (roll < 0.94) return "flat_stone";
+                return "small_log";
+            case BiomeKind.Bloom:
+                if (roll < 0.42)
+                {
+                    return stream.Next(3) switch
+                    {
+                        0 => "flower_yellow",
+                        1 => "flower_pink",
+                        _ => "flower_purple"
+                    };
+                }
+                if (roll < 0.60) return "tallgrass";
+                if (roll < 0.72) return "grass";
+                if (roll < 0.84) return "clover";
+                if (roll < 0.91) return "fern";
+                if (roll < 0.97) return "pebble";
+                return "mushroom";
+            default:
+                // Open meadow keeps the authored garden's balanced dressing.
+                if (roll < 0.40) return "grass";
+                if (roll < 0.58) return "clover";
+                if (roll < 0.68) return "tallgrass";
+                if (roll < 0.78)
+                {
+                    var flower = stream.Next(3);
+                    return flower switch
+                    {
+                        0 => "flower_yellow",
+                        1 => "flower_pink",
+                        _ => "flower_purple"
+                    };
+                }
+                if (roll < 0.84) return "fern";
+                if (roll < 0.90) return "pebble";
+                if (roll < 0.94) return "flat_stone";
+                if (roll < 0.97) return "mushroom";
+                if (roll < 0.99) return "moss_patch";
+                return "small_log";
         }
-        if (roll < 0.84) return "fern";
-        if (roll < 0.90) return "pebble";
-        if (roll < 0.94) return "flat_stone";
-        if (roll < 0.97) return "mushroom";
-        if (roll < 0.99) return "moss_patch";
-        return "small_log";
     }
 
     /// <summary>Sink props slightly so bases meet the ground without floating.</summary>

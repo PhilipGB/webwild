@@ -13,11 +13,6 @@ namespace Webwild.Game;
 /// </summary>
 public static class ChunkTerrainBuilder
 {
-    /// <summary>The authored meadow top colour, so procedural grass reads as
-    /// the same surface the garden uses; per-quad variation adds the low-poly
-    /// patchwork feel.</summary>
-    private static readonly Color MeadowGreen = new(0.466667f, 0.658824f, 0.352941f);
-
     private static readonly Dictionary<string, PackedScene> PropScenes = new();
 
     /// <summary>Generated terrain material: vertex colours, double-sided so the
@@ -49,7 +44,7 @@ public static class ChunkTerrainBuilder
     };
 
     /// <summary>Build the full chunk node: terrain body plus prop dressing.</summary>
-    public static StaticBody3D Build(ChunkData data)
+    public static StaticBody3D Build(ChunkData data, int seed)
     {
         var body = new StaticBody3D
         {
@@ -61,7 +56,7 @@ public static class ChunkTerrainBuilder
         body.SetMeta("chunk_id", data.Coordinate.Id);
         body.SetMeta("content_hash", data.ContentHash().ToString("x16"));
 
-        var mesh = BuildMesh(data);
+        var mesh = BuildMesh(data, seed);
         var meshInstance = new MeshInstance3D
         {
             Name = "TerrainMesh",
@@ -101,7 +96,7 @@ public static class ChunkTerrainBuilder
     /// Flat-shaded mesh: every quad is four unique vertices so per-quad normals
     /// and colours stay crisp, matching the authored garden's look.
     /// </summary>
-    private static ArrayMesh BuildMesh(ChunkData data)
+    private static ArrayMesh BuildMesh(ChunkData data, int seed)
     {
         var resolution = WorldChunk.TerrainResolution;
         var spacing = WorldChunk.TerrainSpacing;
@@ -111,6 +106,7 @@ public static class ChunkTerrainBuilder
         var colors = new Color[quads * 4];
         var indices = new int[quads * 6];
         var heights = data.Heights;
+        var biomes = data.Biomes;
         var originX = data.Coordinate.X * WorldChunk.Size;
         var originZ = data.Coordinate.Z * WorldChunk.Size;
 
@@ -140,11 +136,11 @@ public static class ChunkTerrainBuilder
             if (normal.Y < 0) normal = -normal;
             for (var i = 0; i < 4; i++) normals[vertex + i] = normal;
 
-            var tint = QuadTint(originX + ix * spacing, originZ + iz * spacing);
-            var color = new Color(
-                MeadowGreen.R * tint,
-                MeadowGreen.G * tint,
-                MeadowGreen.B * tint);
+            var weights = BiomeWeightsBetween(biomes, ix, iz);
+            var tint = (float)TerrainPalette.QuadTint(
+                seed, originX + (ix + 0.5) * spacing, originZ + (iz + 0.5) * spacing);
+            var rgb = TerrainPalette.ColorOf(weights);
+            var color = new Color((float)rgb.X * tint, (float)rgb.Y * tint, (float)rgb.Z * tint);
             for (var i = 0; i < 4; i++) colors[vertex + i] = color;
 
             indices[index] = vertex;
@@ -168,14 +164,69 @@ public static class ChunkTerrainBuilder
         return mesh;
     }
 
-    /// <summary>Deterministic per-quad brightness variation in [0.92, 1.08].</summary>
-    private static float QuadTint(double worldX, double worldZ)
+    private static BiomeWeights BiomeWeightsBetween(BiomeWeights[,] biomes, int ix, int iz)
     {
-        var qx = (long)Math.Floor(worldX / 2.0);
-        var qz = (long)Math.Floor(worldZ / 2.0);
-        var h = DeterministicHash.Combine(
-            DeterministicHash.Hash(qx), DeterministicHash.Hash(qz));
-        return (float)(0.92 + DeterministicHash.Unit(h) * 0.16);
+        if (biomes.GetLength(0) <= ix + 1 || biomes.GetLength(1) <= iz + 1)
+            return BiomeWeights.PureMeadow;
+        var a = biomes[ix, iz];
+        var b = biomes[ix + 1, iz];
+        var c = biomes[ix, iz + 1];
+        var d = biomes[ix + 1, iz + 1];
+        return new BiomeWeights(
+            (a.Meadow + b.Meadow + c.Meadow + d.Meadow) * 0.25,
+            (a.Moss + b.Moss + c.Moss + d.Moss) * 0.25,
+            (a.Bloom + b.Bloom + c.Bloom + d.Bloom) * 0.25);
+    }
+
+    /// <summary>Flat, per-quad-tinted patch matching generated terrain colours.
+    /// Used for the landmark skirts so authored ground meets procedural ground
+    /// without a tint break. Purely visual; collision stays with the scene.</summary>
+    public static MeshInstance3D BuildApron(int seed, WorldRect rect, string name)
+    {
+        var cell = WorldChunk.TerrainSpacing;
+        var biomeMap = new BiomeMap(seed);
+        var positions = new List<Vector3>();
+        var normals = new List<Vector3>();
+        var colors = new List<Color>();
+        var indices = new List<int>();
+        var x = rect.MinX;
+        while (x < rect.MaxX - 0.001)
+        {
+            var x1 = Math.Min(x + cell, rect.MaxX);
+            var z = rect.MinZ;
+            while (z < rect.MaxZ - 0.001)
+            {
+                var z1 = Math.Min(z + cell, rect.MaxZ);
+                var weights = biomeMap.WeightsAt((x + x1) * 0.5, (z + z1) * 0.5);
+                var tint = (float)TerrainPalette.QuadTint(seed, (x + x1) * 0.5, (z + z1) * 0.5);
+                var rgb = TerrainPalette.ColorOf(weights);
+                var color = new Color((float)rgb.X * tint, (float)rgb.Y * tint, (float)rgb.Z * tint);
+                var baseIndex = positions.Count;
+                positions.Add(new Vector3((float)x, 0.015f, (float)z));
+                positions.Add(new Vector3((float)x1, 0.015f, (float)z));
+                positions.Add(new Vector3((float)x, 0.015f, (float)z1));
+                positions.Add(new Vector3((float)x1, 0.015f, (float)z1));
+                for (var i = 0; i < 4; i++) { normals.Add(Vector3.Up); colors.Add(color); }
+                indices.AddRange(new[] { baseIndex, baseIndex + 2, baseIndex + 3, baseIndex, baseIndex + 3, baseIndex + 1 });
+                z = z1;
+            }
+            x = x1;
+        }
+
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = positions.ToArray();
+        arrays[(int)Mesh.ArrayType.Normal] = normals.ToArray();
+        arrays[(int)Mesh.ArrayType.Color] = colors.ToArray();
+        arrays[(int)Mesh.ArrayType.Index] = indices.ToArray();
+        var mesh = new ArrayMesh();
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+        return new MeshInstance3D
+        {
+            Name = name,
+            Mesh = mesh,
+            MaterialOverride = TerrainMaterial
+        };
     }
 
     private static PackedScene? LoadPropScene(string path)
@@ -218,6 +269,7 @@ public sealed class ChunkStreamer
     }
 
     public int LoadedCount => _nodes.Count;
+    public WorldGenerator Generator => _generator;
     public int PendingCount => _pending.Count;
     public ChunkCoordinate Centre => _streamer.Centre;
     public IReadOnlyDictionary<ChunkCoordinate, StaticBody3D> Nodes => _nodes;
@@ -293,7 +345,7 @@ public sealed class ChunkStreamer
     {
         var data = _generator.GenerateChunk(coordinate);
         if (data is null) return; // Authored chunks are never generated.
-        var node = ChunkTerrainBuilder.Build(data);
+        var node = ChunkTerrainBuilder.Build(data, _generator.Seed);
         _nodes[coordinate] = node;
         _host.AddChild(node);
     }

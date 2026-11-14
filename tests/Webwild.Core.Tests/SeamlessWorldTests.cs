@@ -69,7 +69,7 @@ public class SeamlessWorldTests
 
         // Beyond the blend ring the raw sampler is authoritative.
         var far = generator.HeightAt(rect.MaxX + WorldGenerator.AuthoredBlendMetres + 5, 0);
-        var raw = new TerrainSampler(Seed).HeightAt(
+        var raw = generator.BaseHeightAt(
             rect.MaxX + WorldGenerator.AuthoredBlendMetres + 5, 0);
         Assert.Equal(raw, far, 12);
     }

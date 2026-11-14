@@ -668,6 +668,11 @@ public partial class RuntimeProbe : Node
         }
         await Capture("17-ui-scale-150");
 
+        // Gameplay evidence after this point uses the default presentation.
+        settings.UiScalePercent = 100;
+        GameData.ApplyUiScale(settings);
+        await Frames(4);
+
         if (_main.Game is { } gameForQuit) gameForQuit.ProbeQuitToMenu();
         await Frames(8);
         Check("quit-to-menu", _main.TitleVisible && _main.ContinueAvailable, "Save and quit returns to title");
@@ -907,7 +912,8 @@ public partial class RuntimeProbe : Node
             {
                 var farReloaded = _main.StartGame(farLoaded.Data);
                 await Frames(10);
-                var reloadPos = farReloaded.Player.GlobalPosition;
+                // Probe-space positions are stable logical world coordinates.
+                var reloadPos = farReloaded.PlayerPosition;
                 Check("p1-reload-far-restores-position",
                     Math.Abs(reloadPos.X - 120f) < 1.5f && Math.Abs(reloadPos.Z + 96f) < 1.5f,
                     $"end={reloadPos}");
@@ -940,6 +946,90 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- P3: biomes, terrain movement and origin rebasing ----
+        var p3Game = _main.StartGame(null);
+        await Frames(10);
+        var moss = p3Game.ProbeFindBiome("moss", new Vec3(0, 0, 0), 420);
+        var bloom = p3Game.ProbeFindBiome("bloom", new Vec3(0, 0, 0), 420);
+        Check("p3-moss-biome-found", p3Game.ProbeBiomeAt(moss) == "moss",
+            $"point={moss} biome={p3Game.ProbeBiomeAt(moss)} props={p3Game.ProbeLoadedPropCount}");
+        Check("p3-bloom-biome-found", p3Game.ProbeBiomeAt(bloom) == "bloom",
+            $"point={bloom} biome={p3Game.ProbeBiomeAt(bloom)}");
+        Check("p3-procedural-props", p3Game.ProbeLoadedPropCount > 50,
+            $"props={p3Game.ProbeLoadedPropCount}");
+
+        var mossTarget = new Vec3(moss.X + 8, moss.Y, moss.Z);
+        var mossWalk = await WalkRoute(p3Game, moss,
+            new[] { mossTarget }, 0.9f, 35f);
+        Check("p3-walks-moss-terrain",
+            mossWalk.Reached && mossWalk.End.Y > -6f,
+            $"reached={mossWalk.Reached} end={mossWalk.End}");
+        p3Game.ProbeSetCameraZoom(15);
+        p3Game.ProbeSetCameraPitch(-12);
+        p3Game.ProbeLookAt(new Vec3(moss.X + 30, moss.Y + 2, moss.Z + 6));
+        await Frames(5);
+        await Capture("33-moss-biome");
+
+        var bloomTarget = new Vec3(bloom.X + 8, bloom.Y, bloom.Z);
+        var bloomWalk = await WalkRoute(p3Game, bloom,
+            new[] { bloomTarget }, 0.9f, 35f);
+        Check("p3-walks-bloom-terrain",
+            bloomWalk.Reached && bloomWalk.End.Y > -6f,
+            $"reached={bloomWalk.Reached} end={bloomWalk.End}");
+        p3Game.ProbeSetCameraZoom(15);
+        p3Game.ProbeSetCameraPitch(-12);
+        p3Game.ProbeLookAt(new Vec3(bloom.X + 30, bloom.Y + 2, bloom.Z + 6));
+        await Frames(5);
+        await Capture("34-bloom-biome");
+
+        // Long-range movement: the presentation origin rebases near the player
+        // while every logical coordinate, save value and chunk remains stable.
+        const double farX = 18_000, farZ = -12_000;
+        var farStart = new Vec3(farX, p3Game.ProbeGroundHeightAt(new Vec3(farX, 0, farZ)) + 0.6, farZ);
+        p3Game.ProbeTeleport(farStart);
+        await Frames(40);
+        var engine = p3Game.ProbeEnginePlayerPosition;
+        Check("p3-origin-rebases-at-distance",
+            Math.Abs(engine.X) < 16_000 && Math.Abs(engine.Z) < 16_000 &&
+            p3Game.ProbeOriginOffset.Length() > 0,
+            $"engine={engine} offset={p3Game.ProbeOriginOffset}");
+        Check("p3-rebase-keeps-logical-position",
+            Mathf.Sqrt(Mathf.Pow(p3Game.PlayerPosition.X - farX, 2) +
+                       Mathf.Pow(p3Game.PlayerPosition.Z - farZ, 2)) < 2.0,
+            $"player={p3Game.PlayerPosition}");
+        Check("p3-far-chunk-ring", RingComplete(p3Game.ChunkStream!,
+            ChunkCoordinate.OfWorldPoint(farX, farZ)),
+            $"loaded={p3Game.ChunkStream?.LoadedCount}");
+        p3Game.ProbeSetCameraZoom(15);
+        p3Game.ProbeSetCameraPitch(-12);
+        p3Game.ProbeLookAt(new Vec3(farX + 28, farStart.Y + 3, farZ + 8));
+        await Frames(5);
+        await Capture("35-origin-rebase");
+
+        var farTarget = new Vec3(farX + 6, farStart.Y, farZ);
+        var farWalk = await WalkRoute(p3Game, farStart, new[] { farTarget }, 1.0f, 40f);
+        Check("p3-walks-after-rebase",
+            farWalk.Reached && farWalk.End.Y > -6f,
+            $"reached={farWalk.Reached} end={farWalk.End}");
+
+        Check("p3-far-save", p3Game.ProbeSave(), "Save 21 km from the garden origin");
+        var p3Loaded = _main.Saves.Load();
+        Check("p3-far-save-loads", p3Loaded.Success && p3Loaded.Data is not null, p3Loaded.Message);
+        if (p3Loaded.Data is not null)
+        {
+            var p3Reloaded = _main.StartGame(p3Loaded.Data);
+            await Frames(20);
+            Check("p3-reload-rebases", p3Reloaded.ProbeOriginOffset.Length() > 0,
+                $"offset={p3Reloaded.ProbeOriginOffset}");
+            Check("p3-reload-keeps-logical-position",
+                Mathf.Sqrt(Mathf.Pow(p3Reloaded.PlayerPosition.X - farX, 2) +
+                           Mathf.Pow(p3Reloaded.PlayerPosition.Z - farZ, 2)) < 30.0,
+                $"player={p3Reloaded.PlayerPosition}");
+            Check("p3-reload-chunk-loaded",
+                p3Reloaded.ChunkStream is not null &&
+                p3Reloaded.ChunkStream.IsChunkLoaded(ChunkCoordinate.OfWorldPoint(farX, farZ)),
+                $"loaded={p3Reloaded.ChunkStream?.LoadedCount}");
+        }
         _main.ProbeReturnToTitle();
         await Frames(6);
 
@@ -1058,6 +1148,11 @@ public partial class RuntimeProbe : Node
         game.ProbeLookAt(new Vec3(80, 0.7, 6));
         await Frames(4);
         await Capture("20b-reedwater-path");
+        // Step back through the gate: the arrival capture must show the
+        // landmark the player actually reached.
+        game.ProbeTeleport(Rw(7.2, 0.55, 7.0));
+        game.ProbeLookAt(Rw(-2, 0.4, 2.0));
+        await Frames(6);
         Check("reedwater-anchors-visible", game.VisibleAnchorCount == 10,
             $"anchors={game.VisibleAnchorCount}");
         Check("reedwater-insects-visible", game.VisibleInsectCount == 3,

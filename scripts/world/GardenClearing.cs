@@ -41,6 +41,8 @@ public partial class GardenClearing : Node3D
     private StaticBody3D? _brambleGate;
     private MeshInstance3D? _brambleGateMesh;
     private bool _reedwaterPathToastShown;
+    private string? _zone;
+    private string? _zoneBiome;
 
     private string _activeRegionId = RegionIds.GardenClearing;
     private Node3D _gardenWorld = null!;
@@ -52,6 +54,13 @@ public partial class GardenClearing : Node3D
     /// <summary>Seed of the live world; restored from the save manifest and
     /// regenerated per new garden. Probe runs force the historical fixed seed.</summary>
     private int _worldSeed = WorldSaveService.NewGameSeed(deterministic: false);
+    /// <summary>Presentation-only offset: logical world = engine position + this.
+    /// Rebased near the player so float32 physics never leaves comfortable
+    /// precision, while saves and simulation keep stable logical coordinates.</summary>
+    private Vec3 _originOffset = Vec3.Zero;
+    private const double RebaseThreshold = 16_000;
+    private const double RebaseGrid = 64;
+    private readonly Dictionary<Node3D, string> _hostRegions = new();
     private readonly Dictionary<string, Node3D> _regionRoots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Node3D> _regionAnchorRoots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Node3D> _viewHosts = new(StringComparer.Ordinal);
@@ -311,6 +320,8 @@ public partial class GardenClearing : Node3D
         _worldSeed = WorldSaveService.NewGameSeed(_probeMode);
         tuning.Seed = _worldSeed;
         _sim = new GameSimulation(tuning, GameData.LoadMissions());
+        _originOffset = Vec3.Zero;
+        UpdateWorldTransforms();
         RebuildChunkStream();
         ActivateRegion(RegionIds.GardenClearing);
         ResetPresentation();
@@ -350,13 +361,15 @@ public partial class GardenClearing : Node3D
         tuning.Seed = _worldSeed;
         GameData.ApplyDifficulty(tuning, _baselineTuning, Settings.LowThreat);
         _sim = GameSimulation.FromSave(data, tuning, GameData.LoadMissions());
+        var region = _sim.ActiveRegion;
+        var savedPlayer = _sim.GetRegionPlayerPosition(region.Id);
+        var savedWorld = LandmarkCatalog.ToWorld(region.Id, savedPlayer.Position).Absolute;
+        _originOffset = SnapOrigin(savedWorld);
+        UpdateWorldTransforms();
         RebuildChunkStream();
         ActivateRegion(_sim.ActiveRegionId);
         ResetPresentation();
-        var region = _sim.ActiveRegion;
-        var savedPlayer = _sim.GetRegionPlayerPosition(region.Id);
-        _player.GlobalPosition = ClampSavedPlayerPosition(
-            LandmarkCatalog.ToWorld(region.Id, savedPlayer.Position).Absolute, region);
+        _player.GlobalPosition = ToEngine(ClampSavedPlayerPosition(savedWorld, region));
         _regionSafePosition = _player.GlobalPosition;
         _player.FallResetPosition = ToWorld(region.Id, region.PlayerSpawn);
         _player.CameraPivot.Rotation = new Vector3(0, (float)savedPlayer.RotationY, 0);
@@ -367,12 +380,11 @@ public partial class GardenClearing : Node3D
         ProcessEvents();
     }
 
-    private static Vector3 ClampSavedPlayerPosition(Vec3 worldPosition, RegionDefinition region)
+    private static Vec3 ClampSavedPlayerPosition(Vec3 worldPosition, RegionDefinition region)
     {
-        var value = ToVector3(worldPosition);
-        if (!float.IsFinite(value.X) || !float.IsFinite(value.Y) || !float.IsFinite(value.Z) || value.Y < -20f)
-            return ToWorld(region.Id, region.PlayerSpawn);
-        return value;
+        if (!worldPosition.IsFinite || worldPosition.Y < -20)
+            return LandmarkCatalog.ToWorld(region.Id, region.PlayerSpawn).Absolute;
+        return worldPosition;
     }
 
     /// <summary>Start streaming a fresh generated baseline for this world seed.</summary>
@@ -384,6 +396,42 @@ public partial class GardenClearing : Node3D
             _chunks = null;
         }
         _chunks = new ChunkStreamer(new WorldGenerator(_worldSeed), _chunkHost);
+        AddLandmarkAprons();
+    }
+
+    /// <summary>
+    /// The authored Reedwater footprint is chunk-aligned, but its box-ground
+    /// skirts are uniformly lit and met procedural grass with a hard tint line.
+    /// Cover each skirt with the same per-quad colours the generator uses and
+    /// hide the box tops; collision remains authored. The apron lives under the
+    /// streaming host so origin rebasing moves it with the rest of the world.
+    /// </summary>
+    private void AddLandmarkAprons()
+    {
+        var reedwater = _regionRoots.TryGetValue(RegionIds.ReedwaterBank, out var root) ? root : null;
+        if (reedwater is null) return;
+        var skirtMeshes = new[]
+        {
+            "World/Terrain/LandingGate/LandingGateMesh",
+            "World/Terrain/BankSkirtWest/BankSkirtWestMesh",
+            "World/Terrain/BankSkirtEast/BankSkirtEastMesh",
+            "World/Terrain/BankSkirtNorth/BankSkirtNorthMesh",
+            "World/Terrain/BankSkirtSouth/BankSkirtSouthMesh"
+        };
+        foreach (var path in skirtMeshes)
+            if (reedwater.GetNodeOrNull<MeshInstance3D>(path) is { } mesh) mesh.Visible = false;
+
+        var rects = new[]
+        {
+            new WorldRect(72, -16.6, 76.4, 16.6),
+            new WorldRect(115.6, -16.6, 120, 16.6),
+            new WorldRect(72, -24, 120, -16.6),
+            new WorldRect(72, 16.6, 120, 24),
+            new WorldRect(76.4, 4, 77, 8)
+        };
+        for (var i = 0; i < rects.Length; i++)
+            _chunkHost.AddChild(ChunkTerrainBuilder.BuildApron(
+                _worldSeed, rects[i], $"ReedwaterApron{i}"));
     }
 
     /// <summary>
@@ -494,8 +542,10 @@ public partial class GardenClearing : Node3D
         var dt = (float)delta;
         // One continuous world: stream around the player wherever they are,
         // even while a paused menu is open, so the load ring never lags a
-        // teleport or a save restore.
-        _chunks?.Update(_player is null ? Vector3.Zero : _player.GlobalPosition, true);
+        // teleport or a save restore. Rebase first so logical streaming stays
+        // independent of float precision.
+        UpdateOriginRebase();
+        _chunks?.Update(ToVector3(PlayerWorld), true);
         UpdateLandmarkZone();
         UpdatePlayerContext();
         UpdateViews(dt);
@@ -579,7 +629,23 @@ public partial class GardenClearing : Node3D
     {
         if (_sim is null || _player is null) return;
         var zone = LandmarkCatalog.LandmarkAt(PlayerWorld);
-        if (zone is not null && zone != _sim.ActiveRegionId && _sim.EnterLandmark(zone))
+        if (zone != _zone)
+        {
+            _zone = zone;
+            _zoneBiome = null;
+            if (zone is not null) _ui.SetExploration(null, null);
+        }
+        if (zone is null && _sim is not null)
+        {
+            var biome = ProbeBiomeAt(PlayerWorld);
+            if (biome != _zoneBiome)
+            {
+                _zoneBiome = biome;
+                _ui.SetExploration("Wild Meadows",
+                    $"Exploring the wild meadows · {biome} biome");
+            }
+        }
+        if (zone is not null && _sim is not null && zone != _sim.ActiveRegionId && _sim.EnterLandmark(zone))
         {
             ActivateRegion(zone);
             _ui.UpdateHud(_sim, Settings);
@@ -1677,17 +1743,79 @@ public partial class GardenClearing : Node3D
 
     public static Vector3 ToVector3(Vec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
 
-    /// <summary>Landmark-local gameplay coordinates to engine world space.</summary>
-    public static Vector3 ToWorld(string regionId, Vec3 local) =>
+    /// <summary>Landmark-local gameplay coordinates to engine space.</summary>
+    private Vector3 ToWorld(string regionId, Vec3 local) =>
+        ToEngine(LandmarkCatalog.OriginOf(regionId) + local);
+
+    /// <summary>Stable logical world position of a landmark-local point.</summary>
+    public static Vector3 LandmarkWorld(string regionId, Vec3 local) =>
         ToVector3(LandmarkCatalog.OriginOf(regionId) + local);
+
+    /// <summary>Logical world to engine space.</summary>
+    private Vector3 ToEngine(Vec3 world) => ToVector3(world - _originOffset);
+
+    /// <summary>Engine position to logical world.</summary>
+    private Vec3 ToLogical(Vector3 engine) =>
+        new(engine.X + _originOffset.X, engine.Y + _originOffset.Y, engine.Z + _originOffset.Z);
 
     /// <summary>Engine world position to landmark-local simulation coordinates.</summary>
     private Vec3 ToLocal(Vec3 world, string? regionId = null) =>
         LandmarkCatalog.ToLocal(regionId ?? _activeRegionId, world);
 
-    private Vec3 PlayerWorld => _player is null
-        ? Vec3.Zero
-        : new Vec3(_player.GlobalPosition.X, _player.GlobalPosition.Y, _player.GlobalPosition.Z);
+    private Vec3 PlayerWorld => _player is null ? Vec3.Zero : ToLogical(_player.GlobalPosition);
+
+    private static Vec3 SnapOrigin(Vec3 world) => new(
+        Math.Round(world.X / RebaseGrid) * RebaseGrid, 0,
+        Math.Round(world.Z / RebaseGrid) * RebaseGrid);
+
+    /// <summary>Move the presentation origin near the player without changing
+    /// any logical coordinate, save value or simulation state.</summary>
+    private void UpdateOriginRebase()
+    {
+        if (_player is null) return;
+        var engine = new Vec3(_player.GlobalPosition.X, _player.GlobalPosition.Y, _player.GlobalPosition.Z);
+        if (Math.Abs(engine.X) < RebaseThreshold && Math.Abs(engine.Z) < RebaseThreshold) return;
+        ApplyOrigin(SnapOrigin(engine + _originOffset));
+    }
+
+    private void ApplyOrigin(Vec3 target)
+    {
+        if (target == _originOffset) return;
+        var delta = target - _originOffset;
+        _originOffset = target;
+        if (_player is not null)
+        {
+            _player.GlobalPosition -= ToVector3(delta);
+            _player.FallResetPosition -= ToVector3(delta);
+        }
+        _regionSafePosition -= ToVector3(delta);
+        RemovePreview();
+        UpdateWorldTransforms();
+    }
+
+    /// <summary>Place every world-space node for the current logical origin.</summary>
+    private void UpdateWorldTransforms()
+    {
+        var offset = ToVector3(_originOffset);
+        if (_gardenWorld is not null) _gardenWorld.Position = -offset;
+        if (_gardenAnchors is not null) _gardenAnchors.Position = -offset;
+        if (_gardenPassage is not null) _gardenPassage.Position = -offset;
+        if (_chunkHost is not null) _chunkHost.Position = -offset;
+        if (_windParticles is not null)
+            _windParticles.Position = new Vector3(0, 1.8f, 0) - offset;
+        if (_climbLabel is not null)
+            _climbLabel.Position = ToEngine(new Vec3(-1.5, 2.0, 9.0));
+        if (_farBankTrailLabel is not null)
+            _farBankTrailLabel.Position = ToEngine(LandmarkCatalog.OriginOf(RegionIds.ReedwaterBank) +
+                                                   new Vec3(-9.6, 1.7, -2.8));
+        if (_nurseryLabel is not null && _sim is not null)
+            _nurseryLabel.Position = ToWorld(_sim.ActiveRegionId,
+                _sim.ActiveRegion.NurseryPosition) + new Vector3(0, 2.25f, 0);
+        foreach (var (regionId, root) in _regionRoots)
+            root.Position = ToWorld(regionId, Vec3.Zero);
+        foreach (var (host, regionId) in _hostRegions)
+            host.Position = ToWorld(regionId, Vec3.Zero);
+    }
 
     private Vec3 PlayerLocal => ToLocal(PlayerWorld);
 
@@ -1703,10 +1831,11 @@ public partial class GardenClearing : Node3D
         host = new Node3D
         {
             Name = "Region_" + regionId,
-            Position = ToVector3(LandmarkCatalog.OriginOf(regionId))
+            Position = ToWorld(regionId, Vec3.Zero)
         };
         root.AddChild(host);
         _viewHosts[key] = host;
+        _hostRegions[host] = regionId;
         return host;
     }
 
@@ -1749,18 +1878,26 @@ public partial class GardenClearing : Node3D
         _ui.RefreshOpenPanels(_sim);
     }
 
-    public void ProbeTeleport(Vec3 position)
+    public void ProbeTeleport(Vec3 world)
     {
         if (_player is null) return;
-        _player.GlobalPosition = ToVector3(position);
+        // Teleports recentre the presentation origin on the destination so a
+        // far jump never spends a frame outside comfortable float precision.
+        ApplyOrigin(SnapOrigin(world));
+        _player.GlobalPosition = ToEngine(world);
         _player.Velocity = Vector3.Zero;
     }
 
-    public void ProbeLookAt(Vec3 target)
+    /// <summary>Generated terrain height at a logical world point.</summary>
+    public double ProbeGroundHeightAt(Vec3 world) =>
+        _chunks?.Generator.HeightAt(world.X, world.Z) ?? 0;
+
+    public void ProbeLookAt(Vec3 worldTarget)
     {
         if (_player is null) return;
-        var dx = (float)target.X - _player.GlobalPosition.X;
-        var dz = (float)target.Z - _player.GlobalPosition.Z;
+        var target = ToEngine(worldTarget);
+        var dx = target.X - _player.GlobalPosition.X;
+        var dz = target.Z - _player.GlobalPosition.Z;
         var yaw = Mathf.Atan2(-dx, -dz);
         _player.CameraPivot.Rotation = new Vector3(0, yaw, 0);
     }
@@ -1896,9 +2033,11 @@ public partial class GardenClearing : Node3D
         var ok = _sim.TryTravelTo(regionId, out _);
         if (!ok) return false;
         var region = _sim.ActiveRegion;
+        var arrival = LandmarkCatalog.ToWorld(regionId, region.ArrivalPoint).Absolute;
+        ApplyOrigin(SnapOrigin(arrival));
         ActivateRegion(regionId);
         ResetPresentation();
-        _player.GlobalPosition = ToWorld(regionId, region.ArrivalPoint);
+        _player.GlobalPosition = ToEngine(arrival);
         _player.Velocity = Vector3.Zero;
         _regionSafePosition = _player.GlobalPosition;
         _player.FallResetPosition = ToWorld(regionId, region.PlayerSpawn);
@@ -1917,9 +2056,9 @@ public partial class GardenClearing : Node3D
     }
 
     /// <summary>True when the probe sphere at a point intersects an authored water volume.</summary>
-    public bool ProbeWaterVolumeAt(Vec3 position)
+    public bool ProbeWaterVolumeAt(Vec3 world)
     {
-        var value = ToVector3(position);
+        var value = ToEngine(world);
         var space = GetWorld3D().DirectSpaceState;
         using var query = new PhysicsShapeQueryParameters3D
         {
@@ -1934,9 +2073,9 @@ public partial class GardenClearing : Node3D
     }
 
     /// <summary>Same water/ground decision used by UpdateWaterHazard at an arbitrary point.</summary>
-    public bool ProbeWaterHazardAt(Vec3 position)
+    public bool ProbeWaterHazardAt(Vec3 world)
     {
-        var value = ToVector3(position);
+        var value = ToEngine(world);
         var space = GetWorld3D().DirectSpaceState;
         using var query = new PhysicsShapeQueryParameters3D
         {
@@ -1963,18 +2102,26 @@ public partial class GardenClearing : Node3D
         _player.SpringArm.SpringLength = Mathf.Clamp(length, 5.5f, 15f);
     }
 
+    /// <summary>Probe framing: spring-arm pitch in degrees (negative looks down).</summary>
+    public void ProbeSetCameraPitch(float degrees)
+    {
+        if (_player is null) return;
+        _player.SpringArm.Rotation = new Vector3(
+            Mathf.DegToRad(Mathf.Clamp(degrees, -80f, -5f)), 0, 0);
+    }
+
     // Kept as a probe-compatible shim: the travel dialog no longer exists in
     // seamless play, so the modal can never open.
     public void ProbeOpenTravel() { }
     public bool TravelModalOpen => false;
     public bool RegionCompleteModalOpen => _ui.IsRegionCompleteOpen;
-    public void ProbeSetRegionPlayer(Vec3 position)
+    public void ProbeSetRegionPlayer(Vec3 world)
     {
-        _regionSafePosition = ToVector3(position);
-        ProbeTeleport(position);
+        ProbeSetSafePosition(world);
+        ProbeTeleport(world);
     }
 
-    public void ProbeSetSafePosition(Vec3 position) => _regionSafePosition = ToVector3(position);
+    public void ProbeSetSafePosition(Vec3 world) => _regionSafePosition = ToEngine(world);
 
     /// <summary>Anchors and insects of the active landmark's story frame. All
     /// landmarks remain resident in the seamless world (see
@@ -2006,11 +2153,58 @@ public partial class GardenClearing : Node3D
     public bool SimulateSaveFailureForProbe { get; set; }
     public bool PlayerPhysicsPaused => _player?.PhysicsPaused ?? false;
     public bool PlayerClimbing => _player?.IsClimbing ?? false;
-    public Vector3 PlayerPosition => _player?.GlobalPosition ?? Vector3.Zero;
+    /// <summary>Stable logical world position (probes and bookkeeping).</summary>
+    public Vector3 PlayerPosition => _player is null ? Vector3.Zero : ToVector3(PlayerWorld);
     public string ProbeJson { get; set; } = "";
 
-    public Vector2 ProbeScreenPosition(Vec3 worldPosition) =>
-        _player.Camera.UnprojectPosition(ToVector3(worldPosition));
+    public Vector2 ProbeScreenPosition(Vec3 world) =>
+        _player.Camera.UnprojectPosition(ToEngine(world));
+
+    public int ProbeLoadedPropCount => _chunks is null ? 0 : _chunks.Nodes.Values
+        .SelectMany(node => node.GetChildren())
+        .Count(child => child.Name.ToString().StartsWith("Prop_", StringComparison.Ordinal));
+
+    /// <summary>Dominant biome at a logical world point (probe/diagnostic).</summary>
+    public string ProbeBiomeAt(Vec3 world) =>
+        _chunks?.Generator.BiomeNameAt(world.X, world.Z) ?? "none";
+
+    /// <summary>
+    /// Find a representative point of one biome near a logical centre. The
+    /// search prefers a deep core (weight ≥ 0.7) so evidence screenshots show
+    /// the biome's own palette and props rather than a boundary blend, and it
+    /// keeps a clear margin from authored landmark ground.
+    /// </summary>
+    public Vec3 ProbeFindBiome(string biome, Vec3 near, double radius)
+    {
+        if (_chunks is null) return near;
+        var generator = _chunks.Generator;
+        Vec3 best = near;
+        var bestWeight = -1.0;
+        for (var ring = 24.0; ring <= radius; ring += 12)
+        {
+            for (var angle = 0; angle < 360; angle += 12)
+            {
+                var rad = Mathf.DegToRad(angle);
+                var x = near.X + Math.Cos(rad) * ring;
+                var z = near.Z + Math.Sin(rad) * ring;
+                // Generated-land probes only: authored landmark ground is a
+                // different surface and may contain authored obstacles.
+                if (WorldGenerator.AuthoredRects.Any(rect => rect.DistanceOutside(x, z) < 28)) continue;
+                var weight = generator.BiomeWeightAt(x, z, biome);
+                if (weight <= bestWeight) continue;
+                bestWeight = weight;
+                best = new Vec3(x, generator.HeightAt(x, z) + 0.6, z);
+                if (weight >= 0.7) return best;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>Current presentation origin (logical minus engine).</summary>
+    public Vector3 ProbeOriginOffset => ToVector3(_originOffset);
+
+    /// <summary>Raw engine-space position; bounded by the rebase threshold.</summary>
+    public Vector3 ProbeEnginePlayerPosition => _player?.GlobalPosition ?? Vector3.Zero;
 
     public bool ProbeClickAnchor(string anchorId)
     {

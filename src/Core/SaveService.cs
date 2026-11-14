@@ -67,7 +67,7 @@ public static class SaveValidator
         if (data.RegionPlayers is null || data.RegionPlayers.Any(entry =>
                 !RegionIds.IsKnown(entry.Region) ||
                 !IsFinite(entry.X, entry.Y, entry.Z) ||
-                Math.Abs(entry.X) > 60 || Math.Abs(entry.Z) > 60 || entry.Y < -3 || entry.Y > 40))
+                !PositionInBounds(entry.Region, entry.X, entry.Y, entry.Z)))
         {
             error = "A region player position is invalid.";
             return false;
@@ -94,8 +94,7 @@ public static class SaveValidator
             return false;
         }
         if (!IsFinite(data.Player.X, data.Player.Y, data.Player.Z) ||
-            Math.Abs(data.Player.X) > 60 || Math.Abs(data.Player.Z) > 60 ||
-            data.Player.Y < -3 || data.Player.Y > 40)
+            !PositionInBounds(data.ActiveRegionId, data.Player.X, data.Player.Y, data.Player.Z))
         {
             error = "Player position is invalid.";
             return false;
@@ -282,6 +281,21 @@ public static class SaveValidator
     }
 
     private static bool IsFinite(params double[] values) => values.All(double.IsFinite);
+
+    /// <summary>
+    /// Per-region remembered-position bounds. Reedwater Bank is a hand-authored
+    /// pocket, so its coordinates stay tight. The garden is the gateway to the
+    /// procedural world from v0.3.0 onward: exploring beyond the old ±60 hedge
+    /// walls is normal play, so its bound is exploration-scale. The world
+    /// manifest (schema 4) replaces these loose numbers with stable world
+    /// positions in P2.
+    /// </summary>
+    public static bool PositionInBounds(string region, double x, double y, double z)
+    {
+        if (region == RegionIds.GardenClearing)
+            return Math.Abs(x) <= 1_000_000 && Math.Abs(z) <= 1_000_000 && y is >= -8 and <= 64;
+        return Math.Abs(x) <= 60 && Math.Abs(z) <= 60 && y is >= -3 and <= 40;
+    }
 
     public static SaveGameData? Deserialize(byte[] bytes, out string error)
     {

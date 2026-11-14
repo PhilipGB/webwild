@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=36 format=3]
 
 [ext_resource type="PackedScene" path="res://art/models/terrain/pebble_cluster.glb" id="1_ravinestonesa"]
 [ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
@@ -40,16 +40,38 @@ emission = Color(0.368627, 0.784314, 0.760784, 1)
 emission_energy_multiplier = 0.15
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_7_westmeadow"]
-size = Vector3(16, 0.6, 28)
+size = Vector3(21, 0.6, 48)
 
 [sub_resource type="BoxMesh" id="BoxMesh_8_westmeadow"]
-size = Vector3(16, 0.6, 28)
+size = Vector3(21, 0.6, 48)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_9_eastmeadow"]
-size = Vector3(16, 0.6, 28)
+size = Vector3(21, 0.6, 48)
 
 [sub_resource type="BoxMesh" id="BoxMesh_10_eastmeadow"]
-size = Vector3(16, 0.6, 28)
+size = Vector3(21, 0.6, 48)
+[sub_resource type="BoxShape3D" id="BoxShape3D_10_northapron"]
+size = Vector3(6, 0.6, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_10_northapron"]
+size = Vector3(6, 0.6, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_10_southapron"]
+size = Vector3(6, 0.6, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_10_southapron"]
+size = Vector3(6, 0.6, 10)
+[sub_resource type="BoxShape3D" id="BoxShape3D_10_northcap"]
+size = Vector3(6, 3.4, 0.55)
+
+[sub_resource type="BoxMesh" id="BoxMesh_10_northcap"]
+size = Vector3(6, 3.4, 0.55)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_10_southcap"]
+size = Vector3(6, 3.4, 0.55)
+
+[sub_resource type="BoxMesh" id="BoxMesh_10_southcap"]
+size = Vector3(6, 3.4, 0.55)
 
 [sub_resource type="BoxMesh" id="BoxMesh_11_west_cliff"]
 size = Vector3(0.32, 3.1, 28)
@@ -120,7 +142,7 @@ radial_segments = 16
 [node name="GardenTerrain" type="Node3D"]
 
 [node name="WestMeadow" type="StaticBody3D" parent="."]
-position = Vector3(-11, -0.3, 0)
+position = Vector3(-13.5, -0.3, 0)
 collision_layer = 1
 collision_mask = 0
 
@@ -135,7 +157,7 @@ mesh = SubResource("BoxMesh_8_westmeadow")
 material_override = SubResource("StandardMaterial3D_1_grass")
 
 [node name="EastMeadow" type="StaticBody3D" parent="."]
-position = Vector3(11, -0.3, 0)
+position = Vector3(13.5, -0.3, 0)
 collision_layer = 1
 collision_mask = 0
 
@@ -148,6 +170,66 @@ rotation_degrees = Vector3(0, 0, 0)
 scale = Vector3(1, 1, 1)
 mesh = SubResource("BoxMesh_10_eastmeadow")
 material_override = SubResource("StandardMaterial3D_1_grass")
+
+[node name="NorthRavineApron" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.3, -19)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NorthRavineApron"]
+shape = SubResource("BoxShape3D_10_northapron")
+
+[node name="NorthRavineApronTop" type="MeshInstance3D" parent="NorthRavineApron"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_10_northapron")
+material_override = SubResource("StandardMaterial3D_1_grass")
+
+[node name="SouthRavineApron" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.3, 19)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SouthRavineApron"]
+shape = SubResource("BoxShape3D_10_southapron")
+
+[node name="SouthRavineApronTop" type="MeshInstance3D" parent="SouthRavineApron"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_10_southapron")
+material_override = SubResource("StandardMaterial3D_1_grass")
+
+[node name="RavineNorthCap" type="StaticBody3D" parent="."]
+position = Vector3(0, -1.7, -13.725)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RavineNorthCap"]
+shape = SubResource("BoxShape3D_10_northcap")
+
+[node name="RavineNorthCapFace" type="MeshInstance3D" parent="RavineNorthCap"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_10_northcap")
+material_override = SubResource("StandardMaterial3D_5_soil_dark")
+
+[node name="RavineSouthCap" type="StaticBody3D" parent="."]
+position = Vector3(0, -1.7, 13.725)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RavineSouthCap"]
+shape = SubResource("BoxShape3D_10_southcap")
+
+[node name="RavineSouthCapFace" type="MeshInstance3D" parent="RavineSouthCap"]
+position = Vector3(0, 0, 0)
+rotation_degrees = Vector3(0, 0, 0)
+scale = Vector3(1, 1, 1)
+mesh = SubResource("BoxMesh_10_southcap")
+material_override = SubResource("StandardMaterial3D_5_soil_dark")
 
 [node name="WestCliff" type="MeshInstance3D" parent="."]
 position = Vector3(-3, -1.55, 0)

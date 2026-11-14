@@ -45,15 +45,16 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.2.2 | Gameplay reliability and usability hardening: continuous bridge collision, safe New Garden, clear anchor/build decisions, live nursery, arrival-based mastery, guidance/pacing/worker feedback | **RELEASED**; merged PRs [#18](https://github.com/PhilipGB/webwild/pull/18), [#19](https://github.com/PhilipGB/webwild/pull/19), [#20](https://github.com/PhilipGB/webwild/pull/20), [#22](https://github.com/PhilipGB/webwild/pull/22), [#23](https://github.com/PhilipGB/webwild/pull/23), [#24](https://github.com/PhilipGB/webwild/pull/24), [#25](https://github.com/PhilipGB/webwild/pull/25) and [#26](https://github.com/PhilipGB/webwild/pull/26) (Windows runtime NOT VERIFIED) | `docs/prs/v0.2.2.md`; 125 unit tests; 55 scene checks; 307 headless / 308 rendered runtime checks; `docs/EXPORTS.md` |
 | v0.3.0 P0 | Never-ending world foundations: signed 64-bit chunk coordinates, origin rebasing, deterministic terrain sampler, chunk contracts, landmark origins, world-manifest schema 4, per-chunk change store, legacy-save migration, ADR | DONE (no new terrain yet, by design) | `docs/prs/v0.3.0.md`; `docs/adr/0001-never-ending-world.md`; 163 unit tests (125 existing + 38 new); 55 scene checks; 307 headless / 308 rendered runtime checks |
 | v0.3.0 P1 | Procedural chunk streaming: deterministic chunk generator and streamer, flat-shaded vertex-coloured chunk terrain with collision, GLB prop dressing, persistent build queue, hedge gates on all four sides, raycast shadow, exploration save bounds | DONE, merged PR [#28](https://github.com/PhilipGB/webwild/pull/28) | `docs/prs/v0.3.0.md`; `WorldStreamingTests`; 180 unit tests (150 existing + 30 new); 55 scene checks; 327 headless / 328 rendered runtime checks; Linux export re-verified |
+| v0.3.0 P2 | Seamless world and manifest saves: Reedwater embedded at (96, 0), walking replaces travel, physical bramble gate, dual-landmark streaming/blending, one sky/sun, schema-4 `WorldSaveService`, legacy migration on load, durable manifest archive, per-save world seeds | DONE, merged PR [#29](https://github.com/PhilipGB/webwild/pull/29) | `docs/prs/v0.3.0.md`; `SeamlessWorldTests`; 189 unit tests (180 existing + 9 new); 57 scene checks; 339 headless / 340 rendered runtime checks; Linux export re-verified |
 
 ## Verification summary
 
-- `dotnet test`: **180 passed, 0 failed** (150 existing + 30 new world-streaming tests).
-- Scene contract validation: **55 passed, 0 failed** across both regions.
-- Headless runtime probe: **327 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **328 passed, 0 failed**.
-- Exported Linux build, headless probe: **327 passed, 0 failed**.
-- Exported Linux build, rendered Xvfb probe: **328 passed, 0 failed**.
+- `dotnet test`: **189 passed, 0 failed** (180 existing + 9 new seamless-world tests).
+- Scene contract validation: **57 passed, 0 failed** across both regions.
+- Headless runtime probe: **339 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **340 passed, 0 failed**.
+- Exported Linux build, headless probe: **339 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb probe: **340 passed, 0 failed**.
 - Linux x64 export: built successfully and launched.
 - Windows x64 export: built successfully; runtime **NOT VERIFIED** (no Windows host).
 - Legacy saves v0.1.0/v0.1.1/v0.1.2: migration tests pass with real fixtures.
@@ -79,9 +80,10 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 
 ## v0.3.0 — Never-Ending World (in progress)
 
-- P0 foundations and P1 chunk streaming merged (see
-  `docs/prs/v0.3.0.md`). The world-manifest save layer is not yet wired into
-  the live save path; the game still writes schema-3 saves until P2. The
-  authored garden now opens onto a deterministic procedural meadow through
-  hedge gates on all four sides, with one fixed seed until P2 adopts
-  per-save seeds.
+- P0 foundations, P1 chunk streaming and P2 seamless world merged (see
+  `docs/prs/v0.3.0.md`). Reedwater Bank is walked to through generated
+  meadow; the travel dialog is gone and a physical bramble gate opens when
+  the garden story completes. Saves are schema-4 world manifests with
+  per-save seeds, with legacy schema-3 saves migrated on first load. The
+  authored Reedwater ground still shows a tint/lighting seam against
+  procedural grass; biome work is P3.

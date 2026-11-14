@@ -43,10 +43,11 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.2.0 P2 | Modular bridge art, durable supply-cache claim, non-obstructing toast lane, release polish | RELEASED as v0.2.0 (Windows runtime NOT VERIFIED) | PR [#13](https://github.com/PhilipGB/webwild/pull/13); `docs/EVIDENCE.md#v020-p2`; `BridgeLayoutTests`, `RegionTests`, P1 save fixtures; 51 scene checks; 236 runtime checks; screenshots 09b–09c, 16a, 23b |
 | v0.2.1 | Reedwater shoreline: authored water/shelf/bed meshes, refitted water hazards, shoreline screenshots and checks | DONE, merged PR [#16](https://github.com/PhilipGB/webwild/pull/16) (not released; Windows runtime NOT VERIFIED) | `docs/EVIDENCE.md#v021`; 55 scene checks; 246 runtime checks; screenshots 22d–22g |
 | v0.2.2 | Gameplay reliability and usability hardening: continuous bridge collision, safe New Garden, clear anchor/build decisions, live nursery, arrival-based mastery, guidance/pacing/worker feedback | **RELEASED**; merged PRs [#18](https://github.com/PhilipGB/webwild/pull/18), [#19](https://github.com/PhilipGB/webwild/pull/19), [#20](https://github.com/PhilipGB/webwild/pull/20), [#22](https://github.com/PhilipGB/webwild/pull/22), [#23](https://github.com/PhilipGB/webwild/pull/23), [#24](https://github.com/PhilipGB/webwild/pull/24), [#25](https://github.com/PhilipGB/webwild/pull/25) and [#26](https://github.com/PhilipGB/webwild/pull/26) (Windows runtime NOT VERIFIED) | `docs/prs/v0.2.2.md`; 125 unit tests; 55 scene checks; 307 headless / 308 rendered runtime checks; `docs/EXPORTS.md` |
+| v0.3.0 P0 | Never-ending world foundations: signed 64-bit chunk coordinates, origin rebasing, deterministic terrain sampler, chunk contracts, landmark origins, world-manifest schema 4, per-chunk change store, legacy-save migration, ADR | DONE (no new terrain yet, by design) | `docs/prs/v0.3.0.md`; `docs/adr/0001-never-ending-world.md`; 163 unit tests (125 existing + 38 new); 55 scene checks; 307 headless / 308 rendered runtime checks |
 
 ## Verification summary
 
-- `dotnet test`: **125 passed, 0 failed, 0 skipped**.
+- `dotnet test`: **163 passed, 0 failed** (125 existing + 38 new world-contract tests).
 - Scene contract validation: **55 passed, 0 failed** across both regions.
 - Headless runtime probe: **307 passed, 0 failed**.
 - Rendered runtime probe (Xvfb, 1280×720): **308 passed, 0 failed**.
@@ -74,3 +75,10 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
   animation.
 - The repository was restored to private visibility during the v0.1.1 hardening
   pass.
+
+## v0.3.0 — Never-Ending World (in progress)
+
+- P0 foundations merged (see `docs/prs/v0.3.0.md`). The world-manifest save
+  layer is not yet wired into the live save path; the game still writes
+  schema-3 saves until P2. No procedural terrain is generated in the runtime
+  yet (P1 adds streaming).

@@ -1335,7 +1335,7 @@ public partial class GardenClearing : Node3D
             anchor.SetHovered(false);
         }
         _player.InputEnabled = type is null;
-        _ui.SetBuildMode(type, null, _sim);
+        _ui.SetBuildMode(type, null, _sim!);
         if (type is not null && !silent)
         {
             _audio.Play("click");
@@ -1343,7 +1343,7 @@ public partial class GardenClearing : Node3D
                 ? "Click two glowing anchors to spin a capture web, then choose Build. Right-click cancels."
                 : "Click two glowing anchors to build a silk bridge, then choose Build. Right-click cancels.", UiKit.TealDark, 4f);
         }
-        if (type is null) _ui.SetStatus(_sim.GetActiveRegionHint());
+        if (type is null) _ui.SetStatus(_sim!.GetActiveRegionHint());
     }
 
     private void ClearBuild()

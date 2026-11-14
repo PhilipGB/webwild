@@ -12,6 +12,9 @@ public sealed class ChunkData
     /// <summary>Height at terrain grid point [x, z], both in [0, Resolution).</summary>
     public double[,] Heights { get; init; } = new double[0, 0];
 
+    /// <summary>Biome mix at each terrain grid point, used for colour and props.</summary>
+    public BiomeWeights[,] Biomes { get; init; } = new BiomeWeights[0, 0];
+
     /// <summary>Deterministic props for this chunk, sorted stably.</summary>
     public IReadOnlyList<PropPlacement> Props { get; init; } = Array.Empty<PropPlacement>();
 
@@ -27,7 +30,14 @@ public sealed class ChunkData
         h = DeterministicHash.Combine(h, DeterministicHash.Hash(Heights.GetLength(1)));
         for (var x = 0; x < Heights.GetLength(0); x++)
         for (var z = 0; z < Heights.GetLength(1); z++)
+        {
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(Heights[x, z]));
+            var biome = Biomes.GetLength(0) > x && Biomes.GetLength(1) > z
+                ? Biomes[x, z]
+                : BiomeWeights.PureMeadow;
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(biome.Moss));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(biome.Bloom));
+        }
         foreach (var prop in Props)
         {
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(prop.Kind));

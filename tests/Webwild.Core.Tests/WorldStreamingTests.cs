@@ -51,7 +51,7 @@ public class WorldGeneratorTests
         }
         // Beyond the ring the pure noise height is reached.
         var far = generator.HeightAt(WorldGenerator.AuthoredMaxX + WorldGenerator.AuthoredBlendMetres + 5, 40.0);
-        var noise = new TerrainSampler(20260214).HeightAt(
+        var noise = generator.BaseHeightAt(
             WorldGenerator.AuthoredMaxX + WorldGenerator.AuthoredBlendMetres + 5, 40.0);
         Assert.Equal(noise, far, 12);
     }

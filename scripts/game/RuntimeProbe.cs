@@ -622,7 +622,10 @@ public partial class RuntimeProbe : Node
             await Frames(3);
             CheckToastLane(toastGame, "100");
             toastGame.ProbeShowBuildConfirmation();
-            await Frames(3);
+            // The confirm panel re-enters layout when the toolbar hides; the
+            // larger UI scales relayout the whole bottom bar, so give the
+            // container time to settle before measuring it.
+            await Frames(8);
             CheckBuildConfirmLane(toastGame, "100");
             await Capture("16b-ui-build-confirm-100");
             toastGame.ProbeHideBuildConfirmation();
@@ -640,7 +643,7 @@ public partial class RuntimeProbe : Node
             await Frames(3);
             CheckToastLane(toastGame125, "125");
             toastGame125.ProbeShowBuildConfirmation();
-            await Frames(3);
+            await Frames(8);
             CheckBuildConfirmLane(toastGame125, "125");
             toastGame125.ProbeHideBuildConfirmation();
         }
@@ -657,7 +660,7 @@ public partial class RuntimeProbe : Node
             await Frames(3);
             CheckToastLane(toastGame150, "150");
             toastGame150.ProbeShowBuildConfirmation();
-            await Frames(3);
+            await Frames(8);
             CheckBuildConfirmLane(toastGame150, "150");
             toastGame150.ProbeHideBuildConfirmation();
         }
@@ -790,6 +793,131 @@ public partial class RuntimeProbe : Node
             restoredPrevious && _main.Game is not null &&
             _main.Game.Simulation.TickCount >= saveTickBefore,
             $"restoredTick={_main.Game?.Simulation.TickCount} archived={saveTickBefore}");
+
+        // ---- P1: never-ending world acceptance ----
+        // Every exit below is walked with real input. Teleports appear only as
+        // documented instrumentation where walking cannot reasonably reach in
+        // one probe step (long-range unload/reload, far save/reload).
+        var p1Game = _main.Game;
+        Check("p1-streamer-present", p1Game?.ChunkStream is not null, "ChunkStreamer wired");
+        if (p1Game is not null && p1Game.ChunkStream is not null)
+        {
+            var chunks = p1Game.ChunkStream;
+            // The restored session usually already stands in the garden; travel
+            // only when a Reedwater session is still the active one.
+            var gardenReturn = p1Game.ActiveRegionId == RegionIds.GardenClearing ||
+                p1Game.ProbeTravel(RegionIds.GardenClearing);
+            await Frames(8);
+            Check("p1-return-to-garden", gardenReturn && p1Game.ActiveRegionId == RegionIds.GardenClearing,
+                $"region={p1Game.ActiveRegionId}");
+            Check("p1-authored-chunks-never-streamed",
+                WorldGenerator.AuthoredFootprint.All(coordinate => !chunks.Nodes.ContainsKey(coordinate)),
+                $"loaded={chunks.LoadedCount}");
+
+            // North gate: the corridor between hedge edge and ravine cliff, then
+            // the apron, then the chunk boundary at z = -24.
+            var north = await WalkRoute(p1Game, new Vec3(-5f, 0.45f, 5f),
+                new Vec3[] { new(-5, 0, -11), new(-5, 0, -18), new(-5, 0, -28) }, 0.7f, 60f);
+            Check("p1-walks-north-gate-across-boundary",
+                north.Reached && !north.EnteredWater && north.End.Y > -4f,
+                $"reached={north.Reached} end={north.End} water={north.EnteredWater}");
+
+            // The chunk just across the boundary becomes the determinism watch
+            // target: unload it far away, return, and compare content hashes.
+            var watched = new ChunkCoordinate(-1, -2);
+            var watchedFirst = chunks.Nodes.TryGetValue(watched, out var firstNode) ? firstNode : null;
+            var hashBefore = watchedFirst?.GetMeta("content_hash").AsString() ?? "";
+            var idBefore = watchedFirst?.GetInstanceId() ?? 0UL;
+            Check("p1-boundary-chunk-built", watchedFirst is not null && hashBefore.Length > 0,
+                $"hash={hashBefore}");
+
+            // East, south and west gates.
+            var east = await WalkRoute(p1Game, new Vec3(12f, 0.45f, 8.5f),
+                new Vec3[] { new(17.5, 0, 8.5), new(24, 0, 8.5), new(30, 0, 8.5) }, 0.7f, 60f);
+            Check("p1-walks-east-gate-across-boundary",
+                east.Reached && !east.EnteredWater && east.End.X > 28f && east.End.Y > -4f,
+                $"reached={east.Reached} end={east.End}");
+
+            var south = await WalkRoute(p1Game, new Vec3(4.7f, 0.45f, -3f),
+                new Vec3[] { new(4.7, 0, 11), new(4.7, 0, 18), new(4.7, 0, 28) }, 0.7f, 60f);
+            Check("p1-walks-south-gate-across-boundary",
+                south.Reached && !south.EnteredWater && south.End.Z > 26f && south.End.Y > -4f,
+                $"reached={south.Reached} end={south.End}");
+
+            var west = await WalkRoute(p1Game, new Vec3(-12f, 0.45f, 8.5f),
+                new Vec3[] { new(-17.5, 0, 8.5), new(-24, 0, 8.5), new(-30, 0, 8.5) }, 0.7f, 60f);
+            Check("p1-walks-west-gate-across-boundary",
+                west.Reached && !west.EnteredWater && west.End.X < -28f && west.End.Y > -4f,
+                $"reached={west.Reached} end={west.End}");
+
+            // Diagonal walk: crosses the second boundary line and loads the
+            // corner chunk beyond it.
+            var diagonal = await WalkRoute(p1Game, new Vec3(30f, 0.45f, 8.5f),
+                new Vec3[] { new(30, 0, 20), new(28, 0, 28) }, 0.7f, 60f);
+            Check("p1-walks-diagonal-corner",
+                diagonal.Reached && !diagonal.EnteredWater && diagonal.End.Y > -4f,
+                $"reached={diagonal.Reached} end={diagonal.End}");
+            Check("p1-corner-chunk-loaded", chunks.IsChunkLoaded(new ChunkCoordinate(1, 1)),
+                $"loaded={chunks.LoadedCount}");
+            await Capture("30-procedural-meadow");
+
+            // Instrumentation: one teleport crosses more chunks than any walk
+            // can; the unload and ring rebuild it triggers are the generator's
+            // own work and are verified by content hash below.
+            p1Game.ProbeSetSafePosition(new Vec3(120f, 2f, -96f));
+            p1Game.ProbeTeleport(new Vec3(120f, 2f, -96f));
+            await Frames(45);
+            Check("p1-far-chunk-unloaded", !chunks.Nodes.ContainsKey(watched),
+                $"loaded={chunks.LoadedCount} centre={chunks.Centre.Id}");
+            Check("p1-load-ring-complete",
+                RingComplete(chunks, ChunkCoordinate.OfWorldPoint(120, -96)),
+                $"loaded={chunks.LoadedCount}");
+
+            Check("p1-save-while-far", p1Game.ProbeSave(), "Save beyond the old hedge bounds");
+            var farLoaded = _main.Saves.Load();
+            Check("p1-far-save-validates", farLoaded.Success && farLoaded.Data is not null, farLoaded.Message);
+            Check("p1-far-save-keeps-position", farLoaded.Data is not null &&
+                Math.Abs(farLoaded.Data.Player.X - 120.0) < 1.0 &&
+                Math.Abs(farLoaded.Data.Player.Z + 96.0) < 1.0,
+                $"player={farLoaded.Data?.Player.X:0.0},{farLoaded.Data?.Player.Z:0.0}");
+
+            // Return onto the retired chunk and prove the rebuild is identical.
+            p1Game.ProbeSetSafePosition(new Vec3(-5f, 0.45f, -26f));
+            p1Game.ProbeTeleport(new Vec3(-5f, 0.45f, -26f));
+            await Frames(6);
+            var watchedReload = chunks.Nodes.TryGetValue(watched, out var reloadNode) ? reloadNode : null;
+            var hashAfter = watchedReload?.GetMeta("content_hash").AsString() ?? "";
+            Check("p1-chunk-rebuilt-after-unload",
+                watchedReload is not null && watchedReload.GetInstanceId() != idBefore,
+                $"fresh-node={watchedReload is not null}");
+            Check("p1-chunk-reload-deterministic",
+                hashAfter.Length > 0 && hashAfter == hashBefore,
+                $"before={hashBefore} after={hashAfter}");
+            var regenWalk = await WalkRoute(p1Game, new Vec3(-5f, 0.45f, -26f),
+                new Vec3[] { new(-5, 0, -30) }, 0.7f, 30f);
+            Check("p1-regenerated-chunk-walkable",
+                regenWalk.Reached && !regenWalk.EnteredWater && regenWalk.End.Y > -4f,
+                $"reached={regenWalk.Reached} end={regenWalk.End}");
+
+            // Reload from the far save: the spider must arrive standing on
+            // ground that the streamer rebuilds synchronously.
+            if (farLoaded.Data is not null)
+            {
+                var farReloaded = _main.StartGame(farLoaded.Data);
+                await Frames(10);
+                var reloadPos = farReloaded.Player.GlobalPosition;
+                Check("p1-reload-far-restores-position",
+                    Math.Abs(reloadPos.X - 120f) < 1.5f && Math.Abs(reloadPos.Z + 96f) < 1.5f,
+                    $"end={reloadPos}");
+                Check("p1-reload-far-grounded", reloadPos.Y > -6f &&
+                    farReloaded.ChunkStream is not null &&
+                    farReloaded.ChunkStream.IsChunkLoaded(
+                        ChunkCoordinate.OfWorldPoint(reloadPos.X, reloadPos.Z)),
+                    $"y={reloadPos.Y:0.00}");
+                await Capture("31-procedural-far-reload");
+            }
+        }
+
         _main.ProbeReturnToTitle();
         await Frames(6);
 
@@ -1322,6 +1450,20 @@ public partial class RuntimeProbe : Node
                     "Navigation restored");
             }
         }
+
+    }
+
+    /// <summary>The load ring around a centre must always be fully materialised.</summary>
+    private static bool RingComplete(ChunkStreamer chunks, ChunkCoordinate centre)
+    {
+        for (var dx = -3; dx <= 3; dx++)
+        for (var dz = -3; dz <= 3; dz++)
+        {
+            var candidate = centre.Offset(dx, dz);
+            if (WorldGenerator.IsAuthoredChunk(candidate)) continue;
+            if (!chunks.IsChunkLoaded(candidate)) return false;
+        }
+        return true;
     }
 
     private bool HasEvent(string type) => _main.Game?.EventLog.Any(e => e.Type == type) ?? false;

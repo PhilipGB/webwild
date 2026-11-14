@@ -183,12 +183,14 @@ public partial class SpiderPlayer : CharacterBody3D
         if (!wasFloor && IsOnFloor()) _landSquash = 1;
         _landSquash = Mathf.Max(0, _landSquash - dt * 4.5f);
 
-        if (GlobalPosition.Y < -4)
+        if (GlobalPosition.Y < -20)
         {
             GlobalPosition = FallResetPosition;
             Velocity = Vector3.Zero;
         }
-        if (GlobalPosition.Y > -1) _lastSafePosition = GlobalPosition;
+        // The procedural meadow legitimately dips below y = -3, so "safe" is
+        // recorded whenever the character body is actually grounded.
+        if (IsOnFloor()) _lastSafePosition = GlobalPosition;
         AnimateVisual(dt, input, false);
         UpdateShadow();
     }
@@ -218,13 +220,28 @@ public partial class SpiderPlayer : CharacterBody3D
             _visual.Rotation = new Vector3(_visual.Rotation.X,
                 Mathf.LerpAngle(_visual.Rotation.Y, targetYaw, Mathf.Min(1, dt * 10)), _visual.Rotation.Z);
         }
-        _shadow.Position = new Vector3(0, -GlobalPosition.Y + 0.02f, 0);
         _shadow.GlobalRotation = Vector3.Zero;
     }
 
     private void UpdateShadow()
     {
-        _shadow.GlobalPosition = new Vector3(GlobalPosition.X, 0.02f, GlobalPosition.Z);
+        // The shadow used to assume flat ground at y = 0. The procedural world
+        // slopes, so cast straight down from the spider and rest the shadow on
+        // whatever surface is under it; hide it when airborne over a drop.
+        var space = GetWorld3D().DirectSpaceState;
+        var from = GlobalPosition + new Vector3(0, 0.5f, 0);
+        var query = PhysicsRayQueryParameters3D.Create(from, from + new Vector3(0, -30, 0), 1);
+        query.Exclude = new Godot.Collections.Array<Rid> { GetRid() };
+        var hit = space.IntersectRay(query);
+        if (hit.Count > 0 && hit["position"].AsVector3().Y > GlobalPosition.Y - 3.5f)
+        {
+            _shadow.Visible = true;
+            _shadow.GlobalPosition = hit["position"].AsVector3() + new Vector3(0, 0.02f, 0);
+        }
+        else
+        {
+            _shadow.Visible = false;
+        }
     }
 
     public Vec3 ToCorePosition() => new(GlobalPosition.X, GlobalPosition.Y, GlobalPosition.Z);

@@ -17,6 +17,9 @@ public partial class GardenClearing : Node3D
     public SpiderPlayer Player => _player!;
     public IReadOnlyList<GameplayEvent> EventLog => _eventLog;
 
+    /// <summary>Procedural chunk streaming state for probes and diagnostics.</summary>
+    public ChunkStreamer? ChunkStream => _chunks;
+
     private GameSimulation _sim = null!;
     private Tuning _baselineTuning = null!;
     private SaveService _saves = null!;
@@ -43,6 +46,13 @@ public partial class GardenClearing : Node3D
     private Node3D _gardenAnchors = null!;
     private Node3D _gardenPassage = null!;
     private Node3D _regionsHost = null!;
+    private Node3D _chunkHost = null!;
+    private ChunkStreamer? _chunks;
+    /// <summary>
+    /// P1 uses a fixed world seed; the manifest (schema 4) persists per-save
+    /// seeds from P2 onward. Deterministic for every session either way.
+    /// </summary>
+    private const int WorldSeed = 20260214;
     private readonly Dictionary<string, Node3D> _regionRoots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Node3D> _regionAnchorRoots = new(StringComparer.Ordinal);
     private readonly Dictionary<ulong, (uint Layer, uint Mask)> _worldCollisionState = new();
@@ -120,6 +130,13 @@ public partial class GardenClearing : Node3D
         BuildWind();
         BindPlayer();
         BuildInterface();
+
+        // Procedural chunk streaming around the authored garden (P1). The host
+        // is a runtime-only sibling of the authored world; the validator runs
+        // before this point, so it still sees the hand-made scene only.
+        _chunkHost = new Node3D { Name = "ProceduralChunks" };
+        AddChild(_chunkHost);
+        _chunks = new ChunkStreamer(new WorldGenerator(WorldSeed), _chunkHost);
     }
 
     private T GetRequired<T>(string path) where T : Node =>
@@ -338,7 +355,7 @@ public partial class GardenClearing : Node3D
     private static Vector3 ClampSavedPlayerPosition(Vec3 position, RegionDefinition region)
     {
         var value = ToVector3(position);
-        if (!float.IsFinite(value.X) || !float.IsFinite(value.Y) || !float.IsFinite(value.Z) || value.Y < -3f)
+        if (!float.IsFinite(value.X) || !float.IsFinite(value.Y) || !float.IsFinite(value.Z) || value.Y < -8f)
             return ToVector3(region.PlayerSpawn);
         return value;
     }
@@ -365,6 +382,7 @@ public partial class GardenClearing : Node3D
             _gardenPassage.Visible = true;
             SetWorldCollisionActive(_gardenWorld, true);
             SetAnchorRegionActive(_gardenAnchors, true);
+            _chunks?.SetFrozen(false);
             foreach (var (id, root) in _regionRoots)
             {
                 root.Visible = false;
@@ -397,6 +415,9 @@ public partial class GardenClearing : Node3D
                 SetWorldCollisionActive(regionWorld, true);
             _anchorsRoot = _regionAnchorRoots[regionId];
             SetAnchorRegionActive(_anchorsRoot, true);
+            // Reedwater's local coordinates overlap the world origin, so chunk
+            // streaming must freeze and hide while the session is away.
+            _chunks?.SetFrozen(true);
         }
 
         _activeRegionId = regionId;
@@ -539,6 +560,11 @@ public partial class GardenClearing : Node3D
         }
 
         var dt = (float)delta;
+        // Chunk streaming runs even while gameplay is paused: the spider may be
+        // parked deep in the procedural meadow, and paused menus must still
+        // show a complete load ring around them.
+        _chunks?.Update(_player is null ? Vector3.Zero : _player.GlobalPosition,
+            _activeRegionId == RegionIds.GardenClearing);
         UpdatePlayerContext();
         UpdateViews(dt);
         UpdateSuggestions();
@@ -558,10 +584,16 @@ public partial class GardenClearing : Node3D
 
         if (_player is not null && _player.GlobalPosition.Y < -3.1f && !_fallToastShown)
         {
-            _fallToastShown = true;
-            _ui.ShowToast(_activeRegionId == RegionIds.GardenClearing
-                ? "Whoops! The ravine sends you back to the home leaf."
-                : "Whoops! The bank sends you back to your safe spot.", UiKit.Coral, 4f);
+            // Only the authored pocket has a hazard dip; the procedural meadow
+            // legitimately rolls below -3, so the toast must not fire there.
+            var authored = Math.Abs(_player.GlobalPosition.X) <= 24f && Math.Abs(_player.GlobalPosition.Z) <= 24f;
+            if (_activeRegionId != RegionIds.GardenClearing || authored)
+            {
+                _fallToastShown = true;
+                _ui.ShowToast(_activeRegionId == RegionIds.GardenClearing
+                    ? "Whoops! The ravine sends you back to the home leaf."
+                    : "Whoops! The bank sends you back to your safe spot.", UiKit.Coral, 4f);
+            }
         }
         else if (_player is not null && _player.GlobalPosition.Y > -1f)
         {

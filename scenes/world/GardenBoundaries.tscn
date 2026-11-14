@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="PackedScene" path="res://art/models/flora/bush.glb" id="1_hedge0"]
 [ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
@@ -7,17 +7,29 @@
 [ext_resource type="PackedScene" path="res://art/models/flora/tall_grass.glb" id="5_hedge3"]
 [ext_resource type="PackedScene" path="res://art/models/flora/sunflower.glb" id="6_hedge4"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_1_northhedgewall"]
-size = Vector3(38, 3.2, 0.8)
+[sub_resource type="BoxShape3D" id="BoxShape3D_1_northhedgewest"]
+size = Vector3(13, 3.2, 0.8)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_2_southhedgewall"]
-size = Vector3(38, 3.2, 0.8)
+[sub_resource type="BoxShape3D" id="BoxShape3D_1_northhedgeeast"]
+size = Vector3(13, 3.2, 0.8)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_3_westhedgewall"]
-size = Vector3(0.8, 3.2, 28)
+[sub_resource type="BoxShape3D" id="BoxShape3D_2_southhedgewest"]
+size = Vector3(13, 3.2, 0.8)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_4_easthedgewall"]
-size = Vector3(0.8, 3.2, 28)
+[sub_resource type="BoxShape3D" id="BoxShape3D_2_southhedgeeast"]
+size = Vector3(13, 3.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3_westhedgesouth"]
+size = Vector3(0.8, 3.2, 19.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3_westhedgenorth"]
+size = Vector3(0.8, 3.2, 2.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4_easthedgesouth"]
+size = Vector3(0.8, 3.2, 19.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4_easthedgenorth"]
+size = Vector3(0.8, 3.2, 2.5)
 
 [node name="GardenBoundaries" type="Node3D"]
 
@@ -27,8 +39,12 @@ collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="NorthHedgeWall"]
-shape = SubResource("BoxShape3D_1_northhedgewall")
-position = Vector3(0, 1.6, 0)
+shape = SubResource("BoxShape3D_1_northhedgewest")
+position = Vector3(-12.5, 1.6, 0)
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="NorthHedgeWall"]
+shape = SubResource("BoxShape3D_1_northhedgeeast")
+position = Vector3(12.5, 1.6, 0)
 
 [node name="SouthHedgeWall" type="StaticBody3D" parent="."]
 position = Vector3(0, 0, 13.45)
@@ -36,8 +52,12 @@ collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="SouthHedgeWall"]
-shape = SubResource("BoxShape3D_2_southhedgewall")
-position = Vector3(0, 1.6, 0)
+shape = SubResource("BoxShape3D_2_southhedgewest")
+position = Vector3(-12.5, 1.6, 0)
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="SouthHedgeWall"]
+shape = SubResource("BoxShape3D_2_southhedgeeast")
+position = Vector3(12.5, 1.6, 0)
 
 [node name="WestHedgeWall" type="StaticBody3D" parent="."]
 position = Vector3(-18.45, 0, 0)
@@ -45,8 +65,12 @@ collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WestHedgeWall"]
-shape = SubResource("BoxShape3D_3_westhedgewall")
-position = Vector3(0, 1.6, 0)
+shape = SubResource("BoxShape3D_3_westhedgesouth")
+position = Vector3(0, 1.6, -4.25)
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="WestHedgeWall"]
+shape = SubResource("BoxShape3D_3_westhedgenorth")
+position = Vector3(0, 1.6, 12.75)
 
 [node name="EastHedgeWall" type="StaticBody3D" parent="."]
 position = Vector3(18.45, 0, 0)
@@ -54,8 +78,12 @@ collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="EastHedgeWall"]
-shape = SubResource("BoxShape3D_4_easthedgewall")
-position = Vector3(0, 1.6, 0)
+shape = SubResource("BoxShape3D_4_easthedgesouth")
+position = Vector3(0, 1.6, -4.25)
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="EastHedgeWall"]
+shape = SubResource("BoxShape3D_4_easthedgenorth")
+position = Vector3(0, 1.6, 12.75)
 
 [node name="Hedge0" parent="." instance=ExtResource("1_hedge0")]
 position = Vector3(-18, 0, -12.9)
@@ -1293,131 +1321,4 @@ material_override = ExtResource("2_vcol")
 material_override = ExtResource("2_vcol")
 
 [node name="Frond_8_1" parent="Hedge37/world" index="18"]
-material_override = ExtResource("2_vcol")
-
-[node name="Hedge38" parent="." instance=ExtResource("5_hedge3")]
-position = Vector3(-17.9, 0, 7)
-rotation_degrees = Vector3(0, 874, 0)
-scale = Vector3(0.84, 0.84, 0.84)
-
-[node name="world" parent="Hedge38" index="0"]
-
-[node name="Blade_0" parent="Hedge38/world" index="0"]
-material_override = ExtResource("2_vcol")
-
-[node name="Blade_1" parent="Hedge38/world" index="1"]
-material_override = ExtResource("2_vcol")
-
-[node name="Blade_2" parent="Hedge38/world" index="2"]
-material_override = ExtResource("2_vcol")
-
-[node name="Blade_3" parent="Hedge38/world" index="3"]
-material_override = ExtResource("2_vcol")
-
-[node name="Blade_4" parent="Hedge38/world" index="4"]
-material_override = ExtResource("2_vcol")
-
-[node name="Blade_5" parent="Hedge38/world" index="5"]
-material_override = ExtResource("2_vcol")
-
-[node name="Blade_6" parent="Hedge38/world" index="6"]
-material_override = ExtResource("2_vcol")
-
-[node name="Blade_7" parent="Hedge38/world" index="7"]
-material_override = ExtResource("2_vcol")
-
-[node name="Hedge39" parent="." instance=ExtResource("6_hedge4")]
-position = Vector3(17.9, 0, 7)
-rotation_degrees = Vector3(0, 897, 0)
-scale = Vector3(0.9, 0.9, 0.9)
-
-[node name="world" parent="Hedge39" index="0"]
-
-[node name="Stalk" parent="Hedge39/world" index="0"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_0" parent="Hedge39/world" index="1"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_1" parent="Hedge39/world" index="2"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_2" parent="Hedge39/world" index="3"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_3" parent="Hedge39/world" index="4"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_4" parent="Hedge39/world" index="5"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_5" parent="Hedge39/world" index="6"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_6" parent="Hedge39/world" index="7"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_7" parent="Hedge39/world" index="8"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_8" parent="Hedge39/world" index="9"]
-material_override = ExtResource("2_vcol")
-
-[node name="Petal_9" parent="Hedge39/world" index="10"]
-material_override = ExtResource("2_vcol")
-
-[node name="Pollen" parent="Hedge39/world" index="11"]
-material_override = ExtResource("2_vcol")
-
-[node name="Leaf_-1" parent="Hedge39/world" index="12"]
-material_override = ExtResource("2_vcol")
-
-[node name="Leaf_1" parent="Hedge39/world" index="13"]
-material_override = ExtResource("2_vcol")
-
-[node name="Hedge40" parent="." instance=ExtResource("1_hedge0")]
-position = Vector3(-17.9, 0, 10)
-rotation_degrees = Vector3(0, 920, 0)
-scale = Vector3(0.72, 0.72, 0.72)
-
-[node name="world" parent="Hedge40" index="0"]
-
-[node name="Foliage_0" parent="Hedge40/world" index="0"]
-material_override = ExtResource("2_vcol")
-
-[node name="Foliage_1" parent="Hedge40/world" index="1"]
-material_override = ExtResource("2_vcol")
-
-[node name="Foliage_2" parent="Hedge40/world" index="2"]
-material_override = ExtResource("2_vcol")
-
-[node name="Foliage_3" parent="Hedge40/world" index="3"]
-material_override = ExtResource("2_vcol")
-
-[node name="Hedge41" parent="." instance=ExtResource("3_hedge1")]
-position = Vector3(17.9, 0, 10)
-rotation_degrees = Vector3(0, 943, 0)
-scale = Vector3(0.78, 0.78, 0.78)
-
-[node name="world" parent="Hedge41" index="0"]
-
-[node name="Foliage_0" parent="Hedge41/world" index="0"]
-material_override = ExtResource("2_vcol")
-
-[node name="Foliage_1" parent="Hedge41/world" index="1"]
-material_override = ExtResource("2_vcol")
-
-[node name="Foliage_2" parent="Hedge41/world" index="2"]
-material_override = ExtResource("2_vcol")
-
-[node name="Foliage_3" parent="Hedge41/world" index="3"]
-material_override = ExtResource("2_vcol")
-
-[node name="Berry_0" parent="Hedge41/world" index="4"]
-material_override = ExtResource("2_vcol")
-
-[node name="Berry_1" parent="Hedge41/world" index="5"]
-material_override = ExtResource("2_vcol")
-
-[node name="Berry_2" parent="Hedge41/world" index="6"]
 material_override = ExtResource("2_vcol")

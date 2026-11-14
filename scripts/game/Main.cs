@@ -8,7 +8,7 @@ namespace Webwild.Game;
 public partial class Main : Node3D
 {
     public SettingsData Settings { get; private set; } = new();
-    public SaveService Saves { get; private set; } = null!;
+    public WorldSaveService Saves { get; private set; } = null!;
     public GardenClearing? Game => _game;
     public bool ProbeMode => _probeMode;
     public bool TitleVisible => _titleRoot?.Visible ?? false;
@@ -45,7 +45,7 @@ public partial class Main : Node3D
 
         _settingsService = GameData.CreateSettingsService();
         Settings = _settingsService.Load();
-        Saves = GameData.CreateSaveService();
+        Saves = GameData.CreateWorldSaveService();
         GameData.ApplyUiScale(Settings);
         GameData.ApplyFullscreen(Settings);
 

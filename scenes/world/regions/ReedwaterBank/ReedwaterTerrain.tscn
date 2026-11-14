@@ -1,11 +1,11 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="ArrayMesh" path="res://art/meshes/reedwater_water_surface.tres" id="1_water_mesh"]
 [ext_resource type="ArrayMesh" path="res://art/meshes/reedwater_shore_shelf.tres" id="2_shelf_mesh"]
 [ext_resource type="ArrayMesh" path="res://art/meshes/reedwater_pond_bed.tres" id="3_bed_mesh"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_bank_grass"]
-albedo_color = Color(0.431373, 0.611765, 0.352941, 1)
+albedo_color = Color(0.466667, 0.658824, 0.352941, 1)
 roughness = 0.96
 
 [sub_resource type="StandardMaterial3D" id="Mat_bank_soil"]
@@ -46,6 +46,41 @@ size = Vector3(12, 0.6, 20)
 material = SubResource("Mat_bank_grass")
 size = Vector3(12, 0.6, 20)
 
+[sub_resource type="BoxShape3D" id="Shape_landing_gate"]
+size = Vector3(0.6, 0.6, 4)
+
+[sub_resource type="BoxMesh" id="Mesh_landing_gate"]
+material = SubResource("Mat_bank_grass")
+size = Vector3(0.6, 0.6, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_skirt_west"]
+size = Vector3(4.4, 0.6, 33.2)
+
+[sub_resource type="BoxMesh" id="Mesh_skirt_west"]
+material = SubResource("Mat_bank_grass")
+size = Vector3(4.4, 0.6, 33.2)
+
+[sub_resource type="BoxShape3D" id="Shape_skirt_east"]
+size = Vector3(4.4, 0.6, 33.2)
+
+[sub_resource type="BoxMesh" id="Mesh_skirt_east"]
+material = SubResource("Mat_bank_grass")
+size = Vector3(4.4, 0.6, 33.2)
+
+[sub_resource type="BoxShape3D" id="Shape_skirt_north"]
+size = Vector3(48, 0.6, 7.4)
+
+[sub_resource type="BoxMesh" id="Mesh_skirt_north"]
+material = SubResource("Mat_bank_grass")
+size = Vector3(48, 0.6, 7.4)
+
+[sub_resource type="BoxShape3D" id="Shape_skirt_south"]
+size = Vector3(48, 0.6, 7.4)
+
+[sub_resource type="BoxMesh" id="Mesh_skirt_south"]
+material = SubResource("Mat_bank_grass")
+size = Vector3(48, 0.6, 7.4)
+
 [sub_resource type="BoxMesh" id="Mesh_detail_box"]
 size = Vector3(1, 1, 1)
 
@@ -84,6 +119,61 @@ shape = SubResource("Shape_far_bank")
 
 [node name="FarBankMesh" type="MeshInstance3D" parent="FarBank"]
 mesh = SubResource("Mesh_far_bank")
+
+[node name="LandingGate" type="StaticBody3D" parent="."]
+position = Vector3(-19.3, -0.3, 6)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LandingGate"]
+shape = SubResource("Shape_landing_gate")
+
+[node name="LandingGateMesh" type="MeshInstance3D" parent="LandingGate"]
+mesh = SubResource("Mesh_landing_gate")
+
+[node name="BankSkirtWest" type="StaticBody3D" parent="."]
+position = Vector3(-21.8, -0.3, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BankSkirtWest"]
+shape = SubResource("Shape_skirt_west")
+
+[node name="BankSkirtWestMesh" type="MeshInstance3D" parent="BankSkirtWest"]
+mesh = SubResource("Mesh_skirt_west")
+
+[node name="BankSkirtEast" type="StaticBody3D" parent="."]
+position = Vector3(21.8, -0.3, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BankSkirtEast"]
+shape = SubResource("Shape_skirt_east")
+
+[node name="BankSkirtEastMesh" type="MeshInstance3D" parent="BankSkirtEast"]
+mesh = SubResource("Mesh_skirt_east")
+
+[node name="BankSkirtNorth" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.3, -20.3)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BankSkirtNorth"]
+shape = SubResource("Shape_skirt_north")
+
+[node name="BankSkirtNorthMesh" type="MeshInstance3D" parent="BankSkirtNorth"]
+mesh = SubResource("Mesh_skirt_north")
+
+[node name="BankSkirtSouth" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.3, 20.3)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BankSkirtSouth"]
+shape = SubResource("Shape_skirt_south")
+
+[node name="BankSkirtSouthMesh" type="MeshInstance3D" parent="BankSkirtSouth"]
+mesh = SubResource("Mesh_skirt_south")
 
 [node name="PondWater" type="MeshInstance3D" parent="."]
 position = Vector3(0, -0.03, 0)

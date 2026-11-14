@@ -283,16 +283,16 @@ public static class SaveValidator
     private static bool IsFinite(params double[] values) => values.All(double.IsFinite);
 
     /// <summary>
-    /// Per-region remembered-position bounds. Reedwater Bank is a hand-authored
-    /// pocket, so its coordinates stay tight. The garden is the gateway to the
-    /// procedural world from v0.3.0 onward: exploring beyond the old ±60 hedge
-    /// walls is normal play, so its bound is exploration-scale. The world
-    /// manifest (schema 4) replaces these loose numbers with stable world
-    /// positions in P2.
+    /// Remembered-position bounds. From v0.3.0 the world is continuous: the
+    /// player can walk from either landmark into the procedural meadow, so a
+    /// landmark-local position may legitimately be far outside that landmark's
+    /// authored pocket. Bounds therefore only reject non-finite or physically
+    /// impossible values; authored-worker positions remain tight elsewhere.
+    /// The schema-4 world manifest stores the true world position.
     /// </summary>
     public static bool PositionInBounds(string region, double x, double y, double z)
     {
-        if (region == RegionIds.GardenClearing)
+        if (region is RegionIds.GardenClearing or RegionIds.ReedwaterBank)
             return Math.Abs(x) <= 1_000_000 && Math.Abs(z) <= 1_000_000 && y is >= -8 and <= 64;
         return Math.Abs(x) <= 60 && Math.Abs(z) <= 60 && y is >= -3 and <= 40;
     }

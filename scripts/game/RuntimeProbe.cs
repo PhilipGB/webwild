@@ -48,6 +48,8 @@ public partial class RuntimeProbe : Node
         foreach (var sceneCheck in game.ProbeSceneValidation())
             Check("scene-" + sceneCheck.Name, sceneCheck.Pass, sceneCheck.Detail);
         Check("anchors-visible", game.VisibleAnchorCount == 12, $"anchors={game.VisibleAnchorCount}");
+        Check("p2-bramble-gate-closed", game.ProbeBrambleGateBlocking,
+            "The Reedwater path stays physically closed until the garden story is complete");
         Check("insects-visible", game.VisibleInsectCount == 4, $"insects={game.VisibleInsectCount}");
         Check("hud-ready", game.Player is not null, "Player exists");
         Check("audio-buses", AudioServer.GetBusIndex("Music") >= 0 && AudioServer.GetBusIndex("SFX") >= 0,
@@ -918,6 +920,26 @@ public partial class RuntimeProbe : Node
             }
         }
 
+        // ---- P2: the bramble gate is a real obstacle before the story ----
+        // A fresh garden has not earned the Reedwater path; walking into the
+        // gate must stop the spider rather than silently opening the region.
+        var gateGame = _main.StartGame(null);
+        await Frames(10);
+        Check("p2-fresh-gate-closed", gateGame.ProbeBrambleGateBlocking,
+            "Fresh garden keeps the Reedwater path closed");
+        gateGame.ProbeSetSafePosition(new Vec3(75, 0.55, 6));
+        gateGame.ProbeTeleport(new Vec3(75, 0.55, 6));
+        gateGame.ProbeLookAt(new Vec3(82, 0.55, 6));
+        await Frames(4);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(90);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(8);
+        Check("p2-fresh-gate-blocks-walking", gateGame.PlayerPosition.X < 76.3f,
+            $"x={gateGame.PlayerPosition.X:0.00} region={gateGame.ActiveRegionId}");
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         _main.ProbeReturnToTitle();
         await Frames(6);
 
@@ -988,31 +1010,54 @@ public partial class RuntimeProbe : Node
         var gardenWebsBefore = sim.Webs.Count(web => web.Region == RegionIds.GardenClearing);
         Check("reedwater-unlocked", sim.ReedwaterUnlocked, "Story victory opens the east passage");
 
-        game.ProbeOpenTravel();
+        var supplyAlreadyClaimed = sim.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank);
+        var supplyEventsBefore = sim.Events.Count(e =>
+            e.Type == "RegionSupply" && e.Region == RegionIds.ReedwaterBank);
+        // Real-input acceptance for P2: leave the garden's east gate, cross the
+        // generated meadows and step through the (now open) bramble gate. No
+        // teleport and no travel dialog are involved.
+        var toReedwater = await WalkRoute(game, new Vec3(23, 0.55, 8.5),
+            new[]
+            {
+                new Vec3(40, 0.45, 8.5), new Vec3(55, 0.5, 8.0),
+                new Vec3(68, 0.45, 7.0), new Vec3(74, 0.4, 6.2),
+                new Vec3(80, 0.45, 6.0)
+            }, 0.9f, 100f);
         await Frames(4);
-        Check("travel-dialog-opens", game.TravelModalOpen, "Destination and explanation are shown");
-        await Capture("20-travel-dialog");
-        game.ProbeCloseModal();
-        await Frames(2);
-
-        var supplyFoodBefore = sim.Ledger.Food;
-        var supplySilkBefore = sim.Ledger.Silk;
-        var travelled = game.ProbeTravel(RegionIds.ReedwaterBank);
-        // Read the grant before a real-time silk batch can spend a food unit.
-        var supplyFoodAfter = sim.Ledger.Food;
-        var supplySilkAfter = sim.Ledger.Silk;
-        await Frames(8);
-        Check("travel-to-reedwater", travelled && game.ActiveRegionId == RegionIds.ReedwaterBank,
-            $"region={game.ActiveRegionId}");
-        var supplyEvent = sim.Events.Any(e => e.Type == "RegionSupply" && e.Region == RegionIds.ReedwaterBank);
+        Check("p2-walks-garden-to-reedwater",
+            toReedwater.Reached && game.ActiveRegionId == RegionIds.ReedwaterBank &&
+            !toReedwater.EnteredWater,
+            $"reached={toReedwater.Reached} region={game.ActiveRegionId} end={toReedwater.End}");
+        Check("p2-bramble-gate-open", game.ProbeBrambleGateOpen,
+            "The garden story physically removed the barrier");
+        Check("p2-both-landmarks-resident",
+            game.ResidentAnchorCount == 22 && game.ResidentInsectCount == 7,
+            $"anchors={game.ResidentAnchorCount} insects={game.ResidentInsectCount}");
+        Check("p2-reedwater-chunks-excluded",
+            game.ChunkStream is not null &&
+            !game.ChunkStream.IsChunkLoaded(new ChunkCoordinate(4, 0)) &&
+            !game.ChunkStream.IsChunkLoaded(new ChunkCoordinate(3, -1)),
+            $"loaded={game.ChunkStream?.LoadedCount}");
+        var supplyEventsAfter = sim.Events.Count(e =>
+            e.Type == "RegionSupply" && e.Region == RegionIds.ReedwaterBank);
+        // A continued save may already hold the durable outpost claim. Either
+        // way, the transition must never grant the cache a second time.
         Check("reedwater-supply-granted-once",
-            supplyFoodAfter >= supplyFoodBefore + 6 && supplySilkAfter >= supplySilkBefore + 24 &&
-            sim.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank),
-            $"food={supplyFoodBefore}->{supplyFoodAfter} silk={supplySilkBefore}->{supplySilkAfter} " +
-            $"claimed={string.Join(",", sim.ClaimedSupplyCaches)} event={supplyEvent}");
-        Check("reedwater-player-arrival",
-            game.PlayerPosition.DistanceTo(GardenClearing.ToVector3(ReedwaterLayout.ArrivalPoint)) < 0.6f,
+            sim.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank) &&
+            (supplyAlreadyClaimed
+                ? supplyEventsAfter == supplyEventsBefore
+                : supplyEventsAfter == supplyEventsBefore + 1),
+            $"claimed={string.Join(",", sim.ClaimedSupplyCaches)} already={supplyAlreadyClaimed} " +
+            $"events={supplyEventsBefore}->{supplyEventsAfter}");
+        Check("p2-entered-reedwater-on-foot",
+            game.PlayerPosition.DistanceTo(GardenClearing.ToVector3(new Vec3(80, 0.45, 6))) < 2.5f,
             $"player={game.PlayerPosition}");
+        // Evidence of the physical connection: stand in the connecting meadow
+        // and look through the opened bramble gate into Reedwater.
+        game.ProbeTeleport(new Vec3(70.5, 0.55, 6));
+        game.ProbeLookAt(new Vec3(80, 0.7, 6));
+        await Frames(4);
+        await Capture("20b-reedwater-path");
         Check("reedwater-anchors-visible", game.VisibleAnchorCount == 10,
             $"anchors={game.VisibleAnchorCount}");
         Check("reedwater-insects-visible", game.VisibleInsectCount == 3,
@@ -1020,6 +1065,10 @@ public partial class RuntimeProbe : Node
         // Hatch at the outpost while the arrival supply cache still covers the
         // cost; later walking/time-based silk production must not make this
         // deterministic feature check depend on a race.
+        // A continued save may have spent the arrival cache on an earlier run;
+        // this check covers the hatch decision, not economy endurance.
+        if (sim.Ledger.Food < 4 || sim.Ledger.Silk < 4)
+            sim.Ledger.Restore(Math.Max(sim.Ledger.Food, 4), Math.Max(sim.Ledger.Silk, 4));
         var hatchCheck = sim.CanHatch();
         var hatched = game.ProbeHatch();
         Check("reedwater-helper-hatched", hatched,
@@ -1027,10 +1076,12 @@ public partial class RuntimeProbe : Node
         await Frames(6);
         await Capture("21-reedwater-arrival");
 
-        var startDry = new Vec3(7.0, 0.55, 8.5);
-        var farDry = new Vec3(-7.6, 0.55, -1.0);
-        var islandADry = sim.GetAnchor(ReedwaterLayout.IslandAPost)!.Position;
-        var islandBDry = sim.GetAnchor(ReedwaterLayout.IslandBPost)!.Position;
+        var startDry = Rw(7.0, 0.55, 8.5);
+        var farDry = Rw(-7.6, 0.55, -1.0);
+        var islandADry = LandmarkCatalog.ToWorld(RegionIds.ReedwaterBank,
+            sim.GetAnchor(ReedwaterLayout.IslandAPost)!.Position).Absolute;
+        var islandBDry = LandmarkCatalog.ToWorld(RegionIds.ReedwaterBank,
+            sim.GetAnchor(ReedwaterLayout.IslandBPost)!.Position).Absolute;
         Check("shoreline-start-bank-dry",
             !game.ProbeWaterVolumeAt(startDry) && !game.ProbeWaterHazardAt(startDry),
             $"water={game.ProbeWaterVolumeAt(startDry)} hazard={game.ProbeWaterHazardAt(startDry)}");
@@ -1044,9 +1095,9 @@ public partial class RuntimeProbe : Node
 
         var openWaterPoints = new[]
         {
-            new Vec3(4.2, -0.3, 8.5),
-            new Vec3(-2.5, -0.3, -4.0),
-            new Vec3(-6.2, -0.3, 5.0)
+            Rw(4.2, -0.3, 8.5),
+            Rw(-2.5, -0.3, -4.0),
+            Rw(-6.2, -0.3, 5.0)
         };
         Check("shoreline-open-water-is-hazardous",
             openWaterPoints.All(point => game.ProbeWaterHazardAt(point)),
@@ -1054,7 +1105,7 @@ public partial class RuntimeProbe : Node
                 $"{point}:{game.ProbeWaterHazardAt(point)}")));
 
         game.ProbeSetSafePosition(startDry);
-        game.ProbeTeleport(new Vec3(4.2, -0.3, 8.5));
+        game.ProbeTeleport(Rw(4.2, -0.3, 8.5));
         await Frames(8);
         Check("shoreline-water-recovery",
             game.PlayerPosition.DistanceTo(GardenClearing.ToVector3(startDry)) < 0.9f &&
@@ -1063,50 +1114,50 @@ public partial class RuntimeProbe : Node
 
         // The pond is real collision, not a simulation flag. Walk west from the
         // starting bank without a bridge and verify the water returns the player.
-        game.ProbeSetSafePosition(ReedwaterLayout.ArrivalPoint);
-        game.ProbeTeleport(new Vec3(6.5, 0.55, 6.5));
-        game.ProbeLookAt(new Vec3(0, 0.55, 5.8));
+        game.ProbeSetSafePosition(Rw(10, 0.55, 8.5));
+        game.ProbeTeleport(Rw(6.5, 0.55, 6.5));
+        game.ProbeLookAt(Rw(0, 0.55, 5.8));
         await Frames(3);
         Input.ActionPress("move_forward");
         await PhysicsFrames(110);
         Input.ActionRelease("move_forward");
         await PhysicsFrames(20);
         Check("water-blocks-without-bridge",
-            game.PlayerPosition.X > 5.9f,
+            game.PlayerPosition.X > 101.9f,
             $"x={game.PlayerPosition.X:0.00} inWater={game.ProbeInWater()}");
         await Capture("22-reedwater-pond");
         game.ProbeSetCameraZoom(15);
-        game.ProbeTeleport(new Vec3(9.5, 1.2, 12.8));
-        game.ProbeLookAt(new Vec3(-4.0, 0.4, 2.0));
+        game.ProbeTeleport(Rw(9.5, 1.2, 12.8));
+        game.ProbeLookAt(Rw(-4.0, 0.4, 2.0));
         await Frames(4);
         await Capture("22b-reedwater-overview");
-        game.ProbeTeleport(new Vec3(3.2, 0.8, 9.0));
-        game.ProbeLookAt(new Vec3(1.0, 0.2, 5.8));
+        game.ProbeTeleport(Rw(3.2, 0.8, 9.0));
+        game.ProbeLookAt(Rw(1.0, 0.2, 5.8));
         await Frames(4);
         await Capture("22c-first-island");
         game.ProbeSetCameraZoom(10);
 
-        game.ProbeSetSafePosition(new Vec3(8.5, 0.55, 12.0));
-        game.ProbeTeleport(new Vec3(8.5, 0.55, 12.0));
-        game.ProbeLookAt(new Vec3(4.5, 0.25, 8.0));
+        game.ProbeSetSafePosition(Rw(8.5, 0.55, 12.0));
+        game.ProbeTeleport(Rw(8.5, 0.55, 12.0));
+        game.ProbeLookAt(Rw(4.5, 0.25, 8.0));
         await Frames(4);
         await Capture("22d-start-shoreline");
 
-        game.ProbeSetSafePosition(new Vec3(-8.8, 0.55, 3.0));
-        game.ProbeTeleport(new Vec3(-8.8, 0.55, 3.0));
-        game.ProbeLookAt(new Vec3(-4.5, 0.25, 2.0));
+        game.ProbeSetSafePosition(Rw(-8.8, 0.55, 3.0));
+        game.ProbeTeleport(Rw(-8.8, 0.55, 3.0));
+        game.ProbeLookAt(Rw(-4.5, 0.25, 2.0));
         await Frames(4);
         await Capture("22e-far-shoreline");
 
         game.ProbeSetSafePosition(islandADry);
         game.ProbeTeleport(islandADry);
-        game.ProbeLookAt(new Vec3(3.8, 0.3, 8.8));
+        game.ProbeLookAt(Rw(3.8, 0.3, 8.8));
         await Frames(4);
         await Capture("22f-island-edges");
 
-        game.ProbeSetSafePosition(new Vec3(7.5, 0.55, 11.5));
-        game.ProbeTeleport(new Vec3(7.5, 0.55, 11.5));
-        game.ProbeLookAt(new Vec3(2.0, 0.25, 7.5));
+        game.ProbeSetSafePosition(Rw(7.5, 0.55, 11.5));
+        game.ProbeTeleport(Rw(7.5, 0.55, 11.5));
+        game.ProbeLookAt(Rw(2.0, 0.25, 7.5));
         await Frames(4);
         await Capture("22g-low-angle-shoreline");
 
@@ -1118,6 +1169,10 @@ public partial class RuntimeProbe : Node
         await Capture("22h-reedwater-build-anchors");
         game.ProbeClearBuild();
         await Frames(2);
+        // Same reasoning: guarantee the regional objective sequence is not
+        // derailed by resources spent in an earlier probe session.
+        if (sim.Ledger.Silk < 40 || sim.Ledger.Food < 8)
+            sim.Ledger.Restore(Math.Max(sim.Ledger.Food, 8), Math.Max(sim.Ledger.Silk, 40));
         Check("bridge-one-built", game.ProbeBuildWeb(ReedwaterLayout.StartPost,
             ReedwaterLayout.IslandAPost, WebType.Bridge), "Reed post to mossy island");
         Check("bridge-two-built", game.ProbeBuildWeb(ReedwaterLayout.IslandAPost,
@@ -1132,8 +1187,8 @@ public partial class RuntimeProbe : Node
             "Building the second bridge is not enough; the player must arrive");
         await Frames(3);
         await Capture("23-bridges-built");
-        game.ProbeTeleport(new Vec3(8.8, 1.6, 10.4));
-        game.ProbeLookAt(new Vec3(3.4, 0.55, 6.2));
+        game.ProbeTeleport(Rw(8.8, 1.6, 10.4));
+        game.ProbeLookAt(Rw(3.4, 0.55, 6.2));
         await Frames(4);
         var islandBScreen = game.ProbeAnchorScreenPosition(ReedwaterLayout.IslandBPost);
         var lilyBScreen = game.ProbeAnchorScreenPosition(ReedwaterLayout.MidB);
@@ -1158,15 +1213,15 @@ public partial class RuntimeProbe : Node
         Check("anchor-screen-empty-space-does-not-select", foundEmpty && emptyPick == "",
             $"pick={emptyPick}");
         await Capture("23b-reedwater-bridge-detail");
-        game.ProbeTeleport(new Vec3(7.6, 0.55, 7.6));
+        game.ProbeTeleport(Rw(7.6, 0.55, 7.6));
         await Frames(2);
 
         // Real walking traversal. Every run starts on legitimate bank/island
         // ground; the player is never placed on or above a deck.
-        var toIslandA = await WalkRoute(game, new Vec3(9.2f, 0.55f, 8.6f),
+        var toIslandA = await WalkRoute(game, Rw(9.2f, 0.55f, 8.6f),
             ReedwaterToIslandA, 0.7f, 40f);
         Check("player-walks-bank-onto-bridge-one",
-            toIslandA.Reached && toIslandA.End.X < 2.6f && !toIslandA.EnteredWater,
+            toIslandA.Reached && toIslandA.End.X < 98.6f && !toIslandA.EnteredWater,
             $"reached={toIslandA.Reached} end={toIslandA.End} seconds={toIslandA.Seconds:0.0}");
         Check("player-walks-bridge-one-to-island-a", toIslandA.Reached &&
             Mathf.Abs(toIslandA.End.Z - 6.4f) < 0.9f,
@@ -1176,7 +1231,7 @@ public partial class RuntimeProbe : Node
         var toIslandB = await WalkRoute(game, toIslandA.End,
             ReedwaterIslandAToIslandB, 0.7f, 40f);
         Check("player-walks-island-a-onto-bridge-two",
-            toIslandB.Reached && toIslandB.End.X < -2.2f && !toIslandB.EnteredWater,
+            toIslandB.Reached && toIslandB.End.X < 93.8f && !toIslandB.EnteredWater,
             $"reached={toIslandB.Reached} end={toIslandB.End}");
         Check("clever-crossing-not-awarded-on-bridge",
             !sim.RegionalObjectives.MasteryAwarded,
@@ -1186,11 +1241,12 @@ public partial class RuntimeProbe : Node
         // only allowed once the spider is grounded inside the island footprint
         // at its walkable surface height, not while crossing above it.
         var ontoIsland = await WalkRoute(game, toIslandB.End,
-            new[] { new Vec3(-4.0, 0.15, 0.8) }, 0.4f, 12f);
+            new[] { Rw(-4.0, 0.15, 0.8) }, 0.4f, 12f);
         var islandGround = game.ProbeGroundColliderPath();
         Check("player-steps-onto-lily-island",
             ontoIsland.Reached && !ontoIsland.EnteredWater &&
-            ReedwaterLayout.IsOnFirstDestinationIsland(ontoIsland.End) &&
+            ReedwaterLayout.IsOnFirstDestinationIsland(
+                new Vec3(ontoIsland.End.X - 96, ontoIsland.End.Y, ontoIsland.End.Z)) &&
             islandGround.Contains("IslandB/MossIsland/Collision", StringComparison.Ordinal),
             $"reached={ontoIsland.Reached} end={ontoIsland.End} ground={islandGround}");
         Check("clever-crossing-earned-by-arrival",
@@ -1205,29 +1261,29 @@ public partial class RuntimeProbe : Node
         var backToBank = await WalkRoute(game, backToIslandA.End,
             Reverse(ReedwaterToIslandA), 0.7f, 40f);
         Check("player-walks-bridge-one-back-to-bank",
-            backToBank.Reached && backToBank.End.X > 8.2f && !backToBank.EnteredWater,
+            backToBank.Reached && backToBank.End.X > 104.2f && !backToBank.EnteredWater,
             $"end={backToBank.End} seconds={backToBank.Seconds:0.0}");
 
         // Stop and restart on the ramp/anchor joint, then turn around mid-deck.
-        var stopped = await WalkRoute(game, new Vec3(9.2f, 0.55f, 8.6f),
+        var stopped = await WalkRoute(game, Rw(9.2f, 0.55f, 8.6f),
             ReedwaterToIslandA, 0.7f, 40f, stopAtWaypoint: 2, stopFrames: 60);
         Check("player-stops-and-resumes-at-deck-joint", stopped.Reached,
             $"end={stopped.End}");
-        var midDeck = await WalkRoute(game, new Vec3(9.2f, 0.55f, 8.6f),
+        var midDeck = await WalkRoute(game, Rw(9.2f, 0.55f, 8.6f),
             new[]
             {
-                new Vec3(7.6, 0, 7.6), new Vec3(6.6, 0.55, 7.0),
-                new Vec3(4.0, 0.25, 6.3)
+                Rw(7.6, 0, 7.6), Rw(6.6, 0.55, 7.0),
+                Rw(4.0, 0.25, 6.3)
             }, 0.55f, 30f);
         var midX = game.PlayerPosition.X;
-        game.ProbeLookAt(new Vec3(9.2, 0.6, 8.6));
+        game.ProbeLookAt(Rw(9.2, 0.6, 8.6));
         await Frames(2);
         Input.ActionPress("move_forward");
         await PhysicsFrames(14);
         Input.ActionRelease("move_forward");
         await PhysicsFrames(6);
         var turnedBackX = game.PlayerPosition.X;
-        game.ProbeLookAt(new Vec3(1.4, 0.6, 5.6));
+        game.ProbeLookAt(Rw(1.4, 0.6, 5.6));
         await Frames(2);
         Input.ActionPress("move_forward");
         await PhysicsFrames(16);
@@ -1252,7 +1308,7 @@ public partial class RuntimeProbe : Node
             game.ProbeLookAt(trapped.Position);
             await Frames(3);
             if (caught == 0) await Capture("25-reedwater-capture-trapped");
-            game.ProbeTeleport(trapped.Position);
+            game.ProbeTeleport(LandmarkCatalog.ToWorld(RegionIds.ReedwaterBank, trapped.Position).Absolute);
             await Frames(2);
             game.ProbeInteract();
             await Frames(2);
@@ -1274,15 +1330,15 @@ public partial class RuntimeProbe : Node
         // the badge, then walk to the shared landing and across bridge three.
         // Teleporting onto the landing itself could wedge the capsule in the
         // bridge two/three joint and made the check intermittently time out.
-        var toFarBank = await WalkRoute(game, new Vec3(-2.78f, 0.24f, 2.55f),
+        var toFarBank = await WalkRoute(game, Rw(-2.78f, 0.24f, 2.55f),
             ReedwaterIslandBToFarBank, 0.7f, 60f);
         Check("player-walks-island-b-onto-bridge-three",
-            toFarBank.Reached && toFarBank.End.X < -8.4f && !toFarBank.EnteredWater,
+            toFarBank.Reached && toFarBank.End.X < 87.6f && !toFarBank.EnteredWater,
             $"reached={toFarBank.Reached} end={toFarBank.End}");
         var farBankBack = await WalkRoute(game, toFarBank.End,
             Reverse(ReedwaterIslandBToFarBank), 0.7f, 60f);
         Check("player-walks-bridge-three-back-to-island-b",
-            farBankBack.Reached && farBankBack.End.X > -3.5f,
+            farBankBack.Reached && farBankBack.End.X > 92.5f,
             $"end={farBankBack.End} seconds={farBankBack.Seconds:0.0}");
         await Capture("24b-reedwater-far-bank-walk");
 
@@ -1341,12 +1397,12 @@ public partial class RuntimeProbe : Node
         }
         Check("far-bank-trail-visible", game.ProbeFarBankTrailVisible,
             "Optional reed trail appears after R03");
-        game.ProbeSetSafePosition(new Vec3(-9.6, 0.55, -2.8));
-        game.ProbeTeleport(new Vec3(-9.6, 0.55, -2.8));
+        game.ProbeSetSafePosition(Rw(-9.6, 0.55, -2.8));
+        game.ProbeTeleport(Rw(-9.6, 0.55, -2.8));
         await Frames(3);
         game.ProbeInteract();
         await Frames(6);
-        var outpost = new Vec3(10.2, 0.55, 6.8);
+        var outpost = Rw(10.2, 0.55, 6.8);
         Check("far-bank-return-shortcut",
             Vec3.Distance(new Vec3(game.PlayerPosition.X, game.PlayerPosition.Y, game.PlayerPosition.Z),
                 outpost) < 2.5f,
@@ -1354,8 +1410,8 @@ public partial class RuntimeProbe : Node
         var farWorker = sim.RegionWorkers.FirstOrDefault();
         if (farWorker is not null)
         {
-            game.ProbeSetSafePosition(new Vec3(-8.6, 0.6, -3.6));
-            game.ProbeTeleport(new Vec3(-8.6, 0.6, -3.6));
+            game.ProbeSetSafePosition(Rw(-8.6, 0.6, -3.6));
+            game.ProbeTeleport(Rw(-8.6, 0.6, -3.6));
             game.ProbeLookAt(farWorker.Position);
             await Frames(4);
         }
@@ -1365,6 +1421,24 @@ public partial class RuntimeProbe : Node
         Check("reedwater-save", game.ProbeSave(), "Save while standing in Reedwater Bank");
         var loaded = _main.Saves.Load();
         Check("reedwater-save-loads", loaded.Success && loaded.Data is not null, loaded.Message);
+        var manifestResult = _main.Saves.WorldStore.LoadManifest();
+        var manifest = manifestResult.Manifest;
+        Check("p2-manifest-written",
+            File.Exists(_main.Saves.WorldStore.ManifestPath) && manifestResult.Success,
+            _main.Saves.WorldStore.ManifestPath);
+        Check("p2-manifest-schema-and-landmark",
+            manifest is { SchemaVersion: WorldManifestSave.CurrentSchemaVersion } &&
+            manifest.ActiveLandmarkId == RegionIds.ReedwaterBank,
+            $"schema={manifest?.SchemaVersion} landmark={manifest?.ActiveLandmarkId}");
+        Check("p2-manifest-seed",
+            manifest is not null && manifest.Seed == game.Simulation.Tuning.Seed &&
+            manifest.Seed > 0,
+            $"manifest={manifest?.Seed} simulation={game.Simulation.Tuning.Seed}");
+        Check("p2-manifest-world-position",
+            manifest is not null &&
+            Math.Abs(manifest.Player.Absolute.X - game.PlayerPosition.X) < 1.0 &&
+            Math.Abs(manifest.Player.Absolute.Z - game.PlayerPosition.Z) < 1.0,
+            $"manifest={manifest?.Player.Absolute} player={game.PlayerPosition}");
         var regionWebs = sim.Webs.Count(web => web.Region == RegionIds.ReedwaterBank);
         var completed = sim.RegionalObjectives.CompletedObjectives.Count;
         if (loaded.Data is not null)
@@ -1386,13 +1460,17 @@ public partial class RuntimeProbe : Node
             await Frames(10);
             Check("reload-in-reedwater", reloadedRegion.ActiveRegionId == RegionIds.ReedwaterBank,
                 $"region={reloadedRegion.ActiveRegionId}");
+            Check("p2-reload-keeps-world-seed",
+                manifest is not null &&
+                reloadedRegion.Simulation.Tuning.Seed == manifest.Seed,
+                $"simulation={reloadedRegion.Simulation.Tuning.Seed} manifest={manifest?.Seed}");
             Check("reload-reedwater-construction",
                 reloadedRegion.Simulation.Webs.Count(web => web.Region == RegionIds.ReedwaterBank) == regionWebs,
                 $"webs={regionWebs}");
             Check("reload-reedwater-objectives",
                 reloadedRegion.Simulation.RegionalObjectives.CompletedObjectives.Count == completed,
                 $"completed={completed}");
-            var reloadWalk = await WalkRoute(reloadedRegion, new Vec3(9.2f, 0.55f, 8.6f),
+            var reloadWalk = await WalkRoute(reloadedRegion, Rw(9.2f, 0.55f, 8.6f),
                 ReedwaterToIslandA, 0.7f, 40f);
             Check("reload-reedwater-bridge-walk", reloadWalk.Reached && !reloadWalk.EnteredWater,
                 $"end={reloadWalk.End} seconds={reloadWalk.Seconds:0.0}");
@@ -1532,24 +1610,29 @@ public partial class RuntimeProbe : Node
         return (index >= route.Count && !water, elapsed, new Vec3(end.X, end.Y, end.Z), water);
     }
 
+    /// <summary>Reedwater-local authored X plus its constant world origin.
+    /// Routes and teleports in the Reedwater section are written in that
+    /// landmark's own frame for readability, then anchored in world space.</summary>
+    private static Vec3 Rw(double x, double y, double z) => new(96 + x, y, z);
+
     private static readonly Vec3[] ReedwaterToIslandA =
     {
-        new(9.2, 0.55, 8.6), new(7.6, 0.0, 7.6), new(6.6, 0.55, 7.0),
-        new(5.0, 0.3, 6.6), new(3.4, 0.22, 6.1), new(2.0, 0.4, 5.7),
-        new(1.4, 0.55, 5.6), new(2.2, 0.15, 6.4)
+        Rw(9.2, 0.55, 8.6), Rw(7.6, 0.0, 7.6), Rw(6.6, 0.55, 7.0),
+        Rw(5.0, 0.3, 6.6), Rw(3.4, 0.22, 6.1), Rw(2.0, 0.4, 5.7),
+        Rw(1.4, 0.55, 5.6), Rw(2.2, 0.15, 6.4)
     };
 
     private static readonly Vec3[] ReedwaterIslandAToIslandB =
     {
-        new(2.2, 0.15, 6.4), new(1.4, 0.55, 5.6), new(0.0, 0.3, 4.4),
-        new(-1.6, 0.25, 3.2), new(-3.0, 0.55, 1.8), new(-2.7, 0.15, 2.7)
+        Rw(2.2, 0.15, 6.4), Rw(1.4, 0.55, 5.6), Rw(0.0, 0.3, 4.4),
+        Rw(-1.6, 0.25, 3.2), Rw(-3.0, 0.55, 1.8), Rw(-2.7, 0.15, 2.7)
     };
 
     private static readonly Vec3[] ReedwaterIslandBToFarBank =
     {
-        new(-2.7, 0.15, 2.7), new(-3.0, 0.55, 1.8), new(-4.4, 0.3, 0.9),
-        new(-5.8, 0.25, 0.0), new(-7.4, 0.55, -1.0), new(-8.8, 0.0, -1.9),
-        new(-9.4, 0.0, -2.4)
+        Rw(-2.7, 0.15, 2.7), Rw(-3.0, 0.55, 1.8), Rw(-4.4, 0.3, 0.9),
+        Rw(-5.8, 0.25, 0.0), Rw(-7.4, 0.55, -1.0), Rw(-8.8, 0.0, -1.9),
+        Rw(-9.4, 0.0, -2.4)
     };
 
     private static Vec3[] Reverse(Vec3[] route)

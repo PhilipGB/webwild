@@ -23,6 +23,11 @@ public sealed class WorldSaveStore
     public string ManifestPath { get; }
     public string ManifestBackupPath { get; }
 
+    /// <summary>True when a manifest (or its rotating backup) exists, even if
+    /// both copies are currently unreadable. Used to prevent silently falling
+    /// back to an older legacy save.</summary>
+    public bool HasManifest => _fs.FileExists(ManifestPath) || _fs.FileExists(ManifestBackupPath);
+
     public WorldSaveStore(ISaveFileSystem? fs = null, string? directory = null)
     {
         _fs = fs ?? new DefaultSaveFileSystem();

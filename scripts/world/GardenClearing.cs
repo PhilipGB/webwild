@@ -22,14 +22,13 @@ public partial class GardenClearing : Node3D
 
     private GameSimulation _sim = null!;
     private Tuning _baselineTuning = null!;
-    private SaveService _saves = null!;
+    private WorldSaveService _saves = null!;
     private SpiderPlayer _player = null!;
     private GameUI _ui = null!;
     private AudioDirector _audio = null!;
     private SettingsDialog _settingsDialog = null!;
     private CanvasLayer _settingsLayer = null!;
 
-    private Node3D _anchorsRoot = null!;
     private Node3D _websRoot = null!;
     private Node3D _insectsRoot = null!;
     private Node3D _workersRoot = null!;
@@ -38,8 +37,10 @@ public partial class GardenClearing : Node3D
     private CpuParticles3D _windParticles = null!;
     private Label3D _nurseryLabel = null!;
     private Label3D _climbLabel = null!;
-    private Label3D _travelLabel = null!;
     private Label3D _farBankTrailLabel = null!;
+    private StaticBody3D? _brambleGate;
+    private MeshInstance3D? _brambleGateMesh;
+    private bool _reedwaterPathToastShown;
 
     private string _activeRegionId = RegionIds.GardenClearing;
     private Node3D _gardenWorld = null!;
@@ -48,15 +49,12 @@ public partial class GardenClearing : Node3D
     private Node3D _regionsHost = null!;
     private Node3D _chunkHost = null!;
     private ChunkStreamer? _chunks;
-    /// <summary>
-    /// P1 uses a fixed world seed; the manifest (schema 4) persists per-save
-    /// seeds from P2 onward. Deterministic for every session either way.
-    /// </summary>
-    private const int WorldSeed = 20260214;
+    /// <summary>Seed of the live world; restored from the save manifest and
+    /// regenerated per new garden. Probe runs force the historical fixed seed.</summary>
+    private int _worldSeed = WorldSaveService.NewGameSeed(deterministic: false);
     private readonly Dictionary<string, Node3D> _regionRoots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Node3D> _regionAnchorRoots = new(StringComparer.Ordinal);
-    private readonly Dictionary<ulong, (uint Layer, uint Mask)> _worldCollisionState = new();
-    private readonly Dictionary<ulong, Godot.Environment?> _worldEnvironmentState = new();
+    private readonly Dictionary<string, Node3D> _viewHosts = new(StringComparer.Ordinal);
     private Vector3 _regionSafePosition;
     private bool _waterToastShown;
 
@@ -87,7 +85,7 @@ public partial class GardenClearing : Node3D
     /// instantiated tree without building gameplay UI or entities.</summary>
     public bool ValidationOnly { get; set; }
 
-    public void Configure(SettingsData settings, SaveService saves, bool probeMode = false)
+    public void Configure(SettingsData settings, WorldSaveService saves, bool probeMode = false)
     {
         Settings = settings;
         Settings.Normalise();
@@ -98,7 +96,7 @@ public partial class GardenClearing : Node3D
     public override void _Ready()
     {
         if (ValidationOnly) return;
-        _saves ??= GameData.CreateSaveService();
+        _saves ??= GameData.CreateWorldSaveService();
         BuildInterior();
         GameData.ApplyUiScale(Settings);
         _ui.SetTutorialPrompts(Settings.TutorialPrompts);
@@ -119,36 +117,55 @@ public partial class GardenClearing : Node3D
         _gardenAnchors = GetRequired<Node3D>("Anchors");
         _gardenPassage = GetRequired<Node3D>("Passage");
         _regionsHost = GetRequired<Node3D>("Regions");
-        _anchorsRoot = _gardenAnchors;
         _websRoot = GetRequired<Node3D>("Webs");
         _insectsRoot = GetRequired<Node3D>("Insects");
         _workersRoot = GetRequired<Node3D>("Workers");
         _previewRoot = GetRequired<Node3D>("WebPreview");
 
-        BindAnchors(RegionIds.GardenClearing);
+        BindAllAnchors();
         BuildMarkers();
         BuildWind();
         BindPlayer();
         BuildInterface();
 
-        // Procedural chunk streaming around the authored garden (P1). The host
-        // is a runtime-only sibling of the authored world; the validator runs
-        // before this point, so it still sees the hand-made scene only.
+        // The procedural world is a runtime-only sibling of the authored world.
         _chunkHost = new Node3D { Name = "ProceduralChunks" };
         AddChild(_chunkHost);
-        _chunks = new ChunkStreamer(new WorldGenerator(WorldSeed), _chunkHost);
+
+        // From P2 the world is seamless: Reedwater Bank is instantiated at its
+        // constant world origin and stays resident, so the connecting meadow is
+        // ordinary walkable ground rather than a teleport destination.
+        var reedwater = EnsureRegionScene(RegionIds.ReedwaterBank);
+        reedwater.Visible = true;
+        SetAnchorRegionActive(_regionAnchorRoots[RegionIds.ReedwaterBank], true);
+        _brambleGate = reedwater.GetNodeOrNull<StaticBody3D>(
+            "World/Boundaries/WestBankWall/BrambleGate");
+        _brambleGateMesh = reedwater.GetNodeOrNull<MeshInstance3D>(
+            "World/Boundaries/WestBankWall/BrambleGate/BrambleGateMesh");
     }
 
     private T GetRequired<T>(string path) where T : Node =>
         GetNodeOrNull<T>(path) ?? throw new InvalidOperationException(
             $"GardenClearing.tscn is missing mandatory node '{path}' ({typeof(T).Name}).");
 
-    private void BindAnchors(string regionId)
+    private void BindAllAnchors()
+    {
+        _anchors.Clear();
+        // External landmark scenes are part of the continuous world; they must
+        // exist before their anchor sockets can be bound.
+        foreach (var entry in RegionSceneCatalog.All.Where(entry => !entry.IsBuiltIntoSession))
+            EnsureRegionScene(entry.RegionId);
+        BindAnchorRoot(_gardenAnchors, RegionIds.GardenClearing);
+        foreach (var (regionId, root) in _regionAnchorRoots)
+            BindAnchorRoot(root, regionId);
+    }
+
+    private void BindAnchorRoot(Node3D root, string regionId)
     {
         var region = RegionCatalog.GetRequired(regionId);
         var definitions = region.Anchors.ToDictionary(definition => definition.Id, StringComparer.Ordinal);
-        _anchors.Clear();
-        foreach (var child in _anchorsRoot.GetChildren())
+        var before = _anchors.Count;
+        foreach (var child in root.GetChildren())
         {
             if (child is not AnchorNode node) continue;
             if (string.IsNullOrWhiteSpace(node.AnchorId) || !definitions.TryGetValue(node.AnchorId, out var definition))
@@ -159,10 +176,9 @@ public partial class GardenClearing : Node3D
             node.Configure(definition);
             _anchors[node.AnchorId] = node;
         }
-
-        if (_anchors.Count != definitions.Count)
+        if (_anchors.Count - before != definitions.Count)
             throw new InvalidOperationException(
-                $"Region '{regionId}' authors {_anchors.Count} anchor sockets but the simulation defines {definitions.Count}.");
+                $"Region '{regionId}' authors {_anchors.Count - before} anchor sockets but the simulation defines {definitions.Count}.");
     }
 
     private void BuildMarkers()
@@ -197,20 +213,6 @@ public partial class GardenClearing : Node3D
         };
         AddChild(_climbLabel);
 
-        _travelLabel = new Label3D
-        {
-            Text = "E · Travel",
-            FontSize = 30,
-            PixelSize = 0.006f,
-            Modulate = UiKit.Gold,
-            OutlineModulate = UiKit.Pine,
-            OutlineSize = 8,
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            NoDepthTest = true,
-            Visible = false
-        };
-        AddChild(_travelLabel);
-
         _farBankTrailLabel = new Label3D
         {
             Text = "E · Reed trail to the outpost",
@@ -221,7 +223,7 @@ public partial class GardenClearing : Node3D
             OutlineSize = 8,
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = true,
-            Position = new Vector3(-9.6f, 1.7f, -2.8f),
+            Position = new Vector3(86.4f, 1.7f, -2.8f),
             Visible = false
         };
         AddChild(_farBankTrailLabel);
@@ -295,6 +297,7 @@ public partial class GardenClearing : Node3D
 
     public void StartNew()
     {
+        BuildInterior();
         _started = true;
         _eventLog.Clear();
         _victoryShown = false;
@@ -303,12 +306,17 @@ public partial class GardenClearing : Node3D
         _baselineTuning = GameData.LoadTuning();
         var tuning = _baselineTuning.Clone();
         GameData.ApplyDifficulty(tuning, _baselineTuning, Settings.LowThreat);
+        // One seed per world: it drives both the colony simulation and the
+        // procedural terrain, and the manifest persists it for every reload.
+        _worldSeed = WorldSaveService.NewGameSeed(_probeMode);
+        tuning.Seed = _worldSeed;
         _sim = new GameSimulation(tuning, GameData.LoadMissions());
+        RebuildChunkStream();
         ActivateRegion(RegionIds.GardenClearing);
         ResetPresentation();
-        _player.GlobalPosition = ToVector3(WorldLayout.PlayerSpawn);
+        _player.GlobalPosition = ToWorld(RegionIds.GardenClearing, WorldLayout.PlayerSpawn);
         _regionSafePosition = _player.GlobalPosition;
-        _player.FallResetPosition = ToVector3(WorldLayout.PlayerSpawn);
+        _player.FallResetPosition = ToWorld(RegionIds.GardenClearing, WorldLayout.PlayerSpawn);
         _player.ResetCamera();
         _player.InputEnabled = true;
         _ui.ShowToast("Welcome to the garden. Use WASD to explore.", UiKit.Pine, 4.5f);
@@ -319,6 +327,7 @@ public partial class GardenClearing : Node3D
 
     public void StartFromSave(SaveGameData data)
     {
+        BuildInterior();
         _started = true;
         _eventLog.Clear();
         _victoryShown = data.Counters.Victory;
@@ -335,15 +344,21 @@ public partial class GardenClearing : Node3D
         }
         var tuning = GameData.LoadTuning();
         _baselineTuning = tuning.Clone();
+        // The saved seed is the world seed contract: terrain must regenerate
+        // byte-identically from it, in every session.
+        _worldSeed = data.Seed > 0 ? data.Seed : WorldSaveService.NewGameSeed(deterministic: true);
+        tuning.Seed = _worldSeed;
         GameData.ApplyDifficulty(tuning, _baselineTuning, Settings.LowThreat);
         _sim = GameSimulation.FromSave(data, tuning, GameData.LoadMissions());
+        RebuildChunkStream();
         ActivateRegion(_sim.ActiveRegionId);
         ResetPresentation();
         var region = _sim.ActiveRegion;
         var savedPlayer = _sim.GetRegionPlayerPosition(region.Id);
-        _player.GlobalPosition = ClampSavedPlayerPosition(savedPlayer.Position, region);
+        _player.GlobalPosition = ClampSavedPlayerPosition(
+            LandmarkCatalog.ToWorld(region.Id, savedPlayer.Position).Absolute, region);
         _regionSafePosition = _player.GlobalPosition;
-        _player.FallResetPosition = ToVector3(region.PlayerSpawn);
+        _player.FallResetPosition = ToWorld(region.Id, region.PlayerSpawn);
         _player.CameraPivot.Rotation = new Vector3(0, (float)savedPlayer.RotationY, 0);
         _player.InputEnabled = true;
         _ui.ShowToast($"Welcome back to {region.DisplayName}.", UiKit.Pine, 4.0f);
@@ -352,76 +367,41 @@ public partial class GardenClearing : Node3D
         ProcessEvents();
     }
 
-    private static Vector3 ClampSavedPlayerPosition(Vec3 position, RegionDefinition region)
+    private static Vector3 ClampSavedPlayerPosition(Vec3 worldPosition, RegionDefinition region)
     {
-        var value = ToVector3(position);
-        if (!float.IsFinite(value.X) || !float.IsFinite(value.Y) || !float.IsFinite(value.Z) || value.Y < -8f)
-            return ToVector3(region.PlayerSpawn);
+        var value = ToVector3(worldPosition);
+        if (!float.IsFinite(value.X) || !float.IsFinite(value.Y) || !float.IsFinite(value.Z) || value.Y < -20f)
+            return ToWorld(region.Id, region.PlayerSpawn);
         return value;
     }
 
+    /// <summary>Start streaming a fresh generated baseline for this world seed.</summary>
+    private void RebuildChunkStream()
+    {
+        if (_chunks is not null)
+        {
+            foreach (var node in _chunks.Nodes.Values) node.QueueFree();
+            _chunks = null;
+        }
+        _chunks = new ChunkStreamer(new WorldGenerator(_worldSeed), _chunkHost);
+    }
+
     /// <summary>
-    /// Switch the authored region presentation without duplicating the player,
-    /// UI, audio, simulation or runtime roots. The simulation keeps all regional
-    /// construction; only views are rebuilt for the active region.
+    /// Bind the colony's story frame to a landmark. In the seamless world this
+    /// never rearranges the scene: every landmark stays visible, collidable and
+    /// streaming-aware. Activation only rebinds labels, anchors and mission
+    /// context as the player physically crosses a landmark boundary.
     /// </summary>
     private void ActivateRegion(string regionId)
     {
         var region = RegionCatalog.GetRequired(regionId);
-        if (regionId == _activeRegionId && _anchorsRoot is not null)
-        {
-            BindAnchors(regionId);
-            UpdateRegionLabels(region);
-            return;
-        }
-
-        if (regionId == RegionIds.GardenClearing)
-        {
-            _gardenWorld.Visible = true;
-            _gardenAnchors.Visible = true;
-            _gardenPassage.Visible = true;
-            SetWorldCollisionActive(_gardenWorld, true);
-            SetAnchorRegionActive(_gardenAnchors, true);
-            _chunks?.SetFrozen(false);
-            foreach (var (id, root) in _regionRoots)
-            {
-                root.Visible = false;
-                if (root.GetNodeOrNull<Node3D>("World") is { } regionWorld)
-                    SetWorldCollisionActive(regionWorld, false);
-                if (_regionAnchorRoots.TryGetValue(id, out var anchors))
-                    SetAnchorRegionActive(anchors, false);
-            }
-            _anchorsRoot = _gardenAnchors;
-        }
-        else
-        {
-            var regionRoot = EnsureRegionScene(regionId);
-            _gardenWorld.Visible = false;
-            _gardenAnchors.Visible = false;
-            _gardenPassage.Visible = false;
-            SetWorldCollisionActive(_gardenWorld, false);
-            SetAnchorRegionActive(_gardenAnchors, false);
-            foreach (var (id, other) in _regionRoots)
-            {
-                if (id == regionId) continue;
-                other.Visible = false;
-                if (other.GetNodeOrNull<Node3D>("World") is { } otherWorld)
-                    SetWorldCollisionActive(otherWorld, false);
-                if (_regionAnchorRoots.TryGetValue(id, out var otherAnchors))
-                    SetAnchorRegionActive(otherAnchors, false);
-            }
-            regionRoot.Visible = true;
-            if (regionRoot.GetNodeOrNull<Node3D>("World") is { } regionWorld)
-                SetWorldCollisionActive(regionWorld, true);
-            _anchorsRoot = _regionAnchorRoots[regionId];
-            SetAnchorRegionActive(_anchorsRoot, true);
-            // Reedwater's local coordinates overlap the world origin, so chunk
-            // streaming must freeze and hide while the session is away.
-            _chunks?.SetFrozen(true);
-        }
-
         _activeRegionId = regionId;
-        BindAnchors(regionId);
+        _gardenWorld.Visible = true;
+        _gardenAnchors.Visible = true;
+        _gardenPassage.Visible = true;
+        SetAnchorRegionActive(_gardenAnchors, true);
+        foreach (var (_, root) in _regionAnchorRoots)
+            SetAnchorRegionActive(root, true);
         UpdateRegionLabels(region);
         _waterToastShown = false;
     }
@@ -447,6 +427,10 @@ public partial class GardenClearing : Node3D
         _regionAnchorRoots[regionId] = anchors;
         if (regionId == RegionIds.ReedwaterBank)
             SceneContentValidator.ValidateReedwaterOrThrow(root);
+        // Authored landmarks are embedded at their constant world origins, so
+        // their scene-local gameplay coordinates never leak into world space.
+        // Validation runs first so it sees the authored local frame.
+        root.Position = ToVector3(LandmarkCatalog.OriginOf(regionId));
         return root;
     }
 
@@ -459,63 +443,11 @@ public partial class GardenClearing : Node3D
         }
     }
 
-    /// <summary>
-    /// Hiding a region is not enough: its StaticBody3D ground must also stop
-    /// colliding, otherwise the loaded garden floor would sit underneath the pond.
-    /// Original layers are remembered so water areas and ground restore exactly.
-    /// </summary>
-    private void SetWorldCollisionActive(Node root, bool active)
-    {
-        foreach (var child in root.GetChildren())
-        {
-            if (child is CollisionObject3D body)
-            {
-                var key = body.GetInstanceId();
-                if (active)
-                {
-                    if (_worldCollisionState.TryGetValue(key, out var saved))
-                    {
-                        body.CollisionLayer = saved.Layer;
-                        body.CollisionMask = saved.Mask;
-                    }
-                }
-                else
-                {
-                    if (!_worldCollisionState.ContainsKey(key))
-                        _worldCollisionState[key] = (body.CollisionLayer, body.CollisionMask);
-                    body.CollisionLayer = 0;
-                    body.CollisionMask = 0;
-                }
-            }
-            if (child is WorldEnvironment worldEnvironment)
-            {
-                var key = worldEnvironment.GetInstanceId();
-                if (active)
-                {
-                    if (_worldEnvironmentState.TryGetValue(key, out var saved))
-                        worldEnvironment.Environment = saved;
-                }
-                else
-                {
-                    if (!_worldEnvironmentState.ContainsKey(key))
-                        _worldEnvironmentState[key] = worldEnvironment.Environment;
-                    worldEnvironment.Environment = null;
-                }
-            }
-            if (child is Light3D light) light.Visible = active;
-            SetWorldCollisionActive(child, active);
-        }
-    }
-
     private void UpdateRegionLabels(RegionDefinition region)
     {
         _nurseryLabel.Text = $"{region.NurseryLabel} · E";
-        _nurseryLabel.Position = ToVector3(region.NurseryPosition) + new Vector3(0, 2.25f, 0);
+        _nurseryLabel.Position = ToWorld(region.Id, region.NurseryPosition) + new Vector3(0, 2.25f, 0);
         _climbLabel.Visible = false;
-        _travelLabel.Position = ToVector3(region.TravelPoint) + new Vector3(0, 2.0f, 0);
-        _travelLabel.Text = region.Id == RegionIds.GardenClearing
-            ? "E · Path to Reedwater Bank"
-            : "E · Return to Garden Clearing";
         _farBankTrailLabel.Visible = region.Id == RegionIds.ReedwaterBank &&
             _sim?.RegionalObjectives.CompletedObjectives.Contains("R03") == true;
     }
@@ -560,11 +492,11 @@ public partial class GardenClearing : Node3D
         }
 
         var dt = (float)delta;
-        // Chunk streaming runs even while gameplay is paused: the spider may be
-        // parked deep in the procedural meadow, and paused menus must still
-        // show a complete load ring around them.
-        _chunks?.Update(_player is null ? Vector3.Zero : _player.GlobalPosition,
-            _activeRegionId == RegionIds.GardenClearing);
+        // One continuous world: stream around the player wherever they are,
+        // even while a paused menu is open, so the load ring never lags a
+        // teleport or a save restore.
+        _chunks?.Update(_player is null ? Vector3.Zero : _player.GlobalPosition, true);
+        UpdateLandmarkZone();
         UpdatePlayerContext();
         UpdateViews(dt);
         UpdateSuggestions();
@@ -577,7 +509,7 @@ public partial class GardenClearing : Node3D
             _masteryCheckTimer = 0;
             if (_activeRegionId == RegionIds.ReedwaterBank && _player is not null &&
                 _player.IsOnFloor() && !_player.IsClimbing)
-                _sim.TryAwardCleverCrossingOnArrival(_player.ToCorePosition(), true);
+                _sim.TryAwardCleverCrossingOnArrival(PlayerLocal, true);
         }
 
         UpdateWaterHazard();
@@ -638,6 +570,50 @@ public partial class GardenClearing : Node3D
         _player.ClimbPoint = new Vector3((float)WorldLayout.ClimbBase.X, 0, (float)WorldLayout.ClimbBase.Z);
     }
 
+    /// <summary>
+    /// Crossing a landmark boundary on foot activates that landmark's story
+    /// frame, helpers and HUD. There is no dialog and no teleport: the spider
+    /// is already standing inside the landmark when this fires.
+    /// </summary>
+    private void UpdateLandmarkZone()
+    {
+        if (_sim is null || _player is null) return;
+        var zone = LandmarkCatalog.LandmarkAt(PlayerWorld);
+        if (zone is not null && zone != _sim.ActiveRegionId && _sim.EnterLandmark(zone))
+        {
+            ActivateRegion(zone);
+            _ui.UpdateHud(_sim, Settings);
+            _ui.SetStatus(_sim.GetActiveRegionHint());
+            _ui.ShowToast($"You reached {_sim.ActiveRegion.DisplayName}.", UiKit.TealDark, 3.5f);
+            RefreshAll();
+            ProcessEvents();
+            SaveGame(false, true);
+        }
+        UpdateBrambleGate();
+        if (_nurseryLabel is not null && _sim is not null)
+            _nurseryLabel.Position = ToWorld(_sim.ActiveRegionId,
+                _sim.ActiveRegion.NurseryPosition) + new Vector3(0, 2.25f, 0);
+    }
+
+    /// <summary>
+    /// The Reedwater path is guarded by a bramble gate until the garden story
+    /// is complete. The barrier is physical: the zone change itself is never
+    /// refused, so unlocking is expressed by the world, not by a dialog.
+    /// </summary>
+    private void UpdateBrambleGate()
+    {
+        if (_brambleGate is null) return;
+        var open = _sim?.ReedwaterUnlocked == true;
+        _brambleGate.CollisionLayer = open ? 0u : 1u;
+        if (_brambleGateMesh is not null) _brambleGateMesh.Visible = !open;
+        if (open && !_reedwaterPathToastShown)
+        {
+            _reedwaterPathToastShown = true;
+            _ui?.ShowToast("The bramble gate east of the garden has opened. Follow the meadows to Reedwater Bank.",
+                UiKit.TealDark, 5f);
+        }
+    }
+
     private void UpdateViews(float delta)
     {
         if (_sim is null) return;
@@ -650,16 +626,18 @@ public partial class GardenClearing : Node3D
                 view.SetNearby(Vector3DistanceToPlayer(view.GlobalPosition, 3.2f));
             }
         }
-        foreach (var insect in _sim.RegionInsects)
+        foreach (var insect in _sim.Insects)
         {
             if (!_insectViews.TryGetValue(insect.Id, out var view)) continue;
             view.UpdateView(delta, Settings.ReducedMotion);
-            view.SetPromptVisible(Vector3DistanceToPlayer(ToVector3(insect.Position), 3.2f));
+            view.SetPromptVisible(Vector3DistanceToPlayer(
+                ToWorld(insect.Definition.Region, insect.Position), 3.2f));
         }
         foreach (var worker in _sim.RegionWorkers)
         {
             if (!_workerViews.TryGetValue(worker.Id, out var view)) continue;
-            view.UpdateView(delta, Settings.ReducedMotion, Vector3DistanceToPlayer(ToVector3(worker.Position), 4f));
+            view.UpdateView(delta, Settings.ReducedMotion,
+                Vector3DistanceToPlayer(ToWorld(worker.Region, worker.Position), 4f));
         }
 
         var nearbyNursery = Vector3DistanceToPlayer(NurseryInteractionPoint, 3.2f);
@@ -668,7 +646,6 @@ public partial class GardenClearing : Node3D
         _nurseryLabel.Visible = nearbyNursery || nurseryStep;
         _climbLabel.Visible = _activeRegionId == RegionIds.GardenClearing &&
                               _player.ClimbAvailable && !_player.IsClimbing;
-        _travelLabel.Visible = Vector3DistanceToPlayer(TravelInteractionPoint, 2.4f);
 
         var wind = _sim.WeatherPhase != WeatherPhase.Calm;
         _windParticles.Emitting = wind && !Settings.ReducedMotion && _activeRegionId == RegionIds.GardenClearing;
@@ -729,7 +706,9 @@ public partial class GardenClearing : Node3D
         {
             // Point at the closest viable flyway instead of always sending the
             // player back to the reed bank.
-            var player = _player?.ToCorePosition() ?? ReedwaterLayout.ArrivalPoint;
+            var player = _sim.ActiveRegionId == RegionIds.ReedwaterBank
+                ? PlayerLocal
+                : ReedwaterLayout.ArrivalPoint;
             var lilyDistance = Math.Min(
                 Vec3.Distance(player, _sim.GetAnchor(ReedwaterLayout.MidA)?.Position ?? ReedwaterLayout.ArrivalPoint),
                 Vec3.Distance(player, _sim.GetAnchor(ReedwaterLayout.MidB)?.Position ?? ReedwaterLayout.ArrivalPoint));
@@ -782,29 +761,23 @@ public partial class GardenClearing : Node3D
                     ? "Click a glowing anchor · right-click cancels"
                     : "Click the second anchor · right-click cancels";
         }
-        else if (_activeRegionId == RegionIds.ReedwaterBank &&
+        else if (_sim.ActiveRegionId == RegionIds.ReedwaterBank &&
                  _sim.RegionalObjectives.CompletedObjectives.Contains("R03") &&
-                 Vector3DistanceToPlayer(new Vector3(-9.6f, 0f, -2.8f), 2.6f))
+                 Vector3DistanceToPlayer(
+                     ToWorld(RegionIds.ReedwaterBank, new Vec3(-9.6, 0, -2.8)), 2.6f))
         {
             text = "E · Follow the reed trail back to the outpost";
-        }
-        else if (Vector3DistanceToPlayer(TravelInteractionPoint, 2.4f))
-        {
-            text = _activeRegionId == RegionIds.GardenClearing
-                ? (_sim.ReedwaterUnlocked
-                    ? "E · Travel to Reedwater Bank"
-                    : "E · Path to Reedwater Bank (finish the garden story)")
-                : "E · Return to Garden Clearing";
         }
         else if (Vector3DistanceToPlayer(NurseryInteractionPoint, 2.8f))
         {
             text = $"E · {_sim.ActiveRegion.NurseryLabel} — hatch a helper";
         }
-        else if (_sim.RegionInsects.Any(i => i.CanBeCollected && Vector3DistanceToPlayer(ToVector3(i.Position), 3.2f)))
+        else if (_sim.Insects.Any(i => i.CanBeCollected &&
+                 Vector3DistanceToPlayer(ToWorld(i.Definition.Region, i.Position), 3.2f)))
         {
             text = "E · Collect the caught insect";
         }
-        else if (_sim.RegionWebs.Any(w => w.Durability < w.MaxDurability && Vector3DistanceToPlayer(WebCenter(w), 3.2f)))
+        else if (_sim.Webs.Any(w => w.Durability < w.MaxDurability && Vector3DistanceToPlayer(WebCenter(w), 3.2f)))
         {
             text = "E · Repair web (2 silk)";
         }
@@ -1186,6 +1159,9 @@ public partial class GardenClearing : Node3D
         var nearestPixels = 30f;
         foreach (var anchor in _anchors.Values)
         {
+            // A socket in the other landmark can never be a valid build target
+            // from the active story frame, so it is not pickable from here.
+            if (_sim?.GetAnchor(anchor.AnchorId)?.Region != _sim?.ActiveRegionId) continue;
             var world = anchor.GlobalPosition + new Vector3(0, 0.18f, 0);
             if (camera.IsPositionBehind(world)) continue;
             var screen = camera.UnprojectPosition(world);
@@ -1351,12 +1327,15 @@ public partial class GardenClearing : Node3D
         _ui.HideBuildConfirmation();
         foreach (var anchor in _anchors.Values)
         {
-            anchor.SetBuildMode(type is not null);
+            // Only the active landmark's sockets glow: the other landmark is
+            // resident but not a valid build frame from here.
+            var sameLandmark = _sim?.GetAnchor(anchor.AnchorId)?.Region == _sim?.ActiveRegionId;
+            anchor.SetBuildMode(type is not null && sameLandmark);
             anchor.SetSelected(false);
             anchor.SetHovered(false);
         }
         _player.InputEnabled = type is null;
-        _ui.SetBuildMode(type, null, _sim);
+        _ui.SetBuildMode(type, null, _sim!);
         if (type is not null && !silent)
         {
             _audio.Play("click");
@@ -1364,7 +1343,7 @@ public partial class GardenClearing : Node3D
                 ? "Click two glowing anchors to spin a capture web, then choose Build. Right-click cancels."
                 : "Click two glowing anchors to build a silk bridge, then choose Build. Right-click cancels.", UiKit.TealDark, 4f);
         }
-        if (type is null) _ui.SetStatus(_sim.GetActiveRegionHint());
+        if (type is null) _ui.SetStatus(_sim!.GetActiveRegionHint());
     }
 
     private void ClearBuild()
@@ -1391,18 +1370,19 @@ public partial class GardenClearing : Node3D
         if (_sim is null || _ui.BlocksWorldInput) return;
         // After the far bank is reached, a short reed trail saves the long walk
         // back over three bridges. It is optional: the bridges still work.
-        if (_activeRegionId == RegionIds.ReedwaterBank &&
+        if (_sim.ActiveRegionId == RegionIds.ReedwaterBank &&
             _sim.RegionalObjectives.CompletedObjectives.Contains("R03") &&
-            Vector3DistanceToPlayer(new Vector3(-9.6f, 0f, -2.8f), 2.6f))
+            Vector3DistanceToPlayer(
+                ToWorld(RegionIds.ReedwaterBank, new Vec3(-9.6, 0, -2.8)), 2.6f))
         {
             _audio.Play("click");
-            _player.GlobalPosition = new Vector3(10.2f, 0.55f, 6.8f);
+            _player.GlobalPosition = ToWorld(RegionIds.ReedwaterBank, new Vec3(10.2, 0.55, 6.8));
             _player.Velocity = Vector3.Zero;
             _regionSafePosition = _player.GlobalPosition;
             _ui.ShowToast("You followed the reed trail back to the outpost.", UiKit.TealDark, 3.5f);
             return;
         }
-        var player = _player.ToCorePosition();
+        var player = PlayerLocal;
         if (_sim.TryCollectNearest(player, 3.2, out _, out _, out _))
         {
             _audio.Play("collect");
@@ -1416,87 +1396,19 @@ public partial class GardenClearing : Node3D
             return;
         }
         var nurseryDistance = _player.GlobalPosition.DistanceTo(NurseryInteractionPoint);
-        var travelDistance = _player.GlobalPosition.DistanceTo(TravelInteractionPoint);
-        // At the Reedwater outpost the nursery and the trail are close together.
-        // Use whichever is actually nearer so E never opens the wrong panel.
-        if (travelDistance <= 2.4f && travelDistance <= nurseryDistance)
-        {
-            _audio.Play("click");
-            OpenTravelDialog();
-            return;
-        }
         if (nurseryDistance <= 2.8f)
         {
             _audio.Play("click");
             _ui.OpenNursery(_sim);
             return;
         }
-        if (travelDistance <= 2.4f)
-        {
-            _audio.Play("click");
-            OpenTravelDialog();
-            return;
-        }
-        _ui.ShowToast("Move closer to a caught insect, a damaged web, the nursery or a trail.", UiKit.Coral, 4f);
-    }
-
-    private void OpenTravelDialog()
-    {
-        if (_sim is null) return;
-        if (_activeRegionId == RegionIds.GardenClearing)
-        {
-            var unlocked = _sim.ReedwaterUnlocked;
-            _ui.OpenTravel(
-                "Reedwater Bank",
-                "A shallow pond, reed beds and mossy islands lie beyond the east hedge. Your webs and helpers can cross the pond with silk bridges.",
-                unlocked,
-                unlocked ? "" : "Finish First Threads, Tiny Team and Storm-Smart to open the path.",
-                () => TravelToRegion(RegionIds.ReedwaterBank));
-        }
-        else
-        {
-            _ui.OpenTravel(
-                "Garden Clearing",
-                "Return along the marked trail to your sunny home clearing, leaf nursery and ravine.",
-                true,
-                "",
-                () => TravelToRegion(RegionIds.GardenClearing));
-        }
-    }
-
-    private void TravelToRegion(string regionId)
-    {
-        if (_sim is null || _player is null) return;
-        if (!_sim.TryTravelTo(regionId, out var reason))
-        {
-            _ui.CloseModal();
-            _ui.ShowToast(reason, UiKit.Coral, 4f);
-            return;
-        }
-
-        _ui.CloseModal();
-        var region = _sim.ActiveRegion;
-        _sim.SetRegionPlayerPosition(_activeRegionId, _player.ToCorePosition(), _player.CameraPivot.Rotation.Y);
-        ActivateRegion(regionId);
-        ResetPresentation();
-        _player.GlobalPosition = ToVector3(region.ArrivalPoint);
-        _player.Velocity = Vector3.Zero;
-        _regionSafePosition = _player.GlobalPosition;
-        _player.FallResetPosition = ToVector3(region.PlayerSpawn);
-        _player.ResetCamera();
-        _player.InputEnabled = true;
-        _ui.UpdateHud(_sim, Settings);
-        _ui.ShowToast($"Welcome to {region.DisplayName}.", UiKit.TealDark, 4.5f);
-        _ui.SetStatus(_sim.GetActiveRegionHint());
-        RefreshAll();
-        ProcessEvents();
-        SaveGame(false, true);
+        _ui.ShowToast("Move closer to a caught insect, a damaged web or the nursery.", UiKit.Coral, 4f);
     }
 
     private void TryDismantleNearest()
     {
         if (_sim is null || _ui.BlocksWorldInput) return;
-        if (_sim.TryDismantleNearest(_player.ToCorePosition(), 3.2, out var silk, out var reason))
+        if (_sim.TryDismantleNearest(PlayerLocal, 3.2, out var silk, out var reason))
         {
             _audio.Play("cancel");
             _ui.ShowToast($"Web removed · +{silk} silk", UiKit.TealDark, 3f);
@@ -1601,7 +1513,7 @@ public partial class GardenClearing : Node3D
     public bool SaveGame(bool showToast, bool quiet = false)
     {
         if (_sim is null || _player is null) return false;
-        var data = _sim.ExportSave(_player.ToCorePosition(), _player.CameraPivot.Rotation.Y, Settings);
+        var data = _sim.ExportSave(PlayerLocal, _player.CameraPivot.Rotation.Y, Settings);
         var result = SimulateSaveFailureForProbe
             ? SaveResult.Fail("Simulated save failure", "simulated")
             : _saves.Save(data);
@@ -1633,18 +1545,20 @@ public partial class GardenClearing : Node3D
     private void SyncWebViews()
     {
         if (_sim is null) return;
-        foreach (var web in _sim.RegionWebs)
+        // Both landmarks render at once: a web built in Reedwater remains
+        // visible while the spider walks back to the garden.
+        foreach (var web in _sim.Webs)
         {
             if (_webViews.ContainsKey(web.Id)) continue;
             var a = _sim.GetAnchor(web.AnchorA);
             var b = _sim.GetAnchor(web.AnchorB);
             if (a is null || b is null) continue;
             var view = new WebVisual { Name = $"Web_{web.Id}" };
-            _websRoot.AddChild(view);
+            ViewHost(_websRoot, web.Region).AddChild(view);
             view.Configure(web, ToVector3(a.Position), ToVector3(b.Position), Settings.ReducedMotion);
             _webViews[web.Id] = view;
         }
-        var activeIds = _sim.RegionWebs.Select(web => web.Id).ToHashSet(StringComparer.Ordinal);
+        var activeIds = _sim.Webs.Select(web => web.Id).ToHashSet(StringComparer.Ordinal);
         var stale = _webViews.Keys.Where(id => !activeIds.Contains(id)).ToList();
         foreach (var id in stale)
         {
@@ -1661,11 +1575,11 @@ public partial class GardenClearing : Node3D
     private void SyncInsectViews()
     {
         if (_sim is null) return;
-        foreach (var insect in _sim.RegionInsects)
+        foreach (var insect in _sim.Insects)
         {
             if (_insectViews.ContainsKey(insect.Id)) continue;
             var view = new FlyView { Name = $"Insect_{insect.Id}" };
-            _insectsRoot.AddChild(view);
+            ViewHost(_insectsRoot, insect.Definition.Region).AddChild(view);
             view.Configure(insect);
             _insectViews[insect.Id] = view;
         }
@@ -1678,19 +1592,22 @@ public partial class GardenClearing : Node3D
         {
             if (_workerViews.ContainsKey(worker.Id)) continue;
             var view = new WorkerView { Name = $"Worker_{worker.Id}" };
-            _workersRoot.AddChild(view);
+            ViewHost(_workersRoot, worker.Region).AddChild(view);
             view.Configure(worker);
             _workerViews[worker.Id] = view;
+        }
+        var activeIds = _sim.RegionWorkers.Select(worker => worker.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var id in _workerViews.Keys.Where(id => !activeIds.Contains(id)).ToList())
+        {
+            _workerViews[id].QueueFree();
+            _workerViews.Remove(id);
         }
     }
 
     private Vector3 NurseryInteractionPoint =>
         _sim is not null
-            ? ToVector3(_sim.ActiveRegion.NurseryPosition) + new Vector3(0, 0.4f, 0)
-            : ToVector3(WorldLayout.NurseryPosition) + new Vector3(0, 0.4f, 0);
-
-    private Vector3 TravelInteractionPoint =>
-        ToVector3(_sim?.ActiveRegion.TravelPoint ?? WorldLayout.TravelPoint) + new Vector3(0, 0.2f, 0);
+            ? ToWorld(_sim.ActiveRegionId, _sim.ActiveRegion.NurseryPosition) + new Vector3(0, 0.4f, 0)
+            : ToWorld(RegionIds.GardenClearing, WorldLayout.NurseryPosition) + new Vector3(0, 0.4f, 0);
 
     /// <summary>
     /// The authored pond water bodies are real monitoring Area3Ds. Touching any
@@ -1754,10 +1671,44 @@ public partial class GardenClearing : Node3D
         var a = _sim.GetAnchor(web.AnchorA);
         var b = _sim.GetAnchor(web.AnchorB);
         if (a is null || b is null) return Vector3.Zero;
-        return (ToVector3(a.Position) + ToVector3(b.Position)) * 0.5f;
+        var region = web.Region;
+        return (ToWorld(region, a.Position) + ToWorld(region, b.Position)) * 0.5f;
     }
 
     public static Vector3 ToVector3(Vec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
+
+    /// <summary>Landmark-local gameplay coordinates to engine world space.</summary>
+    public static Vector3 ToWorld(string regionId, Vec3 local) =>
+        ToVector3(LandmarkCatalog.OriginOf(regionId) + local);
+
+    /// <summary>Engine world position to landmark-local simulation coordinates.</summary>
+    private Vec3 ToLocal(Vec3 world, string? regionId = null) =>
+        LandmarkCatalog.ToLocal(regionId ?? _activeRegionId, world);
+
+    private Vec3 PlayerWorld => _player is null
+        ? Vec3.Zero
+        : new Vec3(_player.GlobalPosition.X, _player.GlobalPosition.Y, _player.GlobalPosition.Z);
+
+    private Vec3 PlayerLocal => ToLocal(PlayerWorld);
+
+    /// <summary>
+    /// Presentation root for one landmark's webs, insects or workers. Positions
+    /// inside the simulation are landmark-local; the host applies the constant
+    /// world origin so both landmarks render in one continuous space.
+    /// </summary>
+    private Node3D ViewHost(Node3D root, string regionId)
+    {
+        var key = root.Name + ":" + regionId;
+        if (_viewHosts.TryGetValue(key, out var host)) return host;
+        host = new Node3D
+        {
+            Name = "Region_" + regionId,
+            Position = ToVector3(LandmarkCatalog.OriginOf(regionId))
+        };
+        root.AddChild(host);
+        _viewHosts[key] = host;
+        return host;
+    }
 
     private static void CopySettings(SettingsData from, SettingsData to)
     {
@@ -1831,7 +1782,7 @@ public partial class GardenClearing : Node3D
     public bool ProbeRepairNearest()
     {
         if (_sim is null) return false;
-        var success = _sim.TryRepairNearest(_player.ToCorePosition(), 4.5, out _);
+        var success = _sim.TryRepairNearest(PlayerLocal, 4.5, out _);
         if (success) ProcessEvents();
         return success;
     }
@@ -1947,10 +1898,10 @@ public partial class GardenClearing : Node3D
         var region = _sim.ActiveRegion;
         ActivateRegion(regionId);
         ResetPresentation();
-        _player.GlobalPosition = ToVector3(region.ArrivalPoint);
+        _player.GlobalPosition = ToWorld(regionId, region.ArrivalPoint);
         _player.Velocity = Vector3.Zero;
         _regionSafePosition = _player.GlobalPosition;
-        _player.FallResetPosition = ToVector3(region.PlayerSpawn);
+        _player.FallResetPosition = ToWorld(regionId, region.PlayerSpawn);
         _player.ResetCamera();
         _ui.ShowToast($"Welcome to {region.DisplayName}.", UiKit.TealDark, 4f);
         _ui.SetStatus(_sim.GetActiveRegionHint());
@@ -2012,8 +1963,10 @@ public partial class GardenClearing : Node3D
         _player.SpringArm.SpringLength = Mathf.Clamp(length, 5.5f, 15f);
     }
 
-    public void ProbeOpenTravel() => OpenTravelDialog();
-    public bool TravelModalOpen => _ui.IsTravelOpen;
+    // Kept as a probe-compatible shim: the travel dialog no longer exists in
+    // seamless play, so the modal can never open.
+    public void ProbeOpenTravel() { }
+    public bool TravelModalOpen => false;
     public bool RegionCompleteModalOpen => _ui.IsRegionCompleteOpen;
     public void ProbeSetRegionPlayer(Vec3 position)
     {
@@ -2023,10 +1976,28 @@ public partial class GardenClearing : Node3D
 
     public void ProbeSetSafePosition(Vec3 position) => _regionSafePosition = ToVector3(position);
 
-    public int VisibleAnchorCount => _anchors.Count;
+    /// <summary>Anchors and insects of the active landmark's story frame. All
+    /// landmarks remain resident in the seamless world (see
+    /// <see cref="ResidentAnchorCount"/>), but interaction and HUD counts stay
+    /// scoped to where the spider is.</summary>
+    public int VisibleAnchorCount => _sim?.RegionAnchors.Count ?? _anchors.Count;
     public int VisibleWebCount => _webViews.Count;
-    public int VisibleInsectCount => _insectViews.Count;
+    public int VisibleInsectCount => _sim?.RegionInsects.Count ?? _insectViews.Count;
     public int VisibleWorkerCount => _workerViews.Count;
+    /// <summary>The bramble gate physically blocks the Reedwater path until
+    /// the garden story is complete.</summary>
+    public bool ProbeBrambleGateBlocking =>
+        _brambleGate is not null && _brambleGate.CollisionLayer == 1 &&
+        _brambleGateMesh?.Visible == true;
+
+    /// <summary>The gate has been removed: collision off and mesh hidden.</summary>
+    public bool ProbeBrambleGateOpen =>
+        _brambleGate is not null && _brambleGate.CollisionLayer == 0 &&
+        _brambleGateMesh?.Visible != true;
+
+    public int ResidentAnchorCount => _anchors.Count;
+    public int ResidentInsectCount => _insectViews.Count;
+    public int ResidentWebCount => _webViews.Count;
     public bool VictoryModalOpen => _ui.IsVictoryOpen;
     public bool PauseModalOpen => _ui.IsPauseOpen;
     public bool HelpModalOpen => _ui.IsHelpOpen;

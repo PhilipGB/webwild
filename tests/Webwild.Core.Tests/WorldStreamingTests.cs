@@ -162,8 +162,15 @@ public class WorldStreamerTests
     {
         var streamer = new WorldStreamer(3, 5);
         var plan = Step(streamer, Start);
-        // 7×7 ring minus 4 authored chunks.
-        Assert.Equal(49 - 4, plan.ToLoad.Count);
+        // 7×7 ring minus the authored chunks that fall inside it. The ring
+        // around the origin touches the garden footprint and the western edge
+        // of Reedwater's footprint, which is no longer generated either.
+        var ring = Enumerable.Range(-3, 7)
+            .SelectMany(dx => Enumerable.Range(-3, 7)
+                .Select(dz => new ChunkCoordinate(dx, dz)))
+            .ToList();
+        var authoredInRing = ring.Count(WorldGenerator.IsAuthoredChunk);
+        Assert.Equal(ring.Count - authoredInRing, plan.ToLoad.Count);
         // Nearest first: all distance-1 chunks precede distance-3 chunks.
         var distances = plan.ToLoad.Select(c => c.ChebyshevDistance(Start)).ToList();
         Assert.Equal(distances, distances.OrderBy(d => d).ToList());
@@ -199,8 +206,13 @@ public class WorldStreamerTests
         var streamer = new WorldStreamer(3, 5);
         Step(streamer, Start);
         var plan = Step(streamer, Start.Offset(1, 0));
-        // The new east edge column: seven chunks, all three steps from the new centre.
-        Assert.Equal(7, plan.ToLoad.Count);
+        // The new east edge column: seven chunks (minus any authored on it),
+        // all three steps from the new centre.
+        var column = Enumerable.Range(-3, 7)
+            .Select(dz => new ChunkCoordinate(4, dz))
+            .Where(c => !WorldGenerator.IsAuthoredChunk(c))
+            .ToList();
+        Assert.Equal(column.Count, plan.ToLoad.Count);
         Assert.All(plan.ToLoad, c => Assert.Equal(3, c.ChebyshevDistance(Start.Offset(1, 0))));
         Assert.Empty(plan.ToUnload);
     }

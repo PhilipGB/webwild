@@ -172,31 +172,23 @@ public sealed class GameSimulation
     }
 
     /// <summary>
-    /// Explicit travel through the marked garden passage. There is no timer or
-    /// proximity shortcut; the adapter calls this only after the player confirms.
-    /// Workers travel with the colony through that same passage and are never
-    /// moved across water; their regional route still has to exist.
+    /// Activate a landmark reached by ordinary walking. The seamless world has
+    /// no teleport: the adapter calls this when the spider crosses into a
+    /// landmark's walkable rect, so missions, helpers and anchors follow the
+    /// player physically. Travel gating is expressed by the environment (the
+    /// bramble gate), never by refusing the zone change.
     /// </summary>
-    public bool TryTravelTo(string regionId, out string reason)
+    public bool EnterLandmark(string regionId)
     {
-        reason = "";
-        var region = RegionCatalog.Get(regionId);
-        if (region is null)
-        {
-            reason = "That place is not part of this garden";
-            return false;
-        }
-        if (regionId == ActiveRegionId)
-        {
-            reason = "You are already here";
-            return false;
-        }
-        if (!IsRegionUnlocked(regionId))
-        {
-            reason = "Finish the garden story to open the Reedwater path";
-            return false;
-        }
+        if (!LandmarkCatalog.IsKnown(regionId)) return false;
+        if (regionId == ActiveRegionId) return false;
+        MoveColonyTo(regionId);
+        return true;
+    }
 
+    private void MoveColonyTo(string regionId)
+    {
+        var region = RegionCatalog.GetRequired(regionId);
         ActiveRegionId = regionId;
         _visitedRegions.Add(regionId);
 
@@ -224,6 +216,34 @@ public sealed class GameSimulation
 
         Emit(new GameplayEvent(NextKey($"region_travel_{regionId}"), "RegionChanged", TickCount,
             regionId, Detail: region.DisplayName, Region: regionId));
+    }
+
+    /// <summary>
+    /// Explicit travel through the marked garden passage. Retained for
+    /// instrumentation and saves created before the world became seamless;
+    /// normal play reaches landmarks by walking (<see cref="EnterLandmark"/>).
+    /// </summary>
+    public bool TryTravelTo(string regionId, out string reason)
+    {
+        reason = "";
+        var region = RegionCatalog.Get(regionId);
+        if (region is null)
+        {
+            reason = "That place is not part of this garden";
+            return false;
+        }
+        if (regionId == ActiveRegionId)
+        {
+            reason = "You are already here";
+            return false;
+        }
+        if (!IsRegionUnlocked(regionId))
+        {
+            reason = "Finish the garden story to open the Reedwater path";
+            return false;
+        }
+
+        MoveColonyTo(regionId);
         return true;
     }
 

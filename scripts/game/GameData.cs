@@ -9,7 +9,7 @@ namespace Webwild.Game;
 /// </summary>
 public static class GameData
 {
-    public const string Version = "0.2.0-dev";
+    public const string Version = "0.3.0-dev";
 
     public static string SavePath => ProjectSettings.GlobalizePath("user://webwild_save.json");
     public static string SettingsPath => ProjectSettings.GlobalizePath("user://webwild_settings.json");
@@ -44,6 +44,11 @@ public static class GameData
     }
 
     public static SaveService CreateSaveService() => new(SavePath);
+
+    /// <summary>The live save path for the seamless world: schema-4 manifests
+    /// plus readable legacy saves migrated on first load.</summary>
+    public static WorldSaveService CreateWorldSaveService() =>
+        new(ProjectSettings.GlobalizePath("user://world"), SavePath);
 
     public static SettingsService CreateSettingsService() => new(SettingsPath);
 

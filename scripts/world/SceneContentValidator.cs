@@ -400,6 +400,37 @@ public static class SceneContentValidator
         Check("rw-bank-collision", bankOk,
             $"start L{startBank?.CollisionLayer}/M{startBank?.CollisionMask} far L{farBank?.CollisionLayer}/M{farBank?.CollisionMask}");
 
+        // The seamless world opens Reedwater's west wall onto the connecting
+        // meadow. The gate is a physical barrier until the garden story ends,
+        // and the chunk-aligned skirts supply authored ground where procedural
+        // chunks are intentionally not generated.
+        var boundaries = world?.GetNodeOrNull<Node3D>("Boundaries");
+        var westWall = boundaries?.GetNodeOrNull<StaticBody3D>("WestBankWall");
+        var brambleGate = westWall?.GetNodeOrNull<StaticBody3D>("BrambleGate");
+        Check("rw-west-gate-contract",
+            westWall is not null &&
+            westWall.GetChildren().OfType<CollisionShape3D>().Count() == 2 &&
+            brambleGate is not null && brambleGate.CollisionLayer == 1 &&
+            brambleGate.CollisionMask == 0 && HasShape(brambleGate) &&
+            brambleGate.GetNodeOrNull<MeshInstance3D>("BrambleGateMesh")?.Mesh is not null,
+            $"shapes={westWall?.GetChildren().OfType<CollisionShape3D>().Count()} " +
+            $"gate={(brambleGate is null ? "missing" : "present")}");
+
+        var skirtNames = new[]
+        {
+            "LandingGate", "BankSkirtWest", "BankSkirtEast", "BankSkirtNorth", "BankSkirtSouth"
+        };
+        var skirts = skirtNames
+            .Select(name => terrain?.GetNodeOrNull<StaticBody3D>(name))
+            .ToList();
+        Check("rw-landmark-skirts",
+            skirts.All(skirt => skirt is not null && skirt.CollisionLayer == 1 &&
+                skirt.CollisionMask == 0 && HasShape(skirt)) &&
+            skirtNames.Select((name, index) =>
+                skirts[index]?.GetNodeOrNull<MeshInstance3D>(name + "Mesh")).All(mesh => mesh?.Mesh is not null),
+            string.Join(",", skirtNames.Select((name, index) =>
+                $"{name}={(skirts[index] is null ? "missing" : "ok")}")));
+
         var waterAreas = terrain?.GetChildren().OfType<Area3D>()
             .Where(area => area.IsInGroup("water")).ToList() ?? new List<Area3D>();
         Check("rw-water-collision",

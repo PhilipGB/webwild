@@ -8,36 +8,43 @@ namespace Webwild.Core;
 /// process lifetime. Sampling is coordinate-based, so neighbouring chunks agree
 /// at shared boundaries without special-casing.
 ///
-/// P1 baseline: a single grassland terrain type. The authored Garden Clearing
-/// occupies a fixed footprint of chunks (see <see cref="AuthoredFootprint"/>);
-/// terrain there is never generated, and heights blend smoothly from the
-/// authored meadow level (y = 0) out into gentle rolling grassland.
+/// P1 baseline: a single grassland terrain type. The authored landmarks each
+/// occupy a fixed footprint of chunks (<see cref="AuthoredFootprint"/>); terrain
+/// there is never generated, and heights blend smoothly from the authored
+/// ground level (y = 0) out into gentle rolling grassland. Two landmarks exist
+/// from v0.3.0 P2: the Garden Clearing at the origin and Reedwater Bank at
+/// (96, 0), with procedural meadow connecting them.
 /// </summary>
 public sealed class WorldGenerator
 {
     private readonly TerrainSampler _sampler;
     private readonly int _seed;
 
-    /// <summary>Chunks covered by the authored Garden Clearing meadow. The
-    /// authored terrain supplies ground here; the generator skips these chunks
-    /// so the two surfaces can never overlap or fight.</summary>
+    /// <summary>Chunks covered by the authored landscape. The authored scenes
+    /// supply ground here; the generator skips these chunks so the two
+    /// surfaces can never overlap or fight.</summary>
     public static IReadOnlySet<ChunkCoordinate> AuthoredFootprint { get; } =
-        new HashSet<ChunkCoordinate>
-        {
-            new(-1, -1), new(0, -1), new(-1, 0), new(0, 0)
-        };
+        FootprintOf(LandmarkCatalog.GardenFootprint, LandmarkCatalog.ReedwaterFootprint);
 
-    /// <summary>World-space rectangle of the authored footprint, chunk aligned.</summary>
+    /// <summary>World-space rectangle of the garden's authored footprint,
+    /// chunk aligned.</summary>
     public const double AuthoredMinX = -1 * WorldChunk.Size;
     public const double AuthoredMaxX = 1 * WorldChunk.Size;
     public const double AuthoredMinZ = -1 * WorldChunk.Size;
     public const double AuthoredMaxZ = 1 * WorldChunk.Size;
 
-    /// <summary>Width in metres of the blend ring outside the authored rect
-    /// where generated heights ramp from the meadow level into terrain noise.</summary>
+    /// <summary>Chunk-aligned world rects owned by authored landmarks.</summary>
+    public static readonly IReadOnlyList<WorldRect> AuthoredRects = new[]
+    {
+        LandmarkCatalog.GardenFootprint,
+        LandmarkCatalog.ReedwaterFootprint
+    };
+
+    /// <summary>Width in metres of the blend ring outside each authored rect
+    /// where generated heights ramp from the authored level into terrain noise.</summary>
     public const double AuthoredBlendMetres = 10.0;
 
-    /// <summary>The meadow top height the authored terrain sits at.</summary>
+    /// <summary>The ground height the authored terrain sits at.</summary>
     public const double AuthoredGroundHeight = 0.0;
 
     public WorldGenerator(int seed)
@@ -46,22 +53,43 @@ public sealed class WorldGenerator
         _sampler = new TerrainSampler(seed);
     }
 
+    private static HashSet<ChunkCoordinate> FootprintOf(params WorldRect[] rects)
+    {
+        var chunks = new HashSet<ChunkCoordinate>();
+        foreach (var rect in rects)
+        {
+            var minX = (long)Math.Floor(rect.MinX / WorldChunk.Size);
+            var maxX = (long)Math.Floor((rect.MaxX - 1e-9) / WorldChunk.Size);
+            var minZ = (long)Math.Floor(rect.MinZ / WorldChunk.Size);
+            var maxZ = (long)Math.Floor((rect.MaxZ - 1e-9) / WorldChunk.Size);
+            for (var x = minX; x <= maxX; x++)
+            for (var z = minZ; z <= maxZ; z++)
+                chunks.Add(new ChunkCoordinate(x, z));
+        }
+        return chunks;
+    }
+
     public static bool IsAuthoredChunk(ChunkCoordinate coordinate) =>
         AuthoredFootprint.Contains(coordinate);
 
     /// <summary>
-    /// Terrain height at an absolute world position: authored level inside the
-    /// footprint rect, smoothstep blend across the ring, then pure noise.
+    /// Terrain height at an absolute world position: authored level inside
+    /// either landmark footprint, smoothstep blend across that footprint's ring,
+    /// then pure noise. A point near two footprints uses the strongest
+    /// authored influence (the smallest blend factor), so overlapping rings
+    /// could never create a seam.
     /// </summary>
     public double HeightAt(double x, double z)
     {
         var raw = _sampler.HeightAt(x, z);
-        var dx = Math.Max(AuthoredMinX - x, x - AuthoredMaxX);
-        var dz = Math.Max(AuthoredMinZ - z, z - AuthoredMaxZ);
-        var outside = Math.Max(dx, dz); // negative when inside the rect
-        if (outside <= 0) return AuthoredGroundHeight;
-        if (outside >= AuthoredBlendMetres) return raw;
-        var t = Smooth(outside / AuthoredBlendMetres);
+        var t = 1.0;
+        foreach (var rect in AuthoredRects)
+        {
+            var outside = rect.DistanceOutside(x, z);
+            if (outside <= 0) return AuthoredGroundHeight;
+            if (outside >= AuthoredBlendMetres) continue;
+            t = Math.Min(t, Smooth(outside / AuthoredBlendMetres));
+        }
         return AuthoredGroundHeight + (raw - AuthoredGroundHeight) * t;
     }
 

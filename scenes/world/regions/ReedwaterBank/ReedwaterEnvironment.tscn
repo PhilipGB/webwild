@@ -31,17 +31,6 @@ adjustment_contrast = 0.99
 
 [node name="ReedwaterEnvironment" type="Node3D"]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_reedwater")
-
-[node name="Sun" type="DirectionalLight3D" parent="."]
-position = Vector3(0, 13, 0)
-rotation_degrees = Vector3(-47, -54, 0)
-light_color = Color(0.941176, 0.960784, 0.862745, 1)
-light_energy = 0.82
-shadow_enabled = true
-directional_shadow_max_distance = 72.0
-
 [node name="NurseryFill" type="OmniLight3D" parent="."]
 position = Vector3(11, 3.0, 5.8)
 light_color = Color(0.898039, 0.980392, 0.780392, 1)

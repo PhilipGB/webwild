@@ -216,7 +216,8 @@ public static class WorldSaveMigrator
             manifest.LandmarkVisits.Count ||
             manifest.LandmarkVisits.Any(v =>
                 !double.IsFinite(v.LocalX) || !double.IsFinite(v.LocalY) || !double.IsFinite(v.LocalZ) ||
-                Math.Abs(v.LocalX) > 60 || Math.Abs(v.LocalZ) > 60 || v.LocalY < -3 || v.LocalY > 40))
+                Math.Abs(v.LocalX) > 1_000_000 || Math.Abs(v.LocalZ) > 1_000_000 ||
+                v.LocalY < -8 || v.LocalY > 64))
         {
             error = "Landmark visits are invalid.";
             return false;

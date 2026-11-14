@@ -24,6 +24,22 @@ public static class WorldChunk
     public const double TerrainSpacing = Size / (TerrainResolution - 1);
 }
 
+/// <summary>
+/// Axis-aligned world-space rectangle on the X/Z plane. Boundaries are
+/// inclusive: a point exactly on an edge belongs to the rect, matching the
+/// streaming contract where a chunk's outer vertices are shared with the next
+/// chunk and must agree on height.
+/// </summary>
+public readonly record struct WorldRect(double MinX, double MinZ, double MaxX, double MaxZ)
+{
+    public bool Contains(double x, double z) =>
+        x >= MinX && x <= MaxX && z >= MinZ && z <= MaxZ;
+
+    /// <summary>Distance outside the rect; zero or negative when inside.</summary>
+    public double DistanceOutside(double x, double z) =>
+        Math.Max(Math.Max(MinX - x, x - MaxX), Math.Max(MinZ - z, z - MaxZ));
+}
+
 /// <summary>Signed 64-bit chunk identity. X grows east, Z grows south.</summary>
 public readonly record struct ChunkCoordinate(long X, long Z) : IComparable<ChunkCoordinate>
 {

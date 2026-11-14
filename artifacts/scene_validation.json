@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-14T19:04:35.3311224Z",
+  "generatedUtc": "2026-11-14T21:23:37.5159076Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "headless",
-  "passes": 55,
+  "passes": 57,
   "failures": 0,
   "checks": [
     {
@@ -231,6 +231,16 @@
       "detail": "start L1/M0 far L1/M0"
     },
     {
+      "name": "rw-west-gate-contract",
+      "pass": true,
+      "detail": "shapes=2 gate=present"
+    },
+    {
+      "name": "rw-landmark-skirts",
+      "pass": true,
+      "detail": "LandingGate=ok,BankSkirtWest=ok,BankSkirtEast=ok,BankSkirtNorth=ok,BankSkirtSouth=ok"
+    },
+    {
       "name": "rw-water-collision",
       "pass": true,
       "detail": "water areas=4"
@@ -258,7 +268,7 @@
     {
       "name": "rw-solid-collision-contract",
       "pass": true,
-      "detail": "bodies=21"
+      "detail": "bodies=27"
     },
     {
       "name": "rw-material-resource",
@@ -268,7 +278,7 @@
     {
       "name": "rw-model-resources",
       "pass": true,
-      "detail": "models=66 meshes=396 "
+      "detail": "models=66 meshes=402 "
     },
     {
       "name": "rw-insect-routes",

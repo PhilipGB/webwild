@@ -71,7 +71,8 @@ controls, economy and saves.
 - PRs [#27](https://github.com/PhilipGB/webwild/pull/27) through
   [#35](https://github.com/PhilipGB/webwild/pull/35) (phases P0–P8), plus the
   P9 integrated-acceptance PR.
-- Tag: `v0.3.0`.
+- Tag: `v0.3.0`; published release:
+  https://github.com/PhilipGB/webwild/releases/tag/v0.3.0
 
 ## Webwild v0.2.1 — Reedwater shoreline correction (unreleased)
 

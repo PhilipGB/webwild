@@ -1,3 +1,16 @@
+## Published v0.3.0 release archives
+
+GitHub release: https://github.com/PhilipGB/webwild/releases/tag/v0.3.0
+
+```text
+b5b15fbac614cffb825edf65510571636e6b59c850027e1fd4c003afd6f9e2b8  Webwild-v0.3.0-linux-x64.zip
+86b1a27623af1841d1fd101b063f1c4cd6d0f6b1888f8ee44fa349c33e65ad72  Webwild-v0.3.0-windows-x64.zip
+```
+
+The Linux archive was re-downloaded from the published release, SHA-256
+matched, extracted, and rerun headless and rendered under Xvfb: **432 headless
+/ 433 rendered**, 0 failed. The Windows archive was published but not launched.
+
 ## Linux x64 — v0.3.0 release build
 
 - Path: `exports/linux/Webwild.x86_64`

@@ -151,10 +151,13 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The Linux v0.3.0 export is launched and verified headlessly and rendered under
-Xvfb. The Windows export builds as a PE32+ x86-64 executable, but **Windows
-runtime verification is NOT VERIFIED** because no Windows host is available.
-See `docs/EXPORTS.md` for checksums and exact commands.
+The v0.3.0 release archives are published on
+[GitHub](https://github.com/PhilipGB/webwild/releases/tag/v0.3.0):
+`Webwild-v0.3.0-linux-x64.zip` and `Webwild-v0.3.0-windows-x64.zip`. The Linux
+archive re-downloads, verifies and passes 432 headless / 433 rendered probes.
+The Windows export builds as a PE32+ x86-64 executable, but **Windows runtime
+verification is NOT VERIFIED** because no Windows host is available. See
+`docs/EXPORTS.md` for checksums and exact commands.
 
 ## Evidence and limitations
 

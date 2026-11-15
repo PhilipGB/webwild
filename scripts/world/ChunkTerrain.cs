@@ -452,6 +452,7 @@ public sealed class ChunkStreamer
     private readonly WorldStreamer _streamer;
     private readonly Node3D _host;
     private readonly Dictionary<ChunkCoordinate, StaticBody3D> _nodes = new();
+    private readonly Dictionary<ChunkCoordinate, ChunkData> _data = new();
     private readonly List<ChunkCoordinate> _pending = new();
     private bool _frozen;
 
@@ -469,6 +470,10 @@ public sealed class ChunkStreamer
     public IReadOnlyDictionary<ChunkCoordinate, StaticBody3D> Nodes => _nodes;
 
     public bool IsChunkLoaded(ChunkCoordinate coordinate) => _nodes.ContainsKey(coordinate);
+
+    /// <summary>Generated data for a currently loaded chunk (food, props, water).</summary>
+    public ChunkData? DataFor(ChunkCoordinate coordinate) =>
+        _data.GetValueOrDefault(coordinate);
 
     /// <summary>Hide all chunk nodes (region switch) and take their collision
     /// out of the physics space. Hidden bodies still collide in Godot, and the
@@ -497,7 +502,10 @@ public sealed class ChunkStreamer
         foreach (var coordinate in plan.ToUnload)
         {
             if (_nodes.Remove(coordinate, out var node))
+            {
+                _data.Remove(coordinate);
                 node.QueueFree();
+            }
         }
 
         // The Core streamer registers planned chunks as active immediately, so
@@ -541,6 +549,7 @@ public sealed class ChunkStreamer
         if (data is null) return; // Authored chunks are never generated.
         var node = ChunkTerrainBuilder.Build(data, _generator.Seed);
         _nodes[coordinate] = node;
+        _data[coordinate] = data;
         _host.AddChild(node);
     }
 }

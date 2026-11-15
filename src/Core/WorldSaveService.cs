@@ -176,6 +176,14 @@ public sealed class WorldSaveService
             }
             _fs.Move(temp, ArchivePath, true);
             temp = null;
+            // Chunk-owned food depletion belongs to the old world. Move those
+            // records out of the live directory before a new garden starts.
+            var chunkArchive = _world.ArchiveChunkChanges(Path.Combine(Directory, "previous-chunks"));
+            if (!chunkArchive.Success)
+            {
+                message = chunkArchive.Message + " " + chunkArchive.Error;
+                return false;
+            }
             message = "Your previous garden is safe in the garden archive.";
             return true;
         }

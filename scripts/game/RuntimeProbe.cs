@@ -1277,6 +1277,100 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- P6: wild food, per-chunk persistence and regeneration ----
+        // Probe runs share an application-data directory and the fixed probe
+        // seed, so clear old chunk records before testing baseline food.
+        foreach (var oldChunk in _main.Saves.WorldStore.ListChangedChunks().ToList())
+            _main.Saves.WorldStore.DeleteChunkChanges(oldChunk);
+
+        var p6Game = _main.StartGame(null);
+        await Frames(12);
+        var p6Source = p6Game.ProbeNearestFood(new Vec3(0, 0, 8.5), 500);
+        Check("p6-wild-food-generated",
+            p6Source is not null && p6Game.ProbeFoodViewCount > 0,
+            $"source={p6Source?.Id} views={p6Game.ProbeFoodViewCount}");
+        if (p6Source is not null)
+        {
+            var p6Id = p6Source.Id;
+            var p6Chunk = p6Source.Chunk;
+            var p6Amount = p6Source.Amount;
+            var p6SourcePos = p6Source.Position;
+            var p6Approach = new Vec3(p6SourcePos.X - 1.4,
+                p6Game.ProbeGroundHeightAt(new Vec3(p6SourcePos.X - 1.4, 0, p6SourcePos.Z)) + 0.6,
+                p6SourcePos.Z);
+            p6Game.ProbeTeleport(p6Approach);
+            p6Game.ProbeLookAt(new Vec3(p6SourcePos.X, p6SourcePos.Y + 0.55, p6SourcePos.Z));
+            p6Game.ProbeSetCameraZoom(9);
+            p6Game.ProbeSetCameraPitch(-16);
+            await Frames(8);
+            Check("p6-forage-prompt",
+                p6Game.ProbeFoodPrompt().Contains("Forage", StringComparison.OrdinalIgnoreCase),
+                p6Game.ProbeFoodPrompt());
+            await Capture("40-wild-food");
+
+            var foodBefore = p6Game.Simulation!.Ledger.Food;
+            Check("p6-harvests-wild-food", p6Game.ProbeForageNearest(),
+                $"food={foodBefore}");
+            await Frames(4);
+            Check("p6-food-granted-once",
+                p6Game.Simulation.Ledger.Food == foodBefore + p6Amount &&
+                !p6Game.ProbeFoodAvailable(p6Id),
+                $"before={foodBefore} after={p6Game.Simulation.Ledger.Food} amount={p6Amount}");
+            var foodAfterHarvest = p6Game.Simulation.Ledger.Food;
+            Check("p6-second-harvest-refused", !p6Game.ProbeForageNearest() &&
+                p6Game.Simulation.Ledger.Food == foodAfterHarvest,
+                $"food={p6Game.Simulation.Ledger.Food}");
+            Check("p6-depleted-view-hidden", !p6Game.ProbeFoodViewVisible(p6Id) &&
+                p6Game.ProbeFoodViewPrompt(p6Id).Contains("regrow", StringComparison.OrdinalIgnoreCase),
+                p6Game.ProbeFoodViewPrompt(p6Id));
+            await Capture("41-wild-food-depleted");
+
+            Check("p6-save", p6Game.ProbeSave(), "Save with a harvested food source");
+            var p6Record = _main.Saves.WorldStore.LoadChunkChanges(p6Chunk, out var p6RecordError);
+            Check("p6-chunk-record-written",
+                p6Record is not null && p6Record.WorldSeed == p6Game.Simulation.Tuning.Seed &&
+                p6Record.FoodSources.Any(food => food.Id == p6Id),
+                $"record={(p6Record is null ? "missing" : p6Record.FoodSources.Count.ToString())} error={p6RecordError}");
+            var p6Loaded = _main.Saves.Load();
+            Check("p6-save-loads", p6Loaded.Success && p6Loaded.Data is not null, p6Loaded.Message);
+            if (p6Loaded.Data is not null)
+            {
+                var p6Reloaded = _main.StartGame(p6Loaded.Data);
+                await Frames(20);
+                Check("p6-reload-restores-depletion", !p6Reloaded.ProbeFoodAvailable(p6Id),
+                    $"remaining={p6Reloaded.ProbeFoodSecondsRemaining(p6Id):0.0}s");
+                Check("p6-reload-keeps-food-views",
+                    p6Reloaded.ProbeFoodViewCount > 0 &&
+                    !p6Reloaded.ProbeFoodViewVisible(p6Id),
+                    $"views={p6Reloaded.ProbeFoodViewCount}");
+
+                // Regeneration follows the simulation clock while the chunk is
+                // far outside the loaded ring.
+                p6Reloaded.ProbeTeleport(new Vec3(3200, 0.6, 3200));
+                await Frames(30);
+                p6Reloaded.ProbeAdvance(p6Reloaded.Simulation!.Tuning.Food.RegenerationSeconds + 2);
+                await Frames(4);
+                p6Reloaded.ProbeTeleport(p6Approach);
+                await Frames(25);
+                Check("p6-regenerates-offscreen",
+                    p6Reloaded.ProbeFoodAvailable(p6Id) &&
+                    p6Reloaded.ProbeFoodViewVisible(p6Id),
+                    $"available={p6Reloaded.ProbeFoodAvailable(p6Id)} views={p6Reloaded.ProbeFoodViewCount}");
+                Check("p6-regrown-prompt",
+                    p6Reloaded.ProbeFoodPrompt().Contains("Forage", StringComparison.OrdinalIgnoreCase),
+                    p6Reloaded.ProbeFoodPrompt());
+                await Capture("42-wild-food-regrown");
+                Check("p6-regrow-save", p6Reloaded.ProbeSave(), "Save after regrowth");
+                var clearedRecord = _main.Saves.WorldStore.LoadChunkChanges(p6Chunk, out _);
+                Check("p6-regrown-record-cleared",
+                    clearedRecord is null ||
+                    !clearedRecord.FoodSources.Any(food => food.Id == p6Id),
+                    $"food={clearedRecord?.FoodSources.Count ?? 0}");
+            }
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;

@@ -57,6 +57,12 @@ public sealed class NurseryTuning
     public double HatchTimeSeconds { get; set; } = 3;
 }
 
+public sealed class FoodTuning
+{
+    /// <summary>Seconds before a harvested wild source becomes available again.</summary>
+    public double RegenerationSeconds { get; set; } = 90;
+}
+
 public sealed class SilkProductionTuning
 {
     public double SilkPerFedWorkerEverySeconds { get; set; } = 18;
@@ -95,6 +101,7 @@ public sealed class Tuning
     public SilkProductionTuning SilkProduction { get; set; } = new();
     public WeatherTuning Weather { get; set; } = new();
     public RecoveryTuning Recovery { get; set; } = new();
+    public FoodTuning Food { get; set; } = new();
 
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -162,6 +169,8 @@ public sealed class Tuning
         Nursery ??= new NurseryTuning();
         Weather ??= new WeatherTuning();
         Recovery ??= new RecoveryTuning();
+        Food ??= new FoodTuning();
+        Food.RegenerationSeconds = Math.Clamp(Food.RegenerationSeconds, 10, 600);
         SilkProduction ??= new SilkProductionTuning();
         SilkProduction.SilkPerFedWorkerEverySeconds = Math.Max(0, SilkProduction.SilkPerFedWorkerEverySeconds);
         SilkProduction.FoodCostPerSilkBatch = Math.Max(0, SilkProduction.FoodCostPerSilkBatch);

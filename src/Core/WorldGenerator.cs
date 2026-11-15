@@ -176,8 +176,54 @@ public sealed class WorldGenerator
             Biomes = biomes,
             Props = GenerateProps(coordinate, originX, originZ, heights),
             WaterQuads = _rivers.WaterQuadsForChunk(coordinate),
-            Bridges = _rivers.BridgesForChunk(coordinate, this)
+            Bridges = _rivers.BridgesForChunk(coordinate, this),
+            FoodSources = GenerateFoodSources(coordinate)
         };
+    }
+
+    /// <summary>
+    /// Deterministic wild food: a few berries, mushrooms or seed heads on dry
+    /// generated land. IDs are stable across unload/reload and carry the owning
+    /// chunk, so state can be stored in that chunk's small change record.
+    /// </summary>
+    public List<FoodSourceDefinition> GenerateFoodSources(ChunkCoordinate coordinate)
+    {
+        var sources = new List<FoodSourceDefinition>();
+        if (IsAuthoredChunk(coordinate)) return sources;
+        var originX = coordinate.X * WorldChunk.Size;
+        var originZ = coordinate.Z * WorldChunk.Size;
+        const int slots = 3;
+        for (var slot = 0; slot < slots; slot++)
+        {
+            var stream = DeterministicHash.RandomFor(_seed, coordinate.X, coordinate.Z, 100 + slot);
+            if (stream.NextDouble() < 0.42) continue;
+            var worldX = originX + 2.0 + stream.NextDouble() * (WorldChunk.Size - 4.0);
+            var worldZ = originZ + 2.0 + stream.NextDouble() * (WorldChunk.Size - 4.0);
+            var river = RiverAt(worldX, worldZ);
+            if (river.HasRiver && river.Distance < river.HalfWidth + 1.5) continue;
+
+            var biome = _biomes.WeightsAt(worldX, worldZ);
+            var roll = stream.NextDouble();
+            var kind = biome.Dominant switch
+            {
+                BiomeKind.Moss => roll < 0.62 ? "mushrooms" : "berries",
+                BiomeKind.Bloom => roll < 0.70 ? "berries" : "seeds",
+                _ => roll < 0.55 ? "seeds" : "berries"
+            };
+            var label = kind switch
+            {
+                "mushrooms" => "mushrooms",
+                "seeds" => "sunflower seeds",
+                _ => "berries"
+            };
+            var amount = kind == "berries" ? 2 : 1;
+            sources.Add(new FoodSourceDefinition(
+                $"food:{coordinate.Id}:{slot}:{kind}",
+                coordinate, kind, label, amount,
+                new Vec3(worldX, HeightAt(worldX, worldZ) + 0.02, worldZ)));
+        }
+        sources.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
+        return sources;
     }
 
     /// <summary>

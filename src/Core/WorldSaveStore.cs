@@ -146,6 +146,32 @@ public sealed class WorldSaveStore
     private string ChunkPath(ChunkCoordinate coordinate) =>
         Path.Combine(_chunksDirectory, $"chunk_{coordinate.Id}.json");
 
+    /// <summary>
+    /// Move all live chunk records into a previous-garden archive directory
+    /// before a New Garden starts. The current world then begins with no stale
+    /// depletion records. The archive keeps the bytes for inspection; restoring
+    /// a previous garden restores colony progress, not wild food depletion.
+    /// </summary>
+    public SaveResult ArchiveChunkChanges(string archiveDirectory)
+    {
+        try
+        {
+            if (!_fs.DirectoryExists(archiveDirectory)) _fs.CreateDirectory(archiveDirectory);
+            foreach (var coordinate in ListChangedChunks())
+            {
+                var source = ChunkPath(coordinate);
+                var destination = Path.Combine(archiveDirectory, Path.GetFileName(source));
+                _fs.Copy(source, destination, true);
+                _fs.Delete(source);
+            }
+            return SaveResult.Ok(archiveDirectory);
+        }
+        catch (Exception ex)
+        {
+            return SaveResult.Fail("Couldn't archive the previous garden's chunk records.", ex.Message);
+        }
+    }
+
     public SaveResult SaveChunkChanges(ChunkChangeSave record)
     {
         record ??= new ChunkChangeSave();
@@ -327,7 +353,8 @@ public sealed class WorldSaveStore
             if (food is null || string.IsNullOrWhiteSpace(food.Id) || food.Id.Length > 80 ||
                 !double.IsFinite(food.X) || !double.IsFinite(food.Y) || !double.IsFinite(food.Z) ||
                 Math.Abs(food.X) > 1e9 || Math.Abs(food.Z) > 1e9 ||
-                string.IsNullOrWhiteSpace(food.Kind) || food.Kind.Length > 24)
+                string.IsNullOrWhiteSpace(food.Kind) || food.Kind.Length > 24 ||
+                food.AvailableAtTick < 0)
             {
                 error = "A chunk food entry is invalid.";
                 return false;

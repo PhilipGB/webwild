@@ -54,6 +54,10 @@ public sealed class WorkerSave
     public double JourneyX { get; set; }
     public double JourneyY { get; set; }
     public double JourneyZ { get; set; }
+    public double DestinationX { get; set; }
+    public double DestinationY { get; set; }
+    public double DestinationZ { get; set; }
+    public bool Summoned { get; set; }
 }
 
 public sealed class InsectSave

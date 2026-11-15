@@ -21,6 +21,7 @@ public partial class GameUI : CanvasLayer
     public event Action? BuildCancelled;
     public event Action? MapRequested;
     public event Action? ReturnHomeRequested;
+    public event Action? SummonRequested;
 
     private Control _root = null!;
     private Label _foodLabel = null!;
@@ -992,6 +993,10 @@ public partial class GameUI : CanvasLayer
             {
                 "violet" => "spider_worker_violet", "green" => "spider_worker_green", _ => "spider_worker_orange"
             });
+        var summon = UiKit.Button("Summon helpers here", 360, 50, true);
+        summon.Pressed += () => SummonRequested?.Invoke();
+        _modalContent.AddChild(summon);
+        _modalContent.AddChild(UiKit.Label("Helpers walk to you and wait nearby. They keep travelling while off screen.", 17, new Color(UiKit.Ink, 0.8f), true));
         _modalContent.AddChild(UiKit.Label("Helpers work by themselves — collecting caught insects first, then repairing damaged webs.", 17, new Color(UiKit.Ink, 0.8f), true));
     }
 

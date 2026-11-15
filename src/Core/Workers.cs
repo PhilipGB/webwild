@@ -43,6 +43,8 @@ public sealed class WorkerState
     public int JourneyIndex { get; set; }
     public bool RouteBlocked { get; set; }
     public bool JourneyUsesBridge { get; set; }
+    public Vec3 JourneyDestination { get; set; }
+    public bool Summoned { get; set; }
 
     /// <summary>Stable world position used for rendering and distance checks.</summary>
     public Vec3 WorldPosition => Travelling

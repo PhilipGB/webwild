@@ -300,6 +300,7 @@ public partial class GardenClearing : Node3D
         _ui.BuildCancelled += ClearBuild;
         _ui.MapRequested += OpenMap;
         _ui.ReturnHomeRequested += ReturnHome;
+        _ui.SummonRequested += SummonHelpers;
 
         _audio = new AudioDirector { Name = "AudioDirector" };
         AddChild(_audio);
@@ -669,6 +670,16 @@ public partial class GardenClearing : Node3D
         _explored.VisitArea(coordinate, 1);
     }
 
+    private void SummonHelpers()
+    {
+        if (_sim is null) return;
+        if (_sim.TrySummonWorkers(PlayerWorld, _sim.ActiveRegionId, out var reason))
+            _ui.ShowToast("Helpers are on their way. They will walk to you.", UiKit.TealDark, 4f);
+        else
+            _ui.ShowToast(reason, UiKit.Coral, 3.5f);
+        _ui.RefreshOpenPanels(_sim);
+    }
+
     private void OpenMap()
     {
         if (_sim is null || _player is null || _chunks is null) return;
@@ -968,8 +979,20 @@ public partial class GardenClearing : Node3D
         foreach (var worker in _sim.Workers)
         {
             if (!_workerViews.TryGetValue(worker.Id, out var view)) continue;
+            // Off-screen helpers keep simulating logically but skip animation
+            // and rendering entirely until they are near again. Measure from
+            // the logical world position: a culled view's own transform is
+            // stale until it is snapped back.
+            var workerEngine = ToEngine(worker.WorldPosition);
+            var near = Vector3DistanceToPlayer(workerEngine, 90f);
+            if (view.Visible != near)
+            {
+                view.Visible = near;
+                if (near) view.SnapToWorld();
+            }
+            if (!near) continue;
             view.UpdateView(delta, Settings.ReducedMotion,
-                Vector3DistanceToPlayer(view.GlobalPosition, 4f));
+                Vector3DistanceToPlayer(workerEngine, 4f));
         }
 
         var nearbyNursery = Vector3DistanceToPlayer(NurseryInteractionPoint, 3.2f);
@@ -2562,6 +2585,17 @@ public partial class GardenClearing : Node3D
     public int TravellingWorkerCount => _sim?.Workers.Count(worker => worker.Travelling) ?? 0;
     public Vec3 ProbeWorkerWorldPosition(string id) =>
         _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.WorldPosition ?? Vec3.Zero;
+    public Vec3 ProbeWorkerJourneyDestination(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.JourneyDestination ?? Vec3.Zero;
+    public bool ProbeWorkerSummoned(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.Summoned == true;
+    public string ProbeWorkerCurrentNode(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.CurrentNode ?? "";
+    public bool ProbeWorkerViewVisible(string id) =>
+        _workerViews.TryGetValue(id, out var view) && view.Visible;
+    public bool ProbeSummonHelpers() =>
+        _sim?.TrySummonWorkers(PlayerWorld, _sim.ActiveRegionId, out _) == true;
+
     public bool ProbeWorkerTravelling(string id) =>
         _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.Travelling == true;
     public string ProbeWorkerJourneyTarget(string id) =>

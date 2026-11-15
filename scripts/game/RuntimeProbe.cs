@@ -1531,6 +1531,102 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- P8: off-screen workers and summoning ----
+        var p8Game = _main.StartGame(null);
+        await Frames(10);
+        p8Game.Simulation!.Ledger.Restore(50, 50);
+        Check("p8-first-helper", p8Game.ProbeHatch(), "Hatch the first helper");
+        p8Game.ProbeAdvance(4);
+        await Frames(4);
+        Check("p8-second-helper", p8Game.ProbeHatch(), "Hatch the second helper");
+        p8Game.ProbeAdvance(4);
+        await Frames(6);
+        var p8Workers = p8Game.Simulation.Workers.Take(2).ToList();
+        Check("p8-two-helpers", p8Workers.Count == 2, $"workers={p8Game.Simulation.Workers.Count}");
+        if (p8Workers.Count == 2)
+        {
+            var farSummon = new Vec3(300, 0, -120);
+            farSummon = new Vec3(farSummon.X,
+                p8Game.ProbeGroundHeightAt(farSummon) + 0.6, farSummon.Z);
+            p8Game.ProbeTeleport(farSummon);
+            await Frames(10);
+            Check("p8-offscreen-views-culled",
+                !p8Game.ProbeWorkerViewVisible(p8Workers[0].Id) &&
+                !p8Game.ProbeWorkerViewVisible(p8Workers[1].Id),
+                $"visible={p8Game.ProbeWorkerViewVisible(p8Workers[0].Id)}/" +
+                $"{p8Game.ProbeWorkerViewVisible(p8Workers[1].Id)}");
+
+            var worldBefore = p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id);
+            Check("p8-summon", p8Game.ProbeSummonHelpers(),
+                "Call both helpers to the player");
+            await Frames(4);
+            Check("p8-summon-does-not-teleport",
+                p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
+                p8Game.ProbeWorkerTravelling(p8Workers[1].Id) &&
+                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id), worldBefore) < 3 &&
+                Vec3.Distance(p8Game.ProbeWorkerJourneyDestination(p8Workers[0].Id), farSummon) < 6,
+                $"worker={p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id)} " +
+                $"destination={p8Game.ProbeWorkerJourneyDestination(p8Workers[0].Id)}");
+
+            p8Game.ProbeAdvance(10);
+            await Frames(4);
+            Check("p8-offscreen-journey-progresses",
+                p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
+                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id), worldBefore) > 3 &&
+                !p8Game.ProbeWorkerViewVisible(p8Workers[0].Id),
+                $"worker={p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id)}");
+
+            for (var i = 0; i < 400; i++)
+            {
+                if (!p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
+                    !p8Game.ProbeWorkerTravelling(p8Workers[1].Id)) break;
+                p8Game.ProbeAdvance(1);
+                await Frames(1);
+            }
+            Check("p8-summoned-helpers-arrive",
+                !p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
+                !p8Game.ProbeWorkerTravelling(p8Workers[1].Id) &&
+                p8Game.ProbeWorkerSummoned(p8Workers[0].Id) &&
+                p8Game.ProbeWorkerSummoned(p8Workers[1].Id) &&
+                p8Game.ProbeWorkerCurrentNode(p8Workers[0].Id) == "" &&
+                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id), farSummon) < 6 &&
+                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[1].Id), farSummon) < 6,
+                $"w0={p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id)} " +
+                $"w1={p8Game.ProbeWorkerWorldPosition(p8Workers[1].Id)}");
+            await Frames(8);
+            Check("p8-arrived-views-visible",
+                p8Game.ProbeWorkerViewVisible(p8Workers[0].Id) &&
+                p8Game.ProbeWorkerViewVisible(p8Workers[1].Id),
+                "Helpers reappear near the player");
+
+            var mid = (p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id) +
+                       p8Game.ProbeWorkerWorldPosition(p8Workers[1].Id)) * 0.5;
+            p8Game.ProbeLookAt(new Vec3(mid.X, mid.Y + 0.3, mid.Z));
+            p8Game.ProbeSetCameraZoom(9);
+            p8Game.ProbeSetCameraPitch(-20);
+            await Frames(6);
+            await Capture("45-summoned-helpers");
+
+            Check("p8-save", p8Game.ProbeSave(), "Save with summoned helpers in the wild");
+            var p8Loaded = _main.Saves.Load();
+            Check("p8-save-loads", p8Loaded.Success && p8Loaded.Data is not null, p8Loaded.Message);
+            if (p8Loaded.Data is not null)
+            {
+                var p8Reloaded = _main.StartGame(p8Loaded.Data);
+                await Frames(20);
+                var reloadedHelpers = p8Reloaded.Simulation!.Workers.Take(2).ToList();
+                Check("p8-reload-keeps-summoned-helpers",
+                    reloadedHelpers.Count == 2 &&
+                    reloadedHelpers.All(helper => helper.Summoned && helper.CurrentNode == "") &&
+                    reloadedHelpers.All(helper =>
+                        Vec3.Distance(helper.WorldPosition, farSummon) < 6),
+                    string.Join(" | ", reloadedHelpers.Select(helper =>
+                        $"{helper.Id}:{helper.WorldPosition}")));
+            }
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;

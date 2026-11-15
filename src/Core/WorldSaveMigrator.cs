@@ -30,6 +30,7 @@ public static class WorldSaveMigrator
             Tick = legacy.Tick,
             ElapsedSeconds = legacy.ElapsedSeconds,
             ActiveLandmarkId = legacy.ActiveRegionId,
+            ExploredChunks = legacy.ExploredChunks?.ToList() ?? new List<string>(),
             Game = legacy
         };
 
@@ -43,9 +44,17 @@ public static class WorldSaveMigrator
 
         var visits = new List<LandmarkVisitSave>();
         var seenLandmarks = new HashSet<string>(StringComparer.Ordinal);
+        // RegionPlayers contains an initialized entry for every landmark, but a
+        // landmark visit means the player has actually been there. Filtering by
+        // VisitedRegions (plus the active landmark) keeps the map and any future
+        // travel records honest for fresh saves.
+        var visited = legacy.VisitedRegions is null
+            ? new HashSet<string>(StringComparer.Ordinal)
+            : new HashSet<string>(legacy.VisitedRegions, StringComparer.Ordinal);
         foreach (var entry in legacy.RegionPlayers)
         {
             if (!LandmarkCatalog.IsKnown(entry.Region) || !seenLandmarks.Add(entry.Region)) continue;
+            if (!visited.Contains(entry.Region) && entry.Region != active) continue;
             visits.Add(new LandmarkVisitSave
             {
                 LandmarkId = entry.Region,
@@ -84,6 +93,7 @@ public static class WorldSaveMigrator
             ? manifest.ActiveLandmarkId
             : LandmarkCatalog.Garden;
 
+        game.ExploredChunks = manifest.ExploredChunks?.ToList() ?? new List<string>();
         var local = LandmarkCatalog.ToLocal(game.ActiveRegionId, manifest.Player.Absolute);
         game.Player = new PlayerSave
         {

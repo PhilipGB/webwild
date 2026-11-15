@@ -19,6 +19,8 @@ public partial class GameUI : CanvasLayer
     public event Action? ContinuePlayingRequested;
     public event Action? BuildConfirmed;
     public event Action? BuildCancelled;
+    public event Action? MapRequested;
+    public event Action? ReturnHomeRequested;
 
     private Control _root = null!;
     private Label _foodLabel = null!;
@@ -53,6 +55,7 @@ public partial class GameUI : CanvasLayer
     private Button _captureButton = null!;
     private Button _bridgeButton = null!;
     private Button _helpButton = null!;
+    private Button _mapButton = null!;
     private Button _colonyButton = null!;
     private Button _interactButton = null!;
     private Button _dismantleButton = null!;
@@ -71,6 +74,9 @@ public partial class GameUI : CanvasLayer
     private bool _saveFailedOpen;
     private bool _travelOpen;
     private bool _regionCompleteOpen;
+    private bool _mapOpen;
+    private MapView? _mapView;
+    private Button? _mapHomeButton;
     private float _toastTimer;
     private float _toastDuration;
     private GameSimulation? _lastSim;
@@ -81,8 +87,8 @@ public partial class GameUI : CanvasLayer
     private readonly List<Button> _workerChips = new();
     private readonly List<string> _probeToastHistory = new();
 
-    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
-    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen;
+    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen || _mapOpen;
+    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen || _mapOpen;
     public bool BlocksWorldInput => IsModalOpen;
     public bool ProbeToastVisible => _toastPanel.Visible;
     public string ProbeToastText => _toastLabel.Text;
@@ -92,6 +98,7 @@ public partial class GameUI : CanvasLayer
     public Rect2 ProbeMissionRect => _missionPanel.GetGlobalRect();
     public Rect2 ProbeActionColumnRect => _actionsColumn.GetGlobalRect();
     public Rect2 ProbeToolbarRect => _toolbar.GetGlobalRect();
+    public Rect2 ProbeMapButtonRect => _mapButton.GetGlobalRect();
     public Rect2 ProbeStatusRect => _statusLabel.GetGlobalRect();
     public string ProbeStatusText => _statusLabel.Text;
     public bool BuildConfirmVisible => _buildConfirmPanel.Visible;
@@ -109,6 +116,9 @@ public partial class GameUI : CanvasLayer
     public bool IsSaveFailedOpen => _saveFailedOpen;
     public bool IsTravelOpen => _travelOpen;
     public bool IsRegionCompleteOpen => _regionCompleteOpen;
+    public bool IsMapOpen => _mapOpen;
+    public int ProbeMapCells => _mapView?.LastDrawnCells ?? -1;
+    public Rect2 ProbeMapHomeRect => _mapHomeButton?.GetGlobalRect() ?? new Rect2();
 
     public override void _Ready()
     {
@@ -243,6 +253,9 @@ public partial class GameUI : CanvasLayer
         _captureButton.Pressed += () => BuildToolRequested?.Invoke(WebType.Capture);
         _bridgeButton = ToolbarButton("bridge", "Silk bridge  [2]", 218);
         _bridgeButton.Pressed += () => BuildToolRequested?.Invoke(WebType.Bridge);
+        _mapButton = UiKit.Button("M", 56, 62);
+        _mapButton.TooltipText = "Wilderness map [M]";
+        _mapButton.Pressed += () => MapRequested?.Invoke();
         _helpButton = UiKit.Button("?", 56, 62);
         _helpButton.TooltipText = "How to play";
         _helpButton.Pressed += OpenHelp;
@@ -250,6 +263,7 @@ public partial class GameUI : CanvasLayer
         _colonyButton.Pressed += () => ToggleColony();
         toolbar.AddChild(_captureButton);
         toolbar.AddChild(_bridgeButton);
+        toolbar.AddChild(_mapButton);
         toolbar.AddChild(_helpButton);
         toolbar.AddChild(_colonyButton);
         bottom.AddChild(toolbar);
@@ -411,7 +425,9 @@ public partial class GameUI : CanvasLayer
     public void CloseModal()
     {
         _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen =
-            _saveFailedOpen = _travelOpen = _regionCompleteOpen = false;
+            _saveFailedOpen = _travelOpen = _regionCompleteOpen = _mapOpen = false;
+        _mapView = null;
+        _mapHomeButton = null;
         _nurserySignature = "";
         _nurseryBar = null;
         _nurseryHatchStatus = null;
@@ -430,7 +446,7 @@ public partial class GameUI : CanvasLayer
 
     private void ConfigureModalState(bool pause = false, bool nursery = false, bool victory = false,
         bool colony = false, bool help = false, bool confirm = false, bool saveFailed = false,
-        bool travel = false, bool regionComplete = false)
+        bool travel = false, bool regionComplete = false, bool map = false)
     {
         _pauseOpen = pause;
         _nurseryOpen = nursery;
@@ -441,6 +457,7 @@ public partial class GameUI : CanvasLayer
         _saveFailedOpen = saveFailed;
         _travelOpen = travel;
         _regionCompleteOpen = regionComplete;
+        _mapOpen = map;
         _modalRoot.Visible = true;
     }
 
@@ -756,6 +773,34 @@ public partial class GameUI : CanvasLayer
         _modalContent.AddChild(no);
     }
 
+    /// <summary>
+    /// Build the exploration map modal. All data is passed in from the
+    /// adapter's Core exploration record; the UI never mutates the world.
+    /// </summary>
+    public void OpenMap(
+        IReadOnlyCollection<ChunkCoordinate> explored,
+        Vec3 player,
+        WorldGenerator generator,
+        IReadOnlyCollection<string> visitedLandmarks)
+    {
+        OpenModal("Wilderness Map", 620);
+        ConfigureModalState(map: true);
+        _mapView = new MapView { Name = "MapView" };
+        _modalContent.AddChild(_mapView);
+        _mapView.Configure(explored, player, generator, visitedLandmarks);
+        var summary = explored.Count == 0
+            ? "No ground explored yet. Walk out and the map will grow."
+            : $"{explored.Count} chunks explored. The pale dot is you; gold circles are landmarks. Rivers are safest at the old plank crossings.";
+        _modalContent.AddChild(UiKit.Label(summary, 16, new Color(UiKit.Ink, 0.86f), true));
+        var home = UiKit.Button("Return to Garden Clearing", 420, 52, true);
+        home.Pressed += () => ReturnHomeRequested?.Invoke();
+        _mapHomeButton = home;
+        _modalContent.AddChild(home);
+        var close = UiKit.Button("Keep exploring", 300, 46);
+        close.Pressed += CloseModal;
+        _modalContent.AddChild(close);
+    }
+
     public void OpenHelp()
     {
         _helpReturnToPause = _pauseOpen;
@@ -771,8 +816,10 @@ public partial class GameUI : CanvasLayer
             ("nest", "Press E at the leaf nursery to hatch a helper (up to 5 spiders)."),
             ("wind", "Wind is forecast before it arrives. Sheltered webs near the log take less damage."),
             ("bridge", "In Reedwater Bank, build two bridges to reach the lily island. The water is too deep to walk through."),
-            ("quest", "Near the east hedge, press E at the reed path to travel between regions."),
-            ("silk", "Right-click or Esc cancels a build. X dismantles a nearby web. Tab shows your colony.")
+            ("quest", "Walk through the hedge gates and across the meadows to Reedwater Bank. The bramble gate opens when the garden story is complete."),
+            ("bridge", "Rivers are too deep to wade. Cross them at old plank bridges every so often."),
+            ("map", "Press M for your explored map and Return Home. Tab shows your colony."),
+            ("silk", "Right-click or Esc cancels a build. X dismantles a nearby web.")
         };
         foreach (var (icon, text) in lines)
             _modalContent.AddChild(UiKit.IconLabel(icon, text, 18));

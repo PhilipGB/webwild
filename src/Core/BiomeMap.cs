@@ -78,10 +78,20 @@ public static class TerrainPalette
     public static readonly Vec3 Moss = new(0.298039, 0.478431, 0.321569);
     public static readonly Vec3 Bloom = new(0.639216, 0.729412, 0.364706);
 
+    /// <summary>Dark wet mud seen through the river surface.</summary>
+    public static readonly Vec3 RiverBed = new(0.211765, 0.231373, 0.172549);
+    /// <summary>Damp transition between riverbed and dry bank grass.</summary>
+    public static readonly Vec3 RiverBank = new(0.376471, 0.423529, 0.286275);
+
     public static Vec3 ColorOf(BiomeWeights weights) => new(
         weights.Blend(Meadow.X, Moss.X, Bloom.X),
         weights.Blend(Meadow.Y, Moss.Y, Bloom.Y),
         weights.Blend(Meadow.Z, Moss.Z, Bloom.Z));
+
+    public static Vec3 Blend(Vec3 a, Vec3 b, double t) => new(
+        a.X + (b.X - a.X) * t,
+        a.Y + (b.Y - a.Y) * t,
+        a.Z + (b.Z - a.Z) * t);
 
     /// <summary>Deterministic per-quad brightness in [0.92, 1.08].</summary>
     public static double QuadTint(int seed, double worldX, double worldZ)

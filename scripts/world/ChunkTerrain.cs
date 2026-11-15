@@ -25,6 +25,32 @@ public static class ChunkTerrainBuilder
         CullMode = BaseMaterial3D.CullModeEnum.Disabled
     };
 
+    private static readonly StandardMaterial3D RiverWaterMaterial = new()
+    {
+        AlbedoColor = new Color(0.145f, 0.482f, 0.541f, 0.76f),
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+        Roughness = 0.16f,
+        Metallic = 0.04f,
+        EmissionEnabled = true,
+        Emission = new Color(0.235f, 0.639f, 0.647f),
+        EmissionEnergyMultiplier = 0.22f,
+        CullMode = BaseMaterial3D.CullModeEnum.Disabled
+    };
+
+    private static readonly StandardMaterial3D BridgeWoodMaterial = new()
+    {
+        AlbedoColor = new Color(0.478f, 0.345f, 0.216f),
+        Roughness = 0.92f,
+        Metallic = 0f
+    };
+
+    private static readonly StandardMaterial3D BridgeRopeMaterial = new()
+    {
+        AlbedoColor = new Color(0.788f, 0.878f, 0.769f),
+        Roughness = 0.72f,
+        Metallic = 0f
+    };
+
     /// <summary>Map a generator prop kind to the supplied GLB that dresses it.</summary>
     private static string? PropScenePath(string kind) => kind switch
     {
@@ -82,14 +108,165 @@ public static class ChunkTerrainBuilder
             var instance = packed.Instantiate<Node3D>();
             if (instance is null) continue;
             instance.Name = $"Prop_{prop.Kind}_{prop.Position.X:0.##}_{prop.Position.Z:0.##}";
-            instance.Position = ToVector3(prop.Position);
+            // Core placements are world-space; the chunk body already carries
+            // the chunk origin, so children must use chunk-local coordinates.
+            instance.Position = ToVector3(prop.Position) - ToVector3(data.Coordinate.OriginWorld);
             instance.RotationDegrees = new Vector3(0, (float)prop.RotationDegrees, 0);
             instance.Scale = Vector3.One * (float)prop.Scale;
             ArtMaterials.ApplyVertexColors(instance);
             body.AddChild(instance);
         }
 
+        if (data.WaterQuads.Count > 0)
+            body.AddChild(BuildWater(data));
+        foreach (var bridge in data.Bridges)
+            AddBridge(body, data, bridge);
+
         return body;
+    }
+
+    /// <summary>Flat river-water surface, one quad per visual grid cell.</summary>
+    private static MeshInstance3D BuildWater(ChunkData data)
+    {
+        var origin = data.Coordinate.OriginWorld;
+        var half = WorldChunk.TerrainSpacing * 0.5;
+        var vertices = new List<Vector3>(data.WaterQuads.Count * 4);
+        var normals = new List<Vector3>(data.WaterQuads.Count * 4);
+        var indices = new List<int>(data.WaterQuads.Count * 6);
+        foreach (var quad in data.WaterQuads)
+        {
+            var cx = (float)(quad.CenterX - origin.X);
+            var cz = (float)(quad.CenterZ - origin.Z);
+            var baseIndex = vertices.Count;
+            vertices.Add(new Vector3(cx - (float)half, (float)quad.Level00, cz - (float)half));
+            vertices.Add(new Vector3(cx + (float)half, (float)quad.Level10, cz - (float)half));
+            vertices.Add(new Vector3(cx - (float)half, (float)quad.Level01, cz + (float)half));
+            vertices.Add(new Vector3(cx + (float)half, (float)quad.Level11, cz + (float)half));
+            for (var i = 0; i < 4; i++) normals.Add(Vector3.Up);
+            indices.AddRange(new[]
+            {
+                baseIndex, baseIndex + 2, baseIndex + 3,
+                baseIndex, baseIndex + 3, baseIndex + 1
+            });
+        }
+
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = vertices.ToArray();
+        arrays[(int)Mesh.ArrayType.Normal] = normals.ToArray();
+        arrays[(int)Mesh.ArrayType.Index] = indices.ToArray();
+        var mesh = new ArrayMesh();
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+        return new MeshInstance3D
+        {
+            Name = "RiverWater",
+            Mesh = mesh,
+            MaterialOverride = RiverWaterMaterial,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+        };
+    }
+
+    /// <summary>
+    /// One stable, low bank-to-bank crossing. The deck is a tilted solid box
+    /// whose ends meet the sampled bank heights; rails and legs are visual.
+    /// </summary>
+    private static void AddBridge(StaticBody3D chunkBody, ChunkData data, RiverBridge bridge)
+    {
+        var origin = data.Coordinate.OriginWorld;
+        var length = (float)(bridge.HalfSpan * 2.0);
+        var slope = (bridge.SouthGroundY - bridge.NorthGroundY) / (bridge.HalfSpan * 2.0);
+        // Meet both banks when possible, but never let a low bank put the deck
+        // under the water: keep at least 0.45 m of clearance.
+        var centerY = Math.Max(
+            (bridge.NorthGroundY + bridge.SouthGroundY) * 0.5 - 0.12,
+            bridge.WaterLevel + 0.37);
+        var body = new StaticBody3D
+        {
+            Name = "RiverBridge_" + bridge.Id,
+            Position = new Vector3(
+                (float)(bridge.X - origin.X),
+                (float)centerY,
+                (float)(bridge.CenterZ - origin.Z)),
+            Rotation = new Vector3((float)-Math.Atan(slope), 0, 0),
+            CollisionLayer = 1,
+            CollisionMask = 0
+        };
+        body.SetMeta("bridge_id", bridge.Id);
+        body.SetMeta("river_index", bridge.RiverIndex);
+        body.SetMeta("water_level", bridge.WaterLevel);
+        body.AddToGroup("river_bridge");
+
+        var deck = new MeshInstance3D
+        {
+            Name = "Deck",
+            Mesh = new BoxMesh { Size = new Vector3(2.8f, 0.16f, length) },
+            MaterialOverride = BridgeWoodMaterial
+        };
+        body.AddChild(deck);
+        body.AddChild(new CollisionShape3D
+        {
+            Name = "DeckShape",
+            Shape = new BoxShape3D { Size = new Vector3(2.8f, 0.16f, length) }
+        });
+
+        // Visible cross-planks and side beams break up the single-box deck.
+        const int plankCount = 11;
+        for (var i = 0; i < plankCount; i++)
+        {
+            var z = -length * 0.5f + (i + 0.5f) * (length / plankCount);
+            body.AddChild(new MeshInstance3D
+            {
+                Name = $"Plank_{i}",
+                Position = new Vector3(0, 0.095f, z),
+                Mesh = new BoxMesh
+                {
+                    Size = new Vector3(2.9f, 0.05f, length / plankCount * 0.72f)
+                },
+                MaterialOverride = BridgeWoodMaterial
+            });
+        }
+        for (var side = -1; side <= 1; side += 2)
+        {
+            body.AddChild(new MeshInstance3D
+            {
+                Name = side < 0 ? "BeamWest" : "BeamEast",
+                Position = new Vector3(side * 1.34f, -0.02f, 0),
+                Mesh = new BoxMesh { Size = new Vector3(0.14f, 0.22f, length) },
+                MaterialOverride = BridgeWoodMaterial
+            });
+        }
+
+        // Woven-silk rails run the full span above low wooden posts.
+        for (var side = -1; side <= 1; side += 2)
+        {
+            var x = side * 1.28f;
+            body.AddChild(new MeshInstance3D
+            {
+                Name = side < 0 ? "RopeWest" : "RopeEast",
+                Position = new Vector3(x, 0.52f, 0),
+                Mesh = new BoxMesh { Size = new Vector3(0.09f, 0.09f, length * 0.98f) },
+                MaterialOverride = BridgeRopeMaterial
+            });
+            foreach (var zSign in new[] { -1f, 1f })
+            {
+                body.AddChild(new MeshInstance3D
+                {
+                    Name = $"Post_{side}_{zSign}",
+                    Position = new Vector3(x, 0.28f, zSign * (length * 0.5f - 0.55f)),
+                    Mesh = new BoxMesh { Size = new Vector3(0.15f, 0.86f, 0.15f) },
+                    MaterialOverride = BridgeWoodMaterial
+                });
+            }
+            body.AddChild(new MeshInstance3D
+            {
+                Name = side < 0 ? "LegWest" : "LegEast",
+                Position = new Vector3(x * 0.72f, -0.72f, 0),
+                Mesh = new BoxMesh { Size = new Vector3(0.16f, 1.55f, 0.16f) },
+                MaterialOverride = BridgeWoodMaterial
+            });
+        }
+
+        chunkBody.AddChild(body);
     }
 
     /// <summary>
@@ -109,6 +286,7 @@ public static class ChunkTerrainBuilder
         var biomes = data.Biomes;
         var originX = data.Coordinate.X * WorldChunk.Size;
         var originZ = data.Coordinate.Z * WorldChunk.Size;
+        var rivers = new RiverMap(seed);
 
         var vertex = 0;
         var index = 0;
@@ -137,9 +315,25 @@ public static class ChunkTerrainBuilder
             for (var i = 0; i < 4; i++) normals[vertex + i] = normal;
 
             var weights = BiomeWeightsBetween(biomes, ix, iz);
-            var tint = (float)TerrainPalette.QuadTint(
-                seed, originX + (ix + 0.5) * spacing, originZ + (iz + 0.5) * spacing);
+            var quadX = originX + (ix + 0.5) * spacing;
+            var quadZ = originZ + (iz + 0.5) * spacing;
+            var tint = (float)TerrainPalette.QuadTint(seed, quadX, quadZ);
             var rgb = TerrainPalette.ColorOf(weights);
+            // Wet mud under and beside the water makes the channel read as a
+            // carved streambed through the translucent surface.
+            var river = rivers.Sample(quadX, quadZ);
+            if (river.HasRiver)
+            {
+                // Mud is only tinted under cells that also receive a water
+                // quad, so no dark slabs leak past the visible waterline.
+                var bedEdge = river.HalfWidth + RiverMap.VisualMargin;
+                var wetEdge = river.HalfWidth + 2.2;
+                if (river.Distance <= bedEdge)
+                    rgb = TerrainPalette.RiverBed;
+                else if (river.Distance <= wetEdge)
+                    rgb = TerrainPalette.Blend(TerrainPalette.RiverBank, rgb,
+                        (river.Distance - bedEdge) / (wetEdge - bedEdge));
+            }
             var color = new Color((float)rgb.X * tint, (float)rgb.Y * tint, (float)rgb.Z * tint);
             for (var i = 0; i < 4; i++) colors[vertex + i] = color;
 

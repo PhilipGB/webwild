@@ -19,6 +19,7 @@ public sealed class WorldGenerator
 {
     private readonly TerrainSampler _sampler;
     private readonly BiomeMap _biomes;
+    private readonly RiverMap _rivers;
     private readonly int _seed;
 
     /// <summary>Chunks covered by the authored landscape. The authored scenes
@@ -56,7 +57,11 @@ public sealed class WorldGenerator
         _seed = seed;
         _sampler = new TerrainSampler(seed);
         _biomes = new BiomeMap(seed);
+        _rivers = new RiverMap(seed);
     }
+
+    /// <summary>Deterministic river field for water, carving and crossings.</summary>
+    public RiverMap Rivers => _rivers;
 
     private static HashSet<ChunkCoordinate> FootprintOf(params WorldRect[] rects)
     {
@@ -95,7 +100,18 @@ public sealed class WorldGenerator
             if (outside >= AuthoredBlendMetres) continue;
             t = Math.Min(t, Smooth(outside / AuthoredBlendMetres));
         }
-        return AuthoredGroundHeight + (raw - AuthoredGroundHeight) * t;
+        var height = AuthoredGroundHeight + (raw - AuthoredGroundHeight) * t;
+        // Rivers carve generated land only; authored footprints are never
+        // touched (their ground is supplied by the hand-made scenes).
+        if (t < 1.0) return height;
+        return height - _rivers.CarveDepth(x, z);
+    }
+
+    /// <summary>Nearest river sample, excluding authored landmark ground.</summary>
+    public RiverSample RiverAt(double x, double z)
+    {
+        if (AuthoredRects.Any(rect => rect.Contains(x, z))) return RiverSample.None;
+        return _rivers.Sample(x, z);
     }
 
     /// <summary>Dominant biome name at a world point (diagnostics and probes).</summary>
@@ -158,7 +174,9 @@ public sealed class WorldGenerator
             Coordinate = coordinate,
             Heights = heights,
             Biomes = biomes,
-            Props = GenerateProps(coordinate, originX, originZ, heights)
+            Props = GenerateProps(coordinate, originX, originZ, heights),
+            WaterQuads = _rivers.WaterQuadsForChunk(coordinate),
+            Bridges = _rivers.BridgesForChunk(coordinate, this)
         };
     }
 
@@ -187,6 +205,9 @@ public sealed class WorldGenerator
             var density = _sampler.Noise(worldX, worldZ, 31, 3);
             if (density < 0.16) continue;
 
+            // No dressing in the channel: the carved bed is visible through
+            // the water and props must not float on it.
+            if (_rivers.Sample(worldX, worldZ).IsWater) continue;
             var kind = PickKind(stream, _biomes.WeightsAt(worldX, worldZ));
             if (kind is null) continue;
             var position = new Vec3(

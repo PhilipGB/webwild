@@ -50,15 +50,16 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.0 P4 | Rivers and crossings: deterministic meandering rivers, carved terrain-following channels, per-chunk water quads and wet-bed palette, stable low bridges every 150 m, river hazard recovery and guidance, safe-bank loading for pre-river saves, chunk-local prop placement fix, river probe tooling | DONE, merged PR [#31](https://github.com/PhilipGB/webwild/pull/31) | `docs/prs/v0.3.0.md`; `RiverTests`; 203 unit tests (195 existing + 8 new); 57 scene checks; 370 headless / 371 rendered runtime checks; Linux export re-verified; screenshots 36–37 |
 | v0.3.0 P5 | Exploration map and Return Home: bounded exploration record saved once in the manifest, biome/river map modal, M toolbar and key, Return Home from anywhere, landmark visit filtering fix, fresh-save map honesty | DONE, merged PR [#32](https://github.com/PhilipGB/webwild/pull/32) | `docs/prs/v0.3.0.md`; `ExplorationTests`; 210 unit tests (203 existing + 7 new); 57 scene checks; 389 headless / 390 rendered runtime checks; Linux export re-verified; screenshots 38–39 |
 | v0.3.0 P6 | Wild food and regeneration: deterministic berries/mushrooms/seeds, tick-based once-per-generation harvest, depleted-only per-chunk records with seed guards, food views/prompts, New-Garden chunk archiving, probe evidence | DONE, merged PR [#33](https://github.com/PhilipGB/webwild/pull/33) | `docs/prs/v0.3.0.md`; `FoodTests`; 219 unit tests (210 existing + 9 new); 57 scene checks; 404 headless / 405 rendered runtime checks; Linux export re-verified; screenshots 40–42 |
+| v0.3.0 P7 | Physical worker navigation: hierarchical dry world routes through hedge gates and generated river bridges, no-teleport landmark journeys, recorded/reversed routes, blocked waiting and retries, mid-journey save/load, world-space helper rendering, probe instrumentation | DONE, merged PR [#34](https://github.com/PhilipGB/webwild/pull/34) | `docs/prs/v0.3.0.md`; `WorkerNavigationTests`; 227 unit tests (219 existing + 8 new); 57 scene checks; 420 headless / 421 rendered runtime checks; Linux export re-verified; screenshots 43–44 |
 
 ## Verification summary
 
-- `dotnet test`: **219 passed, 0 failed** (210 existing + 9 new food tests).
+- `dotnet test`: **227 passed, 0 failed** (219 existing + 8 new worker-navigation tests).
 - Scene contract validation: **57 passed, 0 failed** across both regions.
-- Headless runtime probe: **404 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **405 passed, 0 failed**.
-- Exported Linux build, headless probe: **404 passed, 0 failed**.
-- Exported Linux build, rendered Xvfb probe: **405 passed, 0 failed**.
+- Headless runtime probe: **420 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **421 passed, 0 failed**.
+- Exported Linux build, headless probe: **420 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb probe: **421 passed, 0 failed**.
 - Linux x64 export: built successfully and launched.
 - Windows x64 export: built successfully; runtime **NOT VERIFIED** (no Windows host).
 - Legacy saves v0.1.0/v0.1.1/v0.1.2: migration tests pass with real fixtures.
@@ -84,15 +85,15 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 
 ## v0.3.0 — Never-Ending World (in progress)
 
-- P0 foundations through P6 wild food are merged (see
+- P0 foundations through P7 physical worker navigation are merged (see
   `docs/prs/v0.3.0.md`). Reedwater Bank is walked to through generated
   meadow; the travel dialog is gone and a physical bramble gate opens when
   the garden story completes. Saves are schema-4 world manifests with
   per-save seeds, with legacy schema-3 saves migrated on first load. The
   procedural meadow has three biomes, presentation origin rebasing,
   carved rivers with generated crossings, a durable exploration map with
-  Return Home, and deterministic wild food whose depletion persists per
-  chunk and regrows on the simulation clock. Pre-river saves that land in
-  water recover to the nearest bank. A faint tint line at the Reedwater
-  apron and low-poly river/water shader polish remain for P9; worker
-  physical navigation is P7.
+  Return Home, deterministic wild food with per-chunk depletion and
+  regeneration, and helpers that physically walk between landmarks through
+  gates and generated bridges. A faint tint line at the Reedwater apron
+  and low-poly river/water shader polish remain for P9; off-screen helpers
+  and summoning are P8.

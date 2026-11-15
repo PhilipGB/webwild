@@ -15,7 +15,7 @@ public class WorkerNavigationTests
 
     private static void AdvanceUntilArrived(GameSimulation sim, WorkerState worker)
     {
-        for (var i = 0; i < 700 && worker.Travelling; i++) sim.AdvanceSeconds(0.2);
+        for (var i = 0; i < 2500 && worker.Travelling; i++) sim.AdvanceSeconds(0.2);
         Assert.False(worker.Travelling, "worker journey did not arrive");
     }
 
@@ -169,6 +169,74 @@ public class WorkerNavigationTests
         AdvanceUntilArrived(sim, worker);
         Assert.Equal(RegionIds.GardenClearing, worker.Region);
         Assert.InRange(Vec3.Distance(worker.WorldPosition, gardenNursery), 0, 1);
+    }
+
+    [Fact]
+    public void SummonWorkers_WalkToThePlayerAndWait()
+    {
+        var sim = TestWorld.NewSim();
+        var worker = HatchedWorker(sim);
+        var player = new Vec3(300, 0.5, -120);
+        Assert.True(sim.TrySummonWorkers(player, RegionIds.GardenClearing, out var reason), reason);
+        Assert.True(worker.Travelling);
+        Assert.True(worker.Summoned);
+        Assert.True(Vec3.Distance(worker.WorldPosition, player) > 200,
+            "summoning must not teleport the helper");
+        Assert.InRange(Vec3.Distance(worker.JourneyDestination, player), 0, 4);
+
+        AdvanceUntilArrived(sim, worker);
+        Assert.False(worker.Travelling);
+        Assert.True(worker.Summoned);
+        Assert.Equal(RegionIds.GardenClearing, worker.Region);
+        Assert.Equal("", worker.CurrentNode);
+        Assert.Equal(WorkerActivity.Waiting, worker.Activity);
+        Assert.InRange(Vec3.Distance(worker.WorldPosition, player), 0, 5);
+    }
+
+    [Fact]
+    public void SummonedHelpers_SaveAndLoadTheirWildPosition()
+    {
+        var sim = TestWorld.NewSim();
+        var worker = HatchedWorker(sim);
+        var player = new Vec3(300, 0.5, -120);
+        Assert.True(sim.TrySummonWorkers(player, RegionIds.GardenClearing, out var reason), reason);
+        AdvanceUntilArrived(sim, worker);
+        var data = sim.ExportSave(new Vec3(0, 0.55, 8.5), 0, new SettingsData());
+        data.Seed = sim.Tuning.Seed;
+        Assert.True(data.Workers[0].Summoned);
+        Assert.True(Math.Abs(data.Workers[0].X) > 60,
+            "the summoned helper is far outside the authored garden");
+
+        var tuning = TestWorld.RichTuning(t => t.Seed = sim.Tuning.Seed);
+        var restored = GameSimulation.FromSave(data, tuning, MissionsConfig.Defaults());
+        var restoredWorker = Assert.Single(restored.Workers);
+        Assert.True(restoredWorker.Summoned);
+        Assert.Equal("", restoredWorker.CurrentNode);
+        Assert.InRange(Vec3.Distance(restoredWorker.WorldPosition, player), 0, 6);
+    }
+
+    [Fact]
+    public void SummonWithoutHelpers_ExplainsWhatToDo()
+    {
+        var sim = TestWorld.NewSim();
+        Assert.False(sim.TrySummonWorkers(new Vec3(20, 0.5, 20),
+            RegionIds.GardenClearing, out var reason));
+        Assert.Contains("Hatch", reason, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SummonedWorkerPositions_AreValidatedAsWildPositions()
+    {
+        var sim = TestWorld.NewSim();
+        var worker = HatchedWorker(sim);
+        var player = new Vec3(300, 0.5, -120);
+        Assert.True(sim.TrySummonWorkers(player, RegionIds.GardenClearing, out _));
+        AdvanceUntilArrived(sim, worker);
+        var data = sim.ExportSave(new Vec3(0, 0.55, 8.5), 0, new SettingsData());
+        data.Seed = sim.Tuning.Seed;
+        Assert.True(SaveValidator.Validate(data, out var error), error);
+        data.Workers[0].Summoned = false;
+        Assert.False(SaveValidator.Validate(data, out _));
     }
 
     [Fact]

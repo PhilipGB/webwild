@@ -175,16 +175,23 @@ public static class SaveValidator
                 error = "A worker names an unknown region.";
                 return false;
             }
-            if (!IsFinite(worker.X, worker.Y, worker.Z) || Math.Abs(worker.X) > 60 || Math.Abs(worker.Z) > 60 || worker.Y < -3 || worker.Y > 40)
+            var wideWorker = worker.Travelling || worker.Summoned;
+            var workerBound = wideWorker ? 1_000_000 : 60;
+            var workerLow = wideWorker ? -20 : -3;
+            var workerHigh = wideWorker ? 100 : 40;
+            if (!IsFinite(worker.X, worker.Y, worker.Z) ||
+                Math.Abs(worker.X) > workerBound || Math.Abs(worker.Z) > workerBound ||
+                worker.Y < workerLow || worker.Y > workerHigh)
             {
                 error = "A worker position is invalid.";
                 return false;
             }
-            if (worker.Travelling)
+            if (wideWorker)
             {
-                if (!RegionIds.IsKnown(worker.JourneyTargetRegion))
+                if (!RegionIds.IsKnown(worker.JourneyTargetRegion) &&
+                    !RegionIds.IsKnown(worker.Region))
                 {
-                    error = "A travelling worker names an unknown destination.";
+                    error = "A summoned worker names an unknown destination.";
                     return false;
                 }
                 if (!IsFinite(worker.JourneyX, worker.JourneyY, worker.JourneyZ) ||

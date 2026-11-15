@@ -102,6 +102,14 @@ public partial class WorkerView : Node3D
 
     public void FlashActivity() => _flash = 3.0f;
 
+    /// <summary>Reappear at the logical position after being culled off screen.</summary>
+    public void SnapToWorld()
+    {
+        var world = _state.WorldPosition;
+        Position = new Vector3((float)world.X, (float)world.Y + 0.03f, (float)world.Z);
+        _lastPosition = Position;
+    }
+
     public bool ProbeActivityGlowVisible =>
         _activityGlow.Visible || _flash > 0f ||
         _state.Activity is WorkerActivity.Collecting or WorkerActivity.Repairing;

@@ -223,7 +223,7 @@ public sealed class GameSimulation
                 BeginJourney(worker, regionId, preferReverse: reverse);
                 continue;
             }
-            if (worker.Region == regionId) continue;
+            if (worker.Region == regionId && !worker.Summoned) continue;
             var fromWorld = worker.WorldPosition;
             worker.JourneyFromRegion = worker.Region;
             worker.JourneyPosition = fromWorld;
@@ -257,10 +257,14 @@ public sealed class GameSimulation
     /// stay dormant until it arrives. A missing route leaves it visibly
     /// blocked and it retries rather than teleporting.
     /// </summary>
-    private void BeginJourney(WorkerState worker, string targetRegion, bool preferReverse)
+    private void BeginJourney(WorkerState worker, string targetRegion, bool preferReverse,
+        Vec3? destinationOverride = null, bool summoned = false)
     {
         var region = RegionCatalog.GetRequired(targetRegion);
-        var destination = LandmarkCatalog.ToWorld(targetRegion, region.NurseryPosition).Absolute;
+        var destination = destinationOverride ??
+                          LandmarkCatalog.ToWorld(targetRegion, region.NurseryPosition).Absolute;
+        worker.JourneyDestination = destination;
+        worker.Summoned = summoned;
         var wasBlocked = worker.RouteBlocked;
         WorkerRoute? route = null;
         if (preferReverse && worker.JourneyRoute.Count > 1 && worker.JourneyIndex > 0)
@@ -334,6 +338,7 @@ public sealed class GameSimulation
     private void ArriveJourney(WorkerState worker)
     {
         var region = RegionCatalog.Get(worker.JourneyTargetRegion) ?? RegionCatalog.Garden;
+        var wasSummoned = worker.Summoned;
         worker.Region = region.Id;
         worker.Travelling = false;
         worker.RouteBlocked = false;
@@ -341,12 +346,75 @@ public sealed class GameSimulation
         worker.JourneyIndex = 0;
         worker.JourneyTargetRegion = "";
         worker.JourneyFromRegion = "";
+        if (wasSummoned)
+        {
+            // A summoned helper stops where the player called it. An empty
+            // CurrentNode deliberately keeps local graph tasks from routing it
+            // teleport-style from a distant nursery; the next colony move will
+            // give it a proper node again.
+            worker.Position = LandmarkCatalog.ToLocal(region.Id, worker.JourneyDestination);
+            worker.CurrentNode = "";
+            worker.Activity = WorkerActivity.Waiting;
+            worker.PatrolCooldown = 6;
+            Emit(new GameplayEvent(NextKey($"worker_summoned_{worker.Id}"), "WorkerSummonedArrived",
+                TickCount, worker.Id, Detail: region.Id, Region: region.Id));
+            return;
+        }
+        worker.Summoned = false;
         worker.Position = region.NurseryPosition;
         worker.CurrentNode = region.NurseryNode;
         worker.Activity = WorkerActivity.Resting;
         worker.PatrolCooldown = 1.5;
         Emit(new GameplayEvent(NextKey($"worker_arrived_{worker.Id}"), "WorkerArrived",
             TickCount, worker.Id, Detail: region.Id, Region: region.Id));
+    }
+
+    /// <summary>
+    /// Call every helper to the player's current world point. Journeys are
+    /// physical, keep-offscreen simulation ticking, and never teleport a helper
+    /// or grant anything from an unreachable destination.
+    /// </summary>
+    public bool TrySummonWorkers(Vec3 playerWorld, string targetRegionId, out string reason)
+    {
+        reason = "";
+        if (!RegionIds.IsKnown(targetRegionId))
+        {
+            reason = "That place is not part of this garden";
+            return false;
+        }
+        if (_workers.Count == 0)
+        {
+            reason = "Hatch a helper first";
+            return false;
+        }
+        var target = RegionCatalog.GetRequired(targetRegionId);
+        var summoned = 0;
+        var index = 0;
+        foreach (var worker in _workers)
+        {
+            index++;
+            if (Vec3.Distance(worker.WorldPosition, playerWorld) < 6) continue;
+            var angle = index * Math.PI * 2 / Math.Max(1, _workers.Count);
+            var destination = playerWorld + new Vec3(
+                Math.Cos(angle) * 2.2, 0.35, Math.Sin(angle) * 2.2);
+            if (!worker.Travelling) worker.JourneyFromRegion = worker.Region;
+            worker.JourneyPosition = worker.WorldPosition;
+            worker.Region = targetRegionId;
+            worker.Position = target.NurseryPosition;
+            worker.CurrentNode = target.NurseryNode;
+            worker.Travelling = true;
+            BeginJourney(worker, targetRegionId, preferReverse: false,
+                destinationOverride: destination, summoned: true);
+            summoned++;
+        }
+        if (summoned == 0)
+        {
+            reason = "Your helpers are already here";
+            return false;
+        }
+        Emit(new GameplayEvent(NextKey("workers_summoned"), "WorkersSummoned", TickCount,
+            targetRegionId, Amount: summoned, Region: targetRegionId));
+        return true;
     }
 
     /// <summary>
@@ -1431,7 +1499,11 @@ public sealed class GameSimulation
                 JourneyFromRegion = w.JourneyFromRegion,
                 JourneyX = w.JourneyPosition.X,
                 JourneyY = w.JourneyPosition.Y,
-                JourneyZ = w.JourneyPosition.Z
+                JourneyZ = w.JourneyPosition.Z,
+                DestinationX = w.JourneyDestination.X,
+                DestinationY = w.JourneyDestination.Y,
+                DestinationZ = w.JourneyDestination.Z,
+                Summoned = w.Summoned
             }).ToList(),
             Insects = _insects.Select(i => new InsectSave
             {
@@ -1561,12 +1633,17 @@ public sealed class GameSimulation
                 Travelling = saved.Travelling && RegionIds.IsKnown(saved.JourneyTargetRegion),
                 JourneyPosition = new Vec3(saved.JourneyX, saved.JourneyY, saved.JourneyZ),
                 JourneyTargetRegion = saved.JourneyTargetRegion,
-                JourneyFromRegion = saved.JourneyFromRegion
+                JourneyFromRegion = saved.JourneyFromRegion,
+                Summoned = saved.Summoned,
+                JourneyDestination = new Vec3(saved.DestinationX, saved.DestinationY, saved.DestinationZ)
             };
             if (worker.Travelling)
             {
                 var target = RegionCatalog.GetRequired(saved.JourneyTargetRegion);
-                var destination = LandmarkCatalog.ToWorld(target.Id, target.NurseryPosition).Absolute;
+                var nursery = LandmarkCatalog.ToWorld(target.Id, target.NurseryPosition).Absolute;
+                var destination = saved.DestinationX == 0 && saved.DestinationZ == 0
+                    ? nursery : worker.JourneyDestination;
+                worker.JourneyDestination = destination;
                 var route = sim._navigator.FindRoute(worker.JourneyPosition, destination);
                 worker.JourneyRoute = route?.Points.ToList() ?? new List<Vec3>();
                 worker.JourneyIndex = route is null ? 0 : 1;

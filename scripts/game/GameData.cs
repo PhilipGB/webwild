@@ -9,7 +9,7 @@ namespace Webwild.Game;
 /// </summary>
 public static class GameData
 {
-    public const string Version = "0.3.0-dev";
+    public const string Version = "0.3.0";
 
     public static string SavePath => ProjectSettings.GlobalizePath("user://webwild_save.json");
     public static string SettingsPath => ProjectSettings.GlobalizePath("user://webwild_settings.json");

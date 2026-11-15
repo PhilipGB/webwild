@@ -48,6 +48,12 @@ public sealed class WorkerSave
     public int CollectCount { get; set; }
     public int RepairCount { get; set; }
     public int BridgeCrossings { get; set; }
+    public bool Travelling { get; set; }
+    public string JourneyTargetRegion { get; set; } = "";
+    public string JourneyFromRegion { get; set; } = "";
+    public double JourneyX { get; set; }
+    public double JourneyY { get; set; }
+    public double JourneyZ { get; set; }
 }
 
 public sealed class InsectSave

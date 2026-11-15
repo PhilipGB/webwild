@@ -1371,6 +1371,166 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- P7: physical worker navigation between landmarks ----
+        var p7Game = _main.StartGame(null);
+        await Frames(10);
+        Check("p7-helper-hatched", p7Game.ProbeHatch(), "Hatch a helper for the journey");
+        p7Game.ProbeAdvance(4);
+        await Frames(6);
+        var p7Worker = p7Game.Simulation!.Workers.FirstOrDefault();
+        Check("p7-worker-ready", p7Worker is not null, $"workers={p7Game.Simulation.Workers.Count}");
+        if (p7Worker is not null)
+        {
+            var workerId = p7Worker.Id;
+            var gardenNurseryWorld = LandmarkCatalog.ToWorld(RegionIds.GardenClearing,
+                WorldLayout.NurseryPosition).Absolute;
+            var reedwaterNurseryWorld = LandmarkCatalog.ToWorld(RegionIds.ReedwaterBank,
+                ReedwaterLayout.NurseryPosition).Absolute;
+            var gardenNursery = GardenClearing.ToVector3(gardenNurseryWorld);
+            var reedwaterNursery = GardenClearing.ToVector3(reedwaterNurseryWorld);
+            Check("p7-worker-starts-at-garden",
+                p7Game.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 8 &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), reedwaterNurseryWorld) > 50,
+                $"region={p7Game.ProbeWorkerRegion(workerId)} " +
+                $"worker={p7Game.ProbeWorkerWorldPosition(workerId)} " +
+                $"garden={gardenNurseryWorld} reedwater={reedwaterNurseryWorld}");
+
+            Check("p7-enter-reedwater", p7Game.ProbeEnterLandmark(RegionIds.ReedwaterBank),
+                "Move the colony story frame to Reedwater");
+            await Frames(4);
+            Check("p7-journey-starts",
+                p7Game.ProbeWorkerTravelling(workerId) &&
+                p7Game.ProbeWorkerJourneyTarget(workerId) == RegionIds.ReedwaterBank &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 5,
+                $"travelling={p7Game.ProbeWorkerTravelling(workerId)} " +
+                $"world={p7Game.ProbeWorkerWorldPosition(workerId)}");
+
+            p7Game.ProbeAdvance(5);
+            await Frames(4);
+            Check("p7-worker-moves-physically",
+                p7Game.ProbeWorkerTravelling(workerId) &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) > 5,
+                $"world={p7Game.ProbeWorkerWorldPosition(workerId)}");
+
+            // Move the worker well past the garden play rect before framing it:
+            // standing near the garden would re-enter that story frame and turn
+            // the helper around. The wild camera keeps the Reedwater frame.
+            for (var i = 0; i < 20 &&
+                 p7Game.ProbeWorkerWorldPosition(workerId).X < 32; i++)
+            {
+                p7Game.ProbeAdvance(1);
+                await Frames(1);
+            }
+            var travelPos = p7Game.ProbeWorkerWorldPosition(workerId);
+            var travelCam = new Vec3(travelPos.X - 2.2, 0, travelPos.Z + 2.2);
+            travelCam = new Vec3(travelCam.X,
+                p7Game.ProbeGroundHeightAt(travelCam) + 0.6, travelCam.Z);
+            p7Game.ProbeTeleport(travelCam);
+            p7Game.ProbeLookAt(new Vec3(travelPos.X, travelPos.Y + 0.35, travelPos.Z));
+            p7Game.ProbeSetCameraZoom(5.5f);
+            p7Game.ProbeSetCameraPitch(-14);
+            await Frames(2);
+            await Capture("43-worker-journey");
+
+            for (var i = 0; i < 80 && p7Game.ProbeWorkerTravelling(workerId); i++)
+            {
+                p7Game.ProbeAdvance(1);
+                await Frames(1);
+            }
+            Check("p7-worker-arrives-reedwater",
+                !p7Game.ProbeWorkerTravelling(workerId) &&
+                p7Game.ProbeWorkerRegion(workerId) == RegionIds.ReedwaterBank &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), reedwaterNurseryWorld) < 12,
+                $"region={p7Game.ProbeWorkerRegion(workerId)} " +
+                $"world={p7Game.ProbeWorkerWorldPosition(workerId)}");
+
+            // Return trip, saved mid-journey and continued after reload.
+            Check("p7-enter-garden", p7Game.ProbeEnterLandmark(RegionIds.GardenClearing),
+                "Return the colony frame to the garden");
+            await Frames(4);
+            p7Game.ProbeAdvance(5);
+            Check("p7-return-journey-starts",
+                p7Game.ProbeWorkerTravelling(workerId) &&
+                p7Game.ProbeWorkerJourneyTarget(workerId) == RegionIds.GardenClearing,
+                $"target={p7Game.ProbeWorkerJourneyTarget(workerId)}");
+            var savedJourneyPos = p7Game.ProbeWorkerWorldPosition(workerId);
+            Check("p7-save-mid-journey", p7Game.ProbeSave(), "Save while the helper is walking");
+            var p7Loaded = _main.Saves.Load();
+            Check("p7-mid-journey-loads",
+                p7Loaded.Success && p7Loaded.Data is not null, p7Loaded.Message);
+            if (p7Loaded.Data is not null)
+            {
+                var p7Reloaded = _main.StartGame(p7Loaded.Data);
+                await Frames(20);
+                Check("p7-reload-resumes-journey",
+                    p7Reloaded.ProbeWorkerTravelling(workerId) &&
+                    Vec3.Distance(p7Reloaded.ProbeWorkerWorldPosition(workerId), savedJourneyPos) < 8,
+                    $"world={p7Reloaded.ProbeWorkerWorldPosition(workerId)} saved={savedJourneyPos}");
+                for (var i = 0; i < 80 && p7Reloaded.ProbeWorkerTravelling(workerId); i++)
+                {
+                    p7Reloaded.ProbeAdvance(1);
+                    await Frames(1);
+                }
+                Check("p7-reload-arrives-garden",
+                    !p7Reloaded.ProbeWorkerTravelling(workerId) &&
+                    p7Reloaded.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
+                    Vec3.Distance(p7Reloaded.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 12,
+                    $"region={p7Reloaded.ProbeWorkerRegion(workerId)} " +
+                    $"world={p7Reloaded.ProbeWorkerWorldPosition(workerId)}");
+
+                // Instrument a start south of the river so the navigator must
+                // use the visible generated bridge.
+                var p7Crossing = p7Reloaded.ProbeRiverCrossing(0, 0);
+                var southBank = new Vec3(0, 0, p7Crossing.Z + 13);
+                southBank = new Vec3(0,
+                    p7Reloaded.ProbeGroundHeightAt(southBank) + 0.4, southBank.Z);
+                Check("p7-start-bridge-journey",
+                    p7Reloaded.ProbeStartWorkerJourney(workerId,
+                        RegionIds.GardenClearing, southBank),
+                    $"southBank={southBank}");
+                Check("p7-route-uses-bridge",
+                    p7Reloaded.ProbeWorkerTravelling(workerId) &&
+                    p7Reloaded.ProbeWorkerRouteUsesBridge(workerId),
+                    $"travelling={p7Reloaded.ProbeWorkerTravelling(workerId)}");
+
+                var p7NorthBank = new Vec3(0, 0, p7Crossing.Z - 14);
+                p7NorthBank = new Vec3(0,
+                    p7Reloaded.ProbeGroundHeightAt(p7NorthBank) + 0.6, p7NorthBank.Z);
+                p7Reloaded.ProbeTeleport(p7NorthBank);
+                p7Reloaded.ProbeLookAt(new Vec3(0, p7Crossing.Y + 0.6, p7Crossing.Z));
+                p7Reloaded.ProbeSetCameraZoom(12);
+                p7Reloaded.ProbeSetCameraPitch(-14);
+                await Frames(6);
+                for (var i = 0; i < 40; i++)
+                {
+                    p7Reloaded.ProbeAdvance(0.5);
+                    await Frames(2);
+                    var pos = p7Reloaded.ProbeWorkerWorldPosition(workerId);
+                    if (pos.Z < p7Crossing.Z - 3) break;
+                }
+                var bridgeWorker = p7Reloaded.ProbeWorkerWorldPosition(workerId);
+                p7Reloaded.ProbeLookAt(new Vec3(
+                    bridgeWorker.X, bridgeWorker.Y + 0.3, bridgeWorker.Z));
+                p7Reloaded.ProbeSetCameraZoom(8);
+                p7Reloaded.ProbeSetCameraPitch(-12);
+                await Frames(2);
+                await Capture("44-worker-crossing");
+                for (var i = 0; i < 80 && p7Reloaded.ProbeWorkerTravelling(workerId); i++)
+                {
+                    p7Reloaded.ProbeAdvance(1);
+                    await Frames(1);
+                }
+                Check("p7-bridge-arrival",
+                    !p7Reloaded.ProbeWorkerTravelling(workerId) &&
+                    p7Reloaded.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
+                    Vec3.Distance(p7Reloaded.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 12,
+                    $"region={p7Reloaded.ProbeWorkerRegion(workerId)}");
+            }
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;

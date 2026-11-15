@@ -814,6 +814,7 @@ public partial class GameUI : CanvasLayer
             ("food", "Walk to a caught insect and press E to collect food."),
             ("repair", "Press E beside a damaged web to repair it for 2 silk."),
             ("food", "Ripe berries, mushrooms and seed heads grow in the meadows. Press E to forage; they regrow after a while."),
+            ("spider", "Helpers walk between landmarks. If no safe route exists they wait visibly and keep trying."),
             ("nest", "Press E at the leaf nursery to hatch a helper (up to 5 spiders)."),
             ("wind", "Wind is forecast before it arrives. Sheltered webs near the log take less damage."),
             ("bridge", "In Reedwater Bank, build two bridges to reach the lily island. The water is too deep to walk through."),

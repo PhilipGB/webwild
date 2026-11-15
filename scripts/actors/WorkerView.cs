@@ -71,7 +71,9 @@ public partial class WorkerView : Node3D
         Scale = Vector3.One * Mathf.Ease(_spawn, 0.4f) * (reducedMotion ? 1 : 1.0f);
 
         var onBridge = IsOnBridge();
-        var target = new Vector3((float)_state.Position.X, onBridge ? 0.62f : 0.16f, (float)_state.Position.Z);
+        var world = _state.WorldPosition;
+        var target = new Vector3((float)world.X,
+            (float)world.Y + (onBridge ? 0.08f : 0.03f), (float)world.Z);
         Position = Position.Lerp(target, Mathf.Min(1, (float)delta * 12));
         if (!reducedMotion)
         {

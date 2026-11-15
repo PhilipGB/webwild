@@ -1179,6 +1179,104 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- P5: exploration map and Return Home ----
+        var p5Game = _main.StartGame(null);
+        await Frames(10);
+        var spawnChunk = new Vec3(0, 0, 8.5);
+        Check("p5-spawn-chunks-explored",
+            p5Game.ExploredChunkCount >= 9 && p5Game.ProbeExploredContains(spawnChunk),
+            $"explored={p5Game.ExploredChunkCount}");
+
+        var mapKeyDown = new InputEventKey
+        {
+            PhysicalKeycode = Key.M, Keycode = Key.M, Pressed = true
+        };
+        var mapKeyUp = new InputEventKey
+        {
+            PhysicalKeycode = Key.M, Keycode = Key.M, Pressed = false
+        };
+        Input.ParseInputEvent(mapKeyDown);
+        await Frames(3);
+        Input.ParseInputEvent(mapKeyUp);
+        await Frames(4);
+        Check("p5-map-opens-with-m", p5Game.ProbeMapOpen, "M opens the wilderness map");
+        Check("p5-map-draws-explored-cells",
+            p5Game.ProbeMapCells >= 9, $"cells={p5Game.ProbeMapCells}");
+        Check("p5-map-button-fits",
+            p5Game.ProbeMapButtonRect.Size.X > 0 &&
+            p5Game.ProbeMapButtonRect.End.X <= GetViewport().GetVisibleRect().Size.X + 1,
+            $"button={p5Game.ProbeMapButtonRect}");
+        await Capture("38-wilderness-map");
+
+        // M closes the map again.
+        Input.ParseInputEvent(mapKeyDown);
+        await Frames(3);
+        Input.ParseInputEvent(mapKeyUp);
+        await Frames(3);
+        Check("p5-map-closes-with-m", !p5Game.ProbeMapOpen, "M toggles the map");
+
+        var exploredBeforeWalk = p5Game.ExploredChunkCount;
+        var exploredWalk = await WalkRoute(p5Game, new Vec3(0, 0.55, 30),
+            new[] { new Vec3(0, 0.55, 44) }, 1.0f, 25f);
+        Check("p5-walking-records-new-chunks",
+            exploredWalk.Reached && p5Game.ExploredChunkCount > exploredBeforeWalk,
+            $"before={exploredBeforeWalk} after={p5Game.ExploredChunkCount}");
+
+        const double farExploreX = 200, farExploreZ = 200;
+        var farExploreY = p5Game.ProbeGroundHeightAt(
+            new Vec3(farExploreX, 0, farExploreZ)) + 0.6;
+        p5Game.ProbeTeleport(new Vec3(farExploreX, farExploreY, farExploreZ));
+        await Frames(12);
+        Check("p5-far-exploration-recorded",
+            p5Game.ProbeExploredContains(new Vec3(farExploreX, 0, farExploreZ)),
+            $"explored={p5Game.ExploredChunkCount}");
+        var exploredAtSave = p5Game.ExploredChunkCount;
+        Check("p5-save", p5Game.ProbeSave(), "Save with exploration history");
+        var p5Loaded = _main.Saves.Load();
+        Check("p5-save-loads", p5Loaded.Success && p5Loaded.Data is not null, p5Loaded.Message);
+        if (p5Loaded.Data is not null)
+        {
+            Check("p5-fresh-save-garden-only",
+                !p5Loaded.Data.VisitedRegions.Contains(RegionIds.ReedwaterBank),
+                string.Join(",", p5Loaded.Data.VisitedRegions));
+            Check("p5-save-carries-exploration",
+                p5Loaded.Data.ExploredChunks.Count >= exploredAtSave,
+                $"saved={p5Loaded.Data.ExploredChunks.Count} live={exploredAtSave}");
+            var p5Reloaded = _main.StartGame(p5Loaded.Data);
+            await Frames(20);
+            Check("p5-reload-restores-exploration",
+                p5Reloaded.ProbeExploredContains(new Vec3(farExploreX, 0, farExploreZ)) &&
+                p5Reloaded.ProbeExploredContains(spawnChunk) &&
+                p5Reloaded.ExploredChunkCount >= exploredAtSave,
+                $"explored={p5Reloaded.ExploredChunkCount}");
+
+            p5Reloaded.ProbeOpenMap();
+            await Frames(4);
+            Check("p5-map-opens-from-button", p5Reloaded.ProbeMapOpen,
+                $"cells={p5Reloaded.ProbeMapCells}");
+            await Capture("39-wilderness-map-explored");
+            var homeRect = p5Reloaded.ProbeMapHomeRect;
+            var viewport = GetViewport().GetVisibleRect().Size;
+            Check("p5-return-home-available",
+                homeRect.Size.X > 0 && homeRect.Position.X >= 0 &&
+                homeRect.End.X <= viewport.X + 1 && homeRect.End.Y <= viewport.Y + 1,
+                $"home={homeRect} viewport={viewport}");
+            p5Reloaded.ProbeReturnHome();
+            await Frames(12);
+            var home = GardenClearing.LandmarkWorld(RegionIds.GardenClearing,
+                WorldLayout.PlayerSpawn);
+            Check("p5-return-home-teleports",
+                p5Reloaded.ActiveRegionId == RegionIds.GardenClearing &&
+                p5Reloaded.PlayerPosition.DistanceTo(home) < 2.0 &&
+                !p5Reloaded.ProbeMapOpen,
+                $"player={p5Reloaded.PlayerPosition} home={home} region={p5Reloaded.ActiveRegionId}");
+            Check("p5-return-home-toast",
+                p5Reloaded.ProbeToastHistory.Any(text => text.Contains("returned", StringComparison.OrdinalIgnoreCase)),
+                string.Join(" | ", p5Reloaded.ProbeToastHistory));
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;
@@ -1218,6 +1316,8 @@ public partial class RuntimeProbe : Node
         Check($"toast-avoids-mission-{scaleLabel}", !toast.Intersects(mission), $"{toast} vs {mission}");
         Check($"toast-avoids-actions-{scaleLabel}", !toast.Intersects(actions), $"{toast} vs {actions}");
         Check($"toast-avoids-toolbar-{scaleLabel}", !toast.Intersects(toolbar), $"{toast} vs {toolbar}");
+        Check($"toolbar-inside-viewport-{scaleLabel}",
+            toolbar.Position.X >= -1 && toolbar.End.X <= viewport.X + 1, $"{toolbar} viewport={viewport}");
         Check($"toast-avoids-status-{scaleLabel}", !toast.Intersects(status), $"{toast} vs {status}");
         Check($"toast-avoids-camera-centre-{scaleLabel}",
             toast.Position.X >= viewport.X * 0.58f, $"left={toast.Position.X:0.0} viewport={viewport.X:0.0}");
@@ -1247,7 +1347,9 @@ public partial class RuntimeProbe : Node
         Check("reedwater-unlocked", sim.ReedwaterUnlocked, "Story victory opens the east passage");
 
         var supplyAlreadyClaimed = sim.ClaimedSupplyCaches.Contains(RegionIds.ReedwaterBank);
-        var supplyEventsBefore = sim.Events.Count(e =>
+        // The adapter drains simulation events into its durable EventLog every
+        // frame, so the supply event is observed there, not in sim.Events.
+        var supplyEventsBefore = game.EventLog.Count(e =>
             e.Type == "RegionSupply" && e.Region == RegionIds.ReedwaterBank);
         // Real-input acceptance for P2: leave the garden's east gate, cross the
         // generated meadows and step through the (now open) bramble gate. No
@@ -1274,7 +1376,7 @@ public partial class RuntimeProbe : Node
             !game.ChunkStream.IsChunkLoaded(new ChunkCoordinate(4, 0)) &&
             !game.ChunkStream.IsChunkLoaded(new ChunkCoordinate(3, -1)),
             $"loaded={game.ChunkStream?.LoadedCount}");
-        var supplyEventsAfter = sim.Events.Count(e =>
+        var supplyEventsAfter = game.EventLog.Count(e =>
             e.Type == "RegionSupply" && e.Region == RegionIds.ReedwaterBank);
         // A continued save may already hold the durable outpost claim. Either
         // way, the transition must never grant the cache a second time.

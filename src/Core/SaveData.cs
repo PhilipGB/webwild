@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Webwild.Core;
 
@@ -161,6 +162,14 @@ public sealed class SaveGameData
     public string ActiveRegionId { get; set; } = RegionIds.GardenClearing;
     public PlayerSave Player { get; set; } = new();
     public List<RegionPlayerSave> RegionPlayers { get; set; } = new();
+
+    /// <summary>
+    /// Runtime view of the schema-4 manifest's exploration record. It is not
+    /// serialized inside the embedded colony payload; the manifest stores it
+    /// once at the top level so save size stays bounded.
+    /// </summary>
+    [JsonIgnore]
+    public List<string> ExploredChunks { get; set; } = new();
     public List<string> VisitedRegions { get; set; } = new() { RegionIds.GardenClearing };
     public int Food { get; set; }
     public int Silk { get; set; }

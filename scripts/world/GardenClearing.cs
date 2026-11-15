@@ -43,6 +43,8 @@ public partial class GardenClearing : Node3D
     private bool _reedwaterPathToastShown;
     private string? _zone;
     private string? _zoneBiome;
+    private readonly ExplorationRecord _explored = new();
+    private ChunkCoordinate? _lastExploredChunk;
 
     private string _activeRegionId = RegionIds.GardenClearing;
     private Node3D _gardenWorld = null!;
@@ -292,6 +294,8 @@ public partial class GardenClearing : Node3D
         _ui.ContinuePlayingRequested += () => _ui.SetStatus(_sim.GetActiveRegionHint());
         _ui.BuildConfirmed += ConfirmBuild;
         _ui.BuildCancelled += ClearBuild;
+        _ui.MapRequested += OpenMap;
+        _ui.ReturnHomeRequested += ReturnHome;
 
         _audio = new AudioDirector { Name = "AudioDirector" };
         AddChild(_audio);
@@ -330,6 +334,9 @@ public partial class GardenClearing : Node3D
         _player.FallResetPosition = ToWorld(RegionIds.GardenClearing, WorldLayout.PlayerSpawn);
         _player.ResetCamera();
         _player.InputEnabled = true;
+        _explored.Clear();
+        _lastExploredChunk = null;
+        TrackExploration();
         _ui.ShowToast("Welcome to the garden. Use WASD to explore.", UiKit.Pine, 4.5f);
         _ui.SetStatus(_sim.GetActiveRegionHint());
         RefreshAll();
@@ -391,6 +398,9 @@ public partial class GardenClearing : Node3D
         _player.FallResetPosition = ToWorld(region.Id, region.PlayerSpawn);
         _player.CameraPivot.Rotation = new Vector3(0, (float)savedPlayer.RotationY, 0);
         _player.InputEnabled = true;
+        _explored.Restore(data.ExploredChunks);
+        _lastExploredChunk = null;
+        TrackExploration();
         _ui.ShowToast($"Welcome back to {region.DisplayName}.", UiKit.Pine, 4.0f);
         _ui.SetStatus(_sim.GetActiveRegionHint());
         RefreshAll();
@@ -564,6 +574,7 @@ public partial class GardenClearing : Node3D
         UpdateOriginRebase();
         _chunks?.Update(ToVector3(PlayerWorld), true);
         UpdateLandmarkZone();
+        TrackExploration();
         UpdatePlayerContext();
         UpdateViews(dt);
         UpdateSuggestions();
@@ -638,7 +649,63 @@ public partial class GardenClearing : Node3D
     }
 
     /// <summary>
-    /// Crossing a landmark boundary on foot activates that landmark's story
+    /// Record the chunks the spider can currently see. A 3×3 window keeps the
+    /// map readable for a walking trail without ballooning the save; the record
+    /// is bounded and first-visit order is stable.
+    /// </summary>
+    private void TrackExploration()
+    {
+        if (_player is null) return;
+        var world = PlayerWorld;
+        var coordinate = ChunkCoordinate.OfWorldPoint(world.X, world.Z);
+        if (_lastExploredChunk == coordinate) return;
+        _lastExploredChunk = coordinate;
+        _explored.VisitArea(coordinate, 1);
+    }
+
+    private void OpenMap()
+    {
+        if (_sim is null || _player is null || _chunks is null) return;
+        if (_ui.IsModalOpen) return;
+        ClearBuild();
+        _ui.OpenMap(_explored.Snapshot(), PlayerWorld, _chunks.Generator, _sim.VisitedRegions);
+    }
+
+    /// <summary>
+    /// Return the colony to the garden spawn from anywhere. This is a rescue
+    /// and navigation aid, not a story shortcut: missions, webs and resources
+    /// are untouched, and the trip is saved like any other walk.
+    /// </summary>
+    public void ReturnHome()
+    {
+        if (_sim is null || _player is null) return;
+        if (_sim.ActiveRegionId != RegionIds.GardenClearing)
+            _sim.EnterLandmark(RegionIds.GardenClearing);
+        var spawn = LandmarkCatalog.ToWorld(RegionIds.GardenClearing,
+            WorldLayout.PlayerSpawn).Absolute;
+        ApplyOrigin(SnapOrigin(spawn));
+        ActivateRegion(RegionIds.GardenClearing);
+        ResetPresentation();
+        _player.GlobalPosition = ToEngine(spawn);
+        _player.Velocity = Vector3.Zero;
+        _player.ResetCamera();
+        _regionSafePosition = _player.GlobalPosition;
+        _player.FallResetPosition = _player.GlobalPosition;
+        _zone = LandmarkCatalog.Garden;
+        _zoneBiome = null;
+        _waterToastShown = false;
+        _explored.VisitArea(ChunkCoordinate.OfWorldPoint(spawn.X, spawn.Z), 1);
+        _ui.SetExploration(null, null);
+        _ui.CloseModal();
+        _ui.UpdateHud(_sim, Settings);
+        _ui.SetStatus(_sim.GetActiveRegionHint());
+        _ui.ShowToast("You returned to the Garden Clearing.", UiKit.TealDark, 3.5f);
+        RefreshAll();
+        ProcessEvents();
+        SaveGame(false, true);
+    }
+
+
     /// frame, helpers and HUD. There is no dialog and no teleport: the spider
     /// is already standing inside the landmark when this fires.
     /// </summary>
@@ -1155,7 +1222,13 @@ public partial class GardenClearing : Node3D
             return;
         }
 
-        if (@event.IsActionPressed("colony"))
+        if (@event.IsActionPressed("map"))
+        {
+            if (_ui.IsMapOpen) _ui.CloseModal();
+            else if (!_ui.IsModalOpen) OpenMap();
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed("colony"))
         {
             if (!_ui.IsModalOpen) _ui.ToggleColony();
             else if (_ui.IsModalOpen) _ui.CloseModal();
@@ -1597,6 +1670,7 @@ public partial class GardenClearing : Node3D
     {
         if (_sim is null || _player is null) return false;
         var data = _sim.ExportSave(PlayerLocal, _player.CameraPivot.Rotation.Y, Settings);
+        data.ExploredChunks = _explored.ToIds();
         var result = SimulateSaveFailureForProbe
             ? SaveResult.Fail("Simulated save failure", "simulated")
             : _saves.Save(data);
@@ -2277,6 +2351,17 @@ public partial class GardenClearing : Node3D
 
     public Vector2 ProbeScreenPosition(Vec3 world) =>
         _player.Camera.UnprojectPosition(ToEngine(world));
+
+    public int ExploredChunkCount => _explored.Count;
+    public bool ProbeExploredContains(Vec3 world) =>
+        _explored.Contains(ChunkCoordinate.OfWorldPoint(world.X, world.Z));
+    public bool ProbeMapOpen => _ui.IsMapOpen;
+    public int ProbeMapCells => _ui.ProbeMapCells;
+    public Rect2 ProbeMapButtonRect => _ui.ProbeMapButtonRect;
+    public Rect2 ProbeMapHomeRect => _ui.ProbeMapHomeRect;
+    public void ProbeOpenMap() => OpenMap();
+    public void ProbeCloseMap() => _ui.CloseModal();
+    public void ProbeReturnHome() => ReturnHome();
 
     public int ProbeLoadedPropCount => _chunks is null ? 0 : _chunks.Nodes.Values
         .SelectMany(node => node.GetChildren())

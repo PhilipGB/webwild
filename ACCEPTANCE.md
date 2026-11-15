@@ -1,7 +1,8 @@
-# Acceptance — Webwild v0.2.0 P2
+# Acceptance — Webwild v0.3.0
 
 Every row is backed by observed evidence or marked **NOT VERIFIED**. The final
-implementation commit and exact commands are in `docs/EVIDENCE.md`.
+implementation commit and exact commands are in `docs/EVIDENCE.md#v030`. The
+older v0.2 acceptance tables below remain as historical milestone evidence.
 
 Status key: **PASS** = observed in this delivery; **PARTIAL** = works with a
 documented limitation; **NOT VERIFIED** = not performed on this host.

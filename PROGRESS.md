@@ -47,15 +47,16 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.0 P1 | Procedural chunk streaming: deterministic chunk generator and streamer, flat-shaded vertex-coloured chunk terrain with collision, GLB prop dressing, persistent build queue, hedge gates on all four sides, raycast shadow, exploration save bounds | DONE, merged PR [#28](https://github.com/PhilipGB/webwild/pull/28) | `docs/prs/v0.3.0.md`; `WorldStreamingTests`; 180 unit tests (150 existing + 30 new); 55 scene checks; 327 headless / 328 rendered runtime checks; Linux export re-verified |
 | v0.3.0 P2 | Seamless world and manifest saves: Reedwater embedded at (96, 0), walking replaces travel, physical bramble gate, dual-landmark streaming/blending, one sky/sun, schema-4 `WorldSaveService`, legacy migration on load, durable manifest archive, per-save world seeds | DONE, merged PR [#29](https://github.com/PhilipGB/webwild/pull/29) | `docs/prs/v0.3.0.md`; `SeamlessWorldTests`; 189 unit tests (180 existing + 9 new); 57 scene checks; 339 headless / 340 rendered runtime checks; Linux export re-verified |
 | v0.3.0 P3 | Biomes, landmark aprons and origin rebasing: deterministic three-biome field with walkable height offsets, per-quad biome colour/hash, biome-specific props, generated-style Reedwater aprons, 16 km/64 m presentation rebasing with stable logical saves, wilderness HUD, biome probe tooling | DONE, merged PR [#30](https://github.com/PhilipGB/webwild/pull/30) | `docs/prs/v0.3.0.md`; `BiomeTests`; 195 unit tests (189 existing + 6 new); 57 scene checks; 353 headless / 354 rendered runtime checks; Linux export re-verified; screenshots 33–35 |
+| v0.3.0 P4 | Rivers and crossings: deterministic meandering rivers, carved terrain-following channels, per-chunk water quads and wet-bed palette, stable low bridges every 150 m, river hazard recovery and guidance, safe-bank loading for pre-river saves, chunk-local prop placement fix, river probe tooling | DONE, merged PR [#31](https://github.com/PhilipGB/webwild/pull/31) | `docs/prs/v0.3.0.md`; `RiverTests`; 203 unit tests (195 existing + 8 new); 57 scene checks; 370 headless / 371 rendered runtime checks; Linux export re-verified; screenshots 36–37 |
 
 ## Verification summary
 
-- `dotnet test`: **195 passed, 0 failed** (189 existing + 6 new biome tests).
+- `dotnet test`: **203 passed, 0 failed** (195 existing + 8 new river tests).
 - Scene contract validation: **57 passed, 0 failed** across both regions.
-- Headless runtime probe: **353 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **354 passed, 0 failed**.
-- Exported Linux build, headless probe: **353 passed, 0 failed**.
-- Exported Linux build, rendered Xvfb probe: **354 passed, 0 failed**.
+- Headless runtime probe: **370 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **371 passed, 0 failed**.
+- Exported Linux build, headless probe: **370 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb probe: **371 passed, 0 failed**.
 - Linux x64 export: built successfully and launched.
 - Windows x64 export: built successfully; runtime **NOT VERIFIED** (no Windows host).
 - Legacy saves v0.1.0/v0.1.1/v0.1.2: migration tests pass with real fixtures.
@@ -81,13 +82,13 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 
 ## v0.3.0 — Never-Ending World (in progress)
 
-- P0 foundations, P1 chunk streaming, P2 seamless world and P3 biomes merged
-  (see `docs/prs/v0.3.0.md`). Reedwater Bank is walked to through generated
+- P0 foundations through P4 rivers and crossings are merged (see
+  `docs/prs/v0.3.0.md`). Reedwater Bank is walked to through generated
   meadow; the travel dialog is gone and a physical bramble gate opens when
   the garden story completes. Saves are schema-4 world manifests with
   per-save seeds, with legacy schema-3 saves migrated on first load. The
-  procedural meadow now has moss, meadow and bloom biomes with distinct
-  ground colours, heights and props, and presentation origin rebasing keeps
-  movement precise at arbitrary distance while saves stay logical. The
-  authored Reedwater edge is feathered with generated-style aprons, but a
-  faint tint line and sparse close-up framing remain for P9 polish.
+  procedural meadow has moss, meadow and bloom biomes, presentation origin
+  rebasing keeps movement precise at arbitrary distance, and carved rivers
+  with generated crossings now break up the world. Pre-river saves that land
+  in water recover to the nearest bank. A faint tint line at the Reedwater
+  apron and low-poly river/water shader polish remain for P9.

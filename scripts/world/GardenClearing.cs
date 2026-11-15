@@ -45,6 +45,10 @@ public partial class GardenClearing : Node3D
     private string? _zoneBiome;
     private readonly ExplorationRecord _explored = new();
     private ChunkCoordinate? _lastExploredChunk;
+    private readonly Dictionary<string, FoodSourceDefinition> _foodDefinitions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, FoodView> _foodViews = new(StringComparer.Ordinal);
+    private readonly HashSet<ChunkCoordinate> _foodLoadedChunks = new();
+    private readonly HashSet<ChunkCoordinate> _foodKnownChunks = new();
 
     private string _activeRegionId = RegionIds.GardenClearing;
     private Node3D _gardenWorld = null!;
@@ -417,6 +421,7 @@ public partial class GardenClearing : Node3D
     /// <summary>Start streaming a fresh generated baseline for this world seed.</summary>
     private void RebuildChunkStream()
     {
+        ClearFoodViews();
         if (_chunks is not null)
         {
             foreach (var node in _chunks.Nodes.Values) node.QueueFree();
@@ -573,6 +578,7 @@ public partial class GardenClearing : Node3D
         // independent of float precision.
         UpdateOriginRebase();
         _chunks?.Update(ToVector3(PlayerWorld), true);
+        SyncFoodViews();
         UpdateLandmarkZone();
         TrackExploration();
         UpdatePlayerContext();
@@ -706,6 +712,182 @@ public partial class GardenClearing : Node3D
     }
 
 
+    /// <summary>
+    /// Create/destroy wild food views as chunks stream and import each newly
+    /// loaded chunk's persisted depletion state before its views appear. Food
+    /// definitions regenerate from the seed; only depletion is stored.
+    /// </summary>
+    private void SyncFoodViews()
+    {
+        if (_sim is null || _chunks is null) return;
+        foreach (var coordinate in _foodLoadedChunks
+                     .Where(coordinate => !_chunks.Nodes.ContainsKey(coordinate)).ToList())
+        {
+            foreach (var source in _foodDefinitions.Values
+                         .Where(source => source.Chunk == coordinate).ToList())
+            {
+                if (_foodViews.Remove(source.Id, out var view)) view.QueueFree();
+                _foodDefinitions.Remove(source.Id);
+            }
+            _foodLoadedChunks.Remove(coordinate);
+        }
+
+        foreach (var coordinate in _chunks.Nodes.Keys)
+        {
+            if (!_foodLoadedChunks.Add(coordinate)) continue;
+            var data = _chunks.DataFor(coordinate);
+            if (data is null) continue;
+            var record = _saves.WorldStore.LoadChunkChanges(coordinate, out _);
+            if (record is not null &&
+                (record.WorldSeed == 0 || record.WorldSeed == _worldSeed))
+                _sim.ImportFoodStates(coordinate, record.FoodSources);
+            _foodKnownChunks.Add(coordinate);
+            foreach (var source in data.FoodSources)
+            {
+                var view = new FoodView { Name = "Food_" + source.Id };
+                view.Configure(source);
+                _chunkHost.AddChild(view);
+                _foodDefinitions[source.Id] = source;
+                _foodViews[source.Id] = view;
+            }
+        }
+    }
+
+    private void UpdateFoodViews(float delta)
+    {
+        if (_sim is null) return;
+        foreach (var (id, view) in _foodViews)
+        {
+            view.UpdateView(delta, Settings.ReducedMotion,
+                _sim.IsFoodAvailable(id),
+                _sim.FoodSecondsRemaining(id),
+                Vector3DistanceToPlayer(view.GlobalPosition, 3.2f));
+        }
+    }
+
+    private void ClearFoodViews()
+    {
+        foreach (var view in _foodViews.Values) view.QueueFree();
+        _foodViews.Clear();
+        _foodDefinitions.Clear();
+        _foodLoadedChunks.Clear();
+        _foodKnownChunks.Clear();
+    }
+
+    private FoodSourceDefinition? NearestFood(Vec3 world, double radius, bool availableOnly)
+    {
+        FoodSourceDefinition? best = null;
+        var bestDistance = radius;
+        foreach (var source in _foodDefinitions.Values)
+        {
+            var distance = Vec3.Distance(source.Position, world);
+            if (distance > bestDistance) continue;
+            if (availableOnly && _sim is not null && !_sim.IsFoodAvailable(source.Id)) continue;
+            best = source;
+            bestDistance = distance;
+        }
+        return best;
+    }
+
+    private string? FoodPrompt()
+    {
+        if (_sim is null) return null;
+        var available = NearestFood(PlayerWorld, 3.2, availableOnly: true);
+        if (available is not null) return $"E · Forage {available.Label}";
+        var depleted = NearestFood(PlayerWorld, 3.2, availableOnly: false);
+        if (depleted is not null)
+        {
+            var seconds = Math.Max(1, (int)Math.Ceiling(_sim.FoodSecondsRemaining(depleted.Id)));
+            return $"{Cap(depleted.Label)} regrow in {seconds}s";
+        }
+        return null;
+    }
+
+    private bool TryForageNearest(Vec3 world, double radius,
+        out FoodSourceDefinition? source, out int food, out string reason)
+    {
+        source = null;
+        food = 0;
+        reason = "No wild food nearby";
+        if (_sim is null) return false;
+        var best = NearestFood(world, radius, availableOnly: true);
+        if (best is null)
+        {
+            var depleted = NearestFood(world, radius, availableOnly: false);
+            if (depleted is not null)
+            {
+                var seconds = Math.Max(1, (int)Math.Ceiling(_sim.FoodSecondsRemaining(depleted.Id)));
+                reason = $"{Cap(depleted.Label)} regrow in {seconds}s";
+            }
+            return false;
+        }
+        if (!_sim.TryHarvestFood(best, out food, out reason)) return false;
+        source = best;
+        return true;
+    }
+
+    private static string Cap(string text) =>
+        string.IsNullOrEmpty(text) ? text : char.ToUpperInvariant(text[0]) + text[1..];
+
+    /// <summary>
+    /// Persist only depleted food states, grouped into each chunk's small
+    /// change record. Records for chunks whose state was never loaded this
+    /// session are left untouched; known chunks with no remaining changes are
+    /// deleted so baseline content stays implicit.
+    /// </summary>
+    private bool SaveFoodChunkChanges(out string error)
+    {
+        error = "";
+        if (_sim is null) return true;
+        var depleted = _sim.DepletedFoodStates()
+            .GroupBy(state => state.Chunk)
+            .ToDictionary(group => group.Key,
+                group => group.Select(state => state.Save).ToList());
+        var records = new Dictionary<ChunkCoordinate, ChunkChangeSave>();
+        foreach (var coordinate in _saves.WorldStore.ListChangedChunks())
+        {
+            var existing = _saves.WorldStore.LoadChunkChanges(coordinate, out _);
+            if (existing is not null) records[coordinate] = existing;
+        }
+        var now = DateTime.UtcNow.ToString("O");
+        foreach (var (coordinate, states) in depleted)
+        {
+            if (!records.TryGetValue(coordinate, out var record))
+            {
+                record = new ChunkChangeSave { ChunkX = coordinate.X, ChunkZ = coordinate.Z };
+                records[coordinate] = record;
+            }
+            record.FoodSources = states;
+            record.WorldSeed = _worldSeed;
+            record.UpdatedUtc = now;
+        }
+        foreach (var (coordinate, record) in records)
+        {
+            if (!_foodKnownChunks.Contains(coordinate) && !depleted.ContainsKey(coordinate))
+                continue;
+            if (!depleted.ContainsKey(coordinate) && record.FoodSources.Count > 0)
+            {
+                record.FoodSources.Clear();
+                record.UpdatedUtc = now;
+            }
+            if (record.FoodSources.Count == 0 &&
+                record.BuiltWebIds.Count == 0 && record.Markers.Count == 0)
+            {
+                _saves.WorldStore.DeleteChunkChanges(coordinate);
+                continue;
+            }
+            var result = _saves.WorldStore.SaveChunkChanges(record);
+            if (!result.Success)
+            {
+                error = result.Message + (string.IsNullOrWhiteSpace(result.Error) ? "" : " " + result.Error);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Crossing a landmark boundary on foot activates that landmark's story
     /// frame, helpers and HUD. There is no dialog and no teleport: the spider
     /// is already standing inside the landmark when this fires.
     /// </summary>
@@ -796,6 +978,8 @@ public partial class GardenClearing : Node3D
         _nurseryLabel.Visible = nearbyNursery || nurseryStep;
         _climbLabel.Visible = _activeRegionId == RegionIds.GardenClearing &&
                               _player.ClimbAvailable && !_player.IsClimbing;
+
+        UpdateFoodViews(delta);
 
         var wind = _sim.WeatherPhase != WeatherPhase.Calm;
         _windParticles.Emitting = wind && !Settings.ReducedMotion && _activeRegionId == RegionIds.GardenClearing;
@@ -930,6 +1114,10 @@ public partial class GardenClearing : Node3D
         else if (_sim.Webs.Any(w => w.Durability < w.MaxDurability && Vector3DistanceToPlayer(WebCenter(w), 3.2f)))
         {
             text = "E · Repair web (2 silk)";
+        }
+        else if (FoodPrompt() is { } foodText)
+        {
+            text = foodText;
         }
         else if (_activeRegionId == RegionIds.GardenClearing && _player.ClimbAvailable)
         {
@@ -1551,6 +1739,14 @@ public partial class GardenClearing : Node3D
             ProcessEvents();
             return;
         }
+        if (TryForageNearest(PlayerWorld, 3.2, out var foraged, out var foragedFood, out _))
+        {
+            _audio.Play("collect");
+            _ui.ShowToast(
+                $"Foraged {foraged!.Label} · +{foragedFood} food", UiKit.TealDark, 3f);
+            ProcessEvents();
+            return;
+        }
         var nurseryDistance = _player.GlobalPosition.DistanceTo(NurseryInteractionPoint);
         if (nurseryDistance <= 2.8f)
         {
@@ -1558,7 +1754,8 @@ public partial class GardenClearing : Node3D
             _ui.OpenNursery(_sim);
             return;
         }
-        _ui.ShowToast("Move closer to a caught insect, a damaged web or the nursery.", UiKit.Coral, 4f);
+        _ui.ShowToast("Move closer to a caught insect, a damaged web, wild food or the nursery.",
+            UiKit.Coral, 4f);
     }
 
     private void TryDismantleNearest()
@@ -1671,6 +1868,13 @@ public partial class GardenClearing : Node3D
         if (_sim is null || _player is null) return false;
         var data = _sim.ExportSave(PlayerLocal, _player.CameraPivot.Rotation.Y, Settings);
         data.ExploredChunks = _explored.ToIds();
+        if (!SimulateSaveFailureForProbe && !SaveFoodChunkChanges(out var chunkError))
+        {
+            LastSaveError = chunkError;
+            if (showToast) _ui.ShowSaveResult(false, chunkError);
+            else if (!quiet) _ui.ShowSaveResult(false, chunkError);
+            return false;
+        }
         var result = SimulateSaveFailureForProbe
             ? SaveResult.Fail("Simulated save failure", "simulated")
             : _saves.Save(data);
@@ -2351,6 +2555,20 @@ public partial class GardenClearing : Node3D
 
     public Vector2 ProbeScreenPosition(Vec3 world) =>
         _player.Camera.UnprojectPosition(ToEngine(world));
+
+    public int ProbeFoodViewCount => _foodViews.Count;
+    public FoodSourceDefinition? ProbeNearestFood(Vec3 near, double radius) =>
+        NearestFood(near, radius, availableOnly: false);
+    public bool ProbeFoodAvailable(string id) => _sim?.IsFoodAvailable(id) ?? false;
+    public double ProbeFoodSecondsRemaining(string id) =>
+        _sim?.FoodSecondsRemaining(id) ?? 0;
+    public bool ProbeForageNearest() =>
+        TryForageNearest(PlayerWorld, 3.2, out _, out _, out _);
+    public string ProbeFoodPrompt() => FoodPrompt() ?? "";
+    public bool ProbeFoodViewVisible(string id) =>
+        _foodViews.TryGetValue(id, out var view) && view.ProbeVisible;
+    public string ProbeFoodViewPrompt(string id) =>
+        _foodViews.TryGetValue(id, out var view) ? view.ProbePrompt : "";
 
     public int ExploredChunkCount => _explored.Count;
     public bool ProbeExploredContains(Vec3 world) =>

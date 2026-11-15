@@ -24,6 +24,9 @@ public sealed class ChunkData
     /// <summary>Generated crossings owned by this chunk.</summary>
     public IReadOnlyList<RiverBridge> Bridges { get; init; } = Array.Empty<RiverBridge>();
 
+    /// <summary>Deterministic wild food definitions on this chunk.</summary>
+    public IReadOnlyList<FoodSourceDefinition> FoodSources { get; init; } = Array.Empty<FoodSourceDefinition>();
+
     /// <summary>
     /// Stable content hash: two chunks are interchangeable only when this value
     /// and the coordinate match. Used by streaming, tests and regeneration checks.
@@ -53,6 +56,13 @@ public sealed class ChunkData
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.Level01));
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.Level11));
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.RiverIndex));
+        }
+        foreach (var food in FoodSources)
+        {
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(food.Id));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(food.Position.X));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(food.Position.Z));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(food.Kind));
         }
         foreach (var bridge in Bridges)
         {

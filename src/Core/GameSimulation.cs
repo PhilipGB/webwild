@@ -45,6 +45,7 @@ public sealed class GameSimulation
     private readonly Dictionary<string, PlayerRegionPosition> _regionPlayerPositions = new(StringComparer.Ordinal);
     private readonly HashSet<string> _visitedRegions = new(StringComparer.Ordinal) { RegionIds.GardenClearing };
     private readonly HashSet<string> _claimedSupplyCaches = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, FoodSourceState> _foodStates = new(StringComparer.Ordinal);
 
     public Tuning Tuning { get; }
     public MissionsConfig MissionsConfig { get; }
@@ -494,6 +495,88 @@ public sealed class GameSimulation
         CheckMastery();
         return true;
     }
+
+    /// <summary>Ticks until a harvested wild source becomes available again.</summary>
+    public long FoodRegenerationTicks => Math.Max(1,
+        (long)Math.Ceiling(Tuning.Food.RegenerationSeconds /
+                           Math.Max(0.05, Tuning.FixedSimulationTickSeconds)));
+
+    public bool IsFoodAvailable(string sourceId) =>
+        !_foodStates.TryGetValue(sourceId, out var state) || state.AvailableAtTick <= TickCount;
+
+    public double FoodSecondsRemaining(string sourceId)
+    {
+        if (!_foodStates.TryGetValue(sourceId, out var state)) return 0;
+        return Math.Max(0, (state.AvailableAtTick - TickCount) * Tuning.FixedSimulationTickSeconds);
+    }
+
+    /// <summary>
+    /// Harvest one wild source. The ledger key includes the absolute tick, so a
+    /// double call, save/load at the same tick or duplicate collector can never
+    /// credit the same generation twice; the source stays depleted until its
+    /// regeneration tick.
+    /// </summary>
+    public bool TryHarvestFood(FoodSourceDefinition source, out int food, out string reason)
+    {
+        food = 0;
+        reason = "";
+        if (source is null)
+        {
+            reason = "That food is not here";
+            return false;
+        }
+        if (!IsFoodAvailable(source.Id))
+        {
+            var seconds = (int)Math.Ceiling(FoodSecondsRemaining(source.Id));
+            reason = $"{Cap(source.Label)} regrow in {Math.Max(1, seconds)}s";
+            return false;
+        }
+        if (!Ledger.TryGrantFood(source.Amount, $"food:{source.Id}:{TickCount}"))
+        {
+            reason = "That food is not ready";
+            return false;
+        }
+        _foodStates[source.Id] = new FoodSourceState(
+            source.Id, source.Chunk, source.Kind, source.Position,
+            TickCount + FoodRegenerationTicks);
+        food = source.Amount;
+        Emit(new GameplayEvent(NextKey($"food_foraged_{source.Id}"), "FoodForaged",
+            TickCount, source.Id, Detail: source.Kind, Amount: food, Region: ActiveRegionId));
+        return true;
+    }
+
+    /// <summary>Merge one chunk's persisted depletion records into this session.</summary>
+    public void ImportFoodStates(ChunkCoordinate chunk, IEnumerable<FoodSourceStateSave>? states)
+    {
+        if (states is null) return;
+        foreach (var save in states)
+        {
+            if (save is null || string.IsNullOrWhiteSpace(save.Id)) continue;
+            if (save.AvailableAtTick <= TickCount) continue;
+            if (_foodStates.TryGetValue(save.Id, out var existing) &&
+                existing.AvailableAtTick >= save.AvailableAtTick) continue;
+            _foodStates[save.Id] = FoodSourceState.FromSave(chunk, save);
+        }
+    }
+
+    /// <summary>Depleted states only; available baseline sources are never saved.</summary>
+    public IReadOnlyList<FoodStateSnapshot> DepletedFoodStates()
+    {
+        var expired = _foodStates.Values
+            .Where(state => state.AvailableAtTick <= TickCount)
+            .Select(state => state.Id)
+            .ToList();
+        foreach (var id in expired) _foodStates.Remove(id);
+        return _foodStates.Values
+            .OrderBy(state => state.Chunk.X)
+            .ThenBy(state => state.Chunk.Z)
+            .ThenBy(state => state.Id, StringComparer.Ordinal)
+            .Select(state => new FoodStateSnapshot(state.Chunk, state.ToSave()))
+            .ToList();
+    }
+
+    private static string Cap(string text) =>
+        string.IsNullOrEmpty(text) ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     public bool TryCollectNearest(Vec3 position, double radius, out InsectState? insect, out int food, out string reason)
     {

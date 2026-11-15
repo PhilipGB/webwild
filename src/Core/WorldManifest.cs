@@ -46,6 +46,9 @@ public sealed class ChunkChangeSave
     public long ChunkX { get; set; }
     public long ChunkZ { get; set; }
 
+    /// <summary>World seed this record belongs to (0 for pre-P6 records).</summary>
+    public int WorldSeed { get; set; }
+
     /// <summary>Webs whose centre lies in this chunk. Web payloads (anchors,
     /// durability) live in the manifest game payload; the chunk record is a
     /// fast reconstruction index for streaming.</summary>

@@ -174,6 +174,35 @@ public sealed class RiverMap
         return new Vec3(x, BaseHeightAt(x, safeZ), safeZ);
     }
 
+    /// <summary>
+    /// One crossing by river and X index, independent of chunk ownership. Used
+    /// by chunk generation and by the worker world navigator, so a journey
+    /// crosses exactly the bridge the player sees.
+    /// </summary>
+    public RiverBridge? BridgeAt(int riverIndex, int crossingIndex, WorldGenerator generator)
+    {
+        var x = crossingIndex * CrossingSpacing;
+        var centerZ = CenterAt(riverIndex, x);
+        if (WorldGenerator.AuthoredRects.Any(rect =>
+                rect.DistanceOutside(x, centerZ) < 24)) return null;
+        var halfWidth = HalfWidthAt(riverIndex, x);
+        var halfSpan = halfWidth + BankTaper + 0.8;
+        var northZ = centerZ - halfSpan;
+        var southZ = centerZ + halfSpan;
+        var northY = generator.HeightAt(x, northZ);
+        var southY = generator.HeightAt(x, southZ);
+        var level = WaterLevelAt(riverIndex, x);
+        return new RiverBridge(
+            $"river_{riverIndex}_{crossingIndex}", riverIndex, crossingIndex, x, centerZ,
+            halfWidth, level, halfSpan, northY, southY);
+    }
+
+    /// <summary>Top of a generated bridge deck at its centre (visual/collision
+    /// formula shared with the Godot builder).</summary>
+    public static double DeckTop(RiverBridge bridge) =>
+        Math.Max((bridge.NorthGroundY + bridge.SouthGroundY) * 0.5 - 0.12,
+            bridge.WaterLevel + 0.37) + 0.08;
+
     /// <summary>Water level at an X position for one river band.</summary>
     public double WaterLevelAt(int index, double x) =>
         BaseHeightAt(x, CenterAt(index, x)) - WaterDrop;
@@ -245,18 +274,8 @@ public sealed class RiverMap
             if (WorldGenerator.AuthoredRects.Any(rect =>
                     rect.DistanceOutside(x, centerZ) < 24)) continue;
 
-            var halfWidth = HalfWidthAt(bestIndex, x);
-            var halfSpan = halfWidth + BankTaper + 0.8;
-            var northZ = centerZ - halfSpan;
-            var southZ = centerZ + halfSpan;
-            // The crossing is a low bank-to-bank footbridge. Sample the carved
-            // terrain at both banks so the deck meets the ground on each side.
-            var northY = generator.HeightAt(x, northZ);
-            var southY = generator.HeightAt(x, southZ);
-            var level = WaterLevelAt(bestIndex, x);
-            bridges.Add(new RiverBridge(
-                $"river_{bestIndex}_{n}", bestIndex, (int)n, x, centerZ,
-                halfWidth, level, halfSpan, northY, southY));
+            var bridge = BridgeAt(bestIndex, (int)n, generator);
+            if (bridge is not null) bridges.Add(bridge);
         }
         return bridges;
     }

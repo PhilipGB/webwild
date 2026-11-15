@@ -965,11 +965,11 @@ public partial class GardenClearing : Node3D
             view.SetPromptVisible(Vector3DistanceToPlayer(
                 ToWorld(insect.Definition.Region, insect.Position), 3.2f));
         }
-        foreach (var worker in _sim.RegionWorkers)
+        foreach (var worker in _sim.Workers)
         {
             if (!_workerViews.TryGetValue(worker.Id, out var view)) continue;
             view.UpdateView(delta, Settings.ReducedMotion,
-                Vector3DistanceToPlayer(ToWorld(worker.Region, worker.Position), 4f));
+                Vector3DistanceToPlayer(view.GlobalPosition, 4f));
         }
 
         var nearbyNursery = Vector3DistanceToPlayer(NurseryInteractionPoint, 3.2f);
@@ -1949,15 +1949,18 @@ public partial class GardenClearing : Node3D
     private void SyncWorkerViews()
     {
         if (_sim is null) return;
-        foreach (var worker in _sim.RegionWorkers)
+        // All workers live in one world-space host: local workers use their
+        // landmark origin through WorldPosition, travelling workers walk the
+        // procedural world, and origin rebasing moves the host once.
+        foreach (var worker in _sim.Workers)
         {
             if (_workerViews.ContainsKey(worker.Id)) continue;
             var view = new WorkerView { Name = $"Worker_{worker.Id}" };
-            ViewHost(_workersRoot, worker.Region).AddChild(view);
+            ViewHost(_workersRoot, RegionIds.GardenClearing).AddChild(view);
             view.Configure(worker);
             _workerViews[worker.Id] = view;
         }
-        var activeIds = _sim.RegionWorkers.Select(worker => worker.Id).ToHashSet(StringComparer.Ordinal);
+        var activeIds = _sim.Workers.Select(worker => worker.Id).ToHashSet(StringComparer.Ordinal);
         foreach (var id in _workerViews.Keys.Where(id => !activeIds.Contains(id)).ToList())
         {
             _workerViews[id].QueueFree();
@@ -2556,6 +2559,22 @@ public partial class GardenClearing : Node3D
     public Vector2 ProbeScreenPosition(Vec3 world) =>
         _player.Camera.UnprojectPosition(ToEngine(world));
 
+    public int TravellingWorkerCount => _sim?.Workers.Count(worker => worker.Travelling) ?? 0;
+    public Vec3 ProbeWorkerWorldPosition(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.WorldPosition ?? Vec3.Zero;
+    public bool ProbeWorkerTravelling(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.Travelling == true;
+    public string ProbeWorkerJourneyTarget(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.JourneyTargetRegion ?? "";
+    public bool ProbeWorkerRouteUsesBridge(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.JourneyUsesBridge == true;
+    public bool ProbeWorkerBlocked(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.RouteBlocked == true;
+    public string ProbeWorkerRegion(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.Region ?? "";
+    public bool ProbeStartWorkerJourney(string id, string region, Vec3 world) =>
+        _sim?.BeginWorkerJourneyForTest(id, region, world) == true;
+
     public int ProbeFoodViewCount => _foodViews.Count;
     public FoodSourceDefinition? ProbeNearestFood(Vec3 near, double radius) =>
         NearestFood(near, radius, availableOnly: false);
@@ -2579,6 +2598,31 @@ public partial class GardenClearing : Node3D
     public Rect2 ProbeMapHomeRect => _ui.ProbeMapHomeRect;
     public void ProbeOpenMap() => OpenMap();
     public void ProbeCloseMap() => _ui.CloseModal();
+    public bool ProbeEnterLandmark(string regionId)
+    {
+        if (_sim is null || _player is null) return false;
+        var region = RegionCatalog.Get(regionId);
+        if (region is null) return false;
+        if (_sim.ActiveRegionId != regionId && !_sim.EnterLandmark(regionId)) return false;
+        var world = LandmarkCatalog.ToWorld(regionId, region.NurseryPosition).Absolute;
+        ApplyOrigin(SnapOrigin(world));
+        ActivateRegion(regionId);
+        ResetPresentation();
+        _player.GlobalPosition = ToEngine(world + new Vec3(0, 0.6, 0));
+        _player.Velocity = Vector3.Zero;
+        _player.ResetCamera();
+        _regionSafePosition = _player.GlobalPosition;
+        _player.FallResetPosition = _player.GlobalPosition;
+        _zone = regionId;
+        _zoneBiome = null;
+        _ui.SetExploration(null, null);
+        _ui.UpdateHud(_sim, Settings);
+        _ui.SetStatus(_sim.GetActiveRegionHint());
+        RefreshAll();
+        ProcessEvents();
+        return true;
+    }
+
     public void ProbeReturnHome() => ReturnHome();
 
     public int ProbeLoadedPropCount => _chunks is null ? 0 : _chunks.Nodes.Values

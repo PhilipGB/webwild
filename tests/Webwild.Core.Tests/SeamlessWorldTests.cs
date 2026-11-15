@@ -87,6 +87,14 @@ public class SeamlessWorldTests
         Assert.Equal(RegionIds.ReedwaterBank, sim.ActiveRegionId);
         Assert.Contains(RegionIds.ReedwaterBank, sim.VisitedRegions);
         Assert.Equal(RegionIds.ReedwaterBank, worker.Region);
+        // P7: the helper physically walks there instead of teleporting.
+        Assert.True(worker.Travelling);
+        var gardenNursery = LandmarkCatalog.ToWorld(RegionIds.GardenClearing,
+            WorldLayout.NurseryPosition).Absolute;
+        Assert.True(Vec3.Distance(worker.WorldPosition, gardenNursery) < 3,
+            $"worker at {worker.WorldPosition} should still be in the garden");
+        for (var i = 0; i < 700 && worker.Travelling; i++) sim.AdvanceSeconds(0.2);
+        Assert.False(worker.Travelling);
         Assert.Equal(RegionCatalog.Reedwater.NurseryPosition, worker.Position);
         Assert.Contains(RegionIds.ReedwaterBank, sim.ClaimedSupplyCaches);
 

@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-15T03:01:18.4385813Z",
+  "generatedUtc": "2026-11-15T04:06:14.6496767Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "X11",
-  "passes": 405,
+  "passes": 421,
   "failures": 0,
   "checks": [
     {
@@ -383,12 +383,12 @@
     {
       "name": "pause-freezes-airborne",
       "pass": true,
-      "detail": "start=0.60 paused=0.60"
+      "detail": "start=0.53 paused=0.53"
     },
     {
       "name": "pause-resumes-physics",
       "pass": true,
-      "detail": "resumed=-0.00 paused=0.60"
+      "detail": "resumed=-0.00 paused=0.53"
     },
     {
       "name": "climb-stem",
@@ -788,7 +788,7 @@
     {
       "name": "p2-walks-garden-to-reedwater",
       "pass": true,
-      "detail": "reached=True region=reedwater_bank end=Vec3 { X = 79.2353744506836, Y = 0.0008309100521728396, Z = 6.032872676849365, LengthSquared = 6314.640117765529, Length = 79.46470988914217, HorizontalLength = 79.46470988479803, IsFinite = True }"
+      "detail": "reached=True region=reedwater_bank end=Vec3 { X = 79.23532104492188, Y = 0.0008308428223244846, Z = 6.032872676849365, LengthSquared = 6314.631654517215, Length = 79.46465663750908, HorizontalLength = 79.46465663316563, IsFinite = True }"
     },
     {
       "name": "p2-bramble-gate-open",
@@ -813,7 +813,7 @@
     {
       "name": "p2-entered-reedwater-on-foot",
       "pass": true,
-      "detail": "player=(79.235374, 0.00083091005, 6.0328727)"
+      "detail": "player=(79.23532, 0.0008308428, 6.0328727)"
     },
     {
       "name": "reedwater-anchors-visible",
@@ -863,7 +863,7 @@
     {
       "name": "water-blocks-without-bridge",
       "pass": true,
-      "detail": "x=102.32 inWater=False"
+      "detail": "x=102.23 inWater=False"
     },
     {
       "name": "pond-route-blocked-before-bridges",
@@ -898,7 +898,7 @@
     {
       "name": "anchor-screen-nearest-target",
       "pass": true,
-      "detail": "pick=rw_island_b_post islandB=(623.79047, 107.53027) lilyB=(645.89136, 83.64538)"
+      "detail": "pick=rw_island_b_post islandB=(623.7903, 107.53025) lilyB=(645.8911, 83.64533)"
     },
     {
       "name": "anchor-screen-empty-space-does-not-select",
@@ -918,37 +918,37 @@
     {
       "name": "player-walks-island-a-onto-bridge-two",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 93.34718322753906, Y = 0.4634324908256531, Z = 2.138110876083374, LengthSquared = 8718.48290430773, Length = 93.3728167311436, HorizontalLength = 93.37166665875776, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 93.34709167480469, Y = 0.4634610414505005, Z = 2.137993335723877, LengthSquared = 8718.465335784933, Length = 93.37272265380791, HorizontalLength = 93.37157243855322, IsFinite = True }"
     },
     {
       "name": "clever-crossing-not-awarded-on-bridge",
       "pass": true,
-      "detail": "bridges=2 position=Vec3 { X = 93.34718322753906, Y = 0.4634324908256531, Z = 2.138110876083374, LengthSquared = 8718.48290430773, Length = 93.3728167311436, HorizontalLength = 93.37166665875776, IsFinite = True }"
+      "detail": "bridges=2 position=Vec3 { X = 93.34709167480469, Y = 0.4634610414505005, Z = 2.137993335723877, LengthSquared = 8718.465335784933, Length = 93.37272265380791, HorizontalLength = 93.37157243855322, IsFinite = True }"
     },
     {
       "name": "player-steps-onto-lily-island",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 92.27783203125, Y = 0.13350220024585724, Z = 1.075910210609436, LengthSquared = 8516.373690006352, Length = 92.28420065215037, HorizontalLength = 92.28410408715513, IsFinite = True } ground=/root/Main/GardenClearing/Regions/reedwater_bank/World/Landmarks/IslandB/MossIsland/Collision"
+      "detail": "reached=True end=Vec3 { X = 92.27781677246094, Y = 0.13354922831058502, Z = 1.0758850574493408, LengthSquared = 8516.370832345097, Length = 92.28418516921032, HorizontalLength = 92.28408853615403, IsFinite = True } ground=/root/Main/GardenClearing/Regions/reedwater_bank/World/Landmarks/IslandB/MossIsland/Collision"
     },
     {
       "name": "clever-crossing-earned-by-arrival",
       "pass": true,
-      "detail": "bridges=2 position=Vec3 { X = 92.27783203125, Y = 0.13350220024585724, Z = 1.075910210609436, LengthSquared = 8516.373690006352, Length = 92.28420065215037, HorizontalLength = 92.28410408715513, IsFinite = True }"
+      "detail": "bridges=2 position=Vec3 { X = 92.27781677246094, Y = 0.13354922831058502, Z = 1.0758850574493408, LengthSquared = 8516.370832345097, Length = 92.28418516921032, HorizontalLength = 92.28408853615403, IsFinite = True }"
     },
     {
       "name": "player-walks-bridge-two-back-to-island-a",
       "pass": true,
-      "detail": "end=Vec3 { X = 97.77859497070312, Y = 0.4655628204345703, Z = 6.001885890960693, LengthSquared = 9596.893017432694, Length = 97.96373317423492, HorizontalLength = 97.96262689767421, IsFinite = True } seconds=3.2"
+      "detail": "end=Vec3 { X = 97.77825164794922, Y = 0.4658741354942322, Z = 6.001590251922607, LengthSquared = 9596.82261959178, Length = 97.96337386795015, HorizontalLength = 97.96226610732143, IsFinite = True } seconds=3.1"
     },
     {
       "name": "player-walks-bridge-one-back-to-bank",
       "pass": true,
-      "detail": "end=Vec3 { X = 104.77058410644531, Y = 0.0008246724028140306, Z = 8.347281455993652, LengthSquared = 11046.55240239139, Length = 105.10258037931985, HorizontalLength = 105.10258037608452, IsFinite = True } seconds=2.0"
+      "detail": "end=Vec3 { X = 104.77005004882812, Y = 0.0008343520457856357, Z = 8.346973419189453, LengthSquared = 11046.435353190749, Length = 105.10202354470036, HorizontalLength = 105.1020235413886, IsFinite = True } seconds=2.0"
     },
     {
       "name": "player-stops-and-resumes-at-deck-joint",
       "pass": true,
-      "detail": "end=Vec3 { X = 97.99949645996094, Y = 0.4276456832885742, Z = 5.959478855133057, LengthSquared = 9639.599575461109, Length = 98.18146248381672, HorizontalLength = 98.18053113846285, IsFinite = True }"
+      "detail": "end=Vec3 { X = 97.999755859375, Y = 0.42757976055145264, Z = 5.959609508514404, LengthSquared = 9639.651918442712, Length = 98.18172904590097, HorizontalLength = 98.18079799019297, IsFinite = True }"
     },
     {
       "name": "player-turns-around-on-bridge",
@@ -983,12 +983,12 @@
     {
       "name": "player-walks-island-b-onto-bridge-three",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 86.98490905761719, Y = 0.0008276329608634114, Z = -2.109745740890503, LengthSquared = 7570.825431538115, Length = 87.01049035339426, HorizontalLength = 87.01049034945808, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 86.98490905761719, Y = 0.0008278676541522145, Z = -2.1097500324249268, LengthSquared = 7570.825449646615, Length = 87.01049045745354, HorizontalLength = 87.01049045351515, IsFinite = True }"
     },
     {
       "name": "player-walks-bridge-three-back-to-island-b",
       "pass": true,
-      "detail": "end=Vec3 { X = 92.97966003417969, Y = 0.5111773610115051, Z = 2.18308687210083, LengthSquared = 8650.244350657182, Length = 93.00668981668566, HorizontalLength = 93.0052850560804, IsFinite = True } seconds=4.1"
+      "detail": "end=Vec3 { X = 92.97982025146484, Y = 0.5113299489021301, Z = 2.1833138465881348, LengthSquared = 8650.27529166406, Length = 93.00685615407103, HorizontalLength = 93.00545055719807, IsFinite = True } seconds=4.1"
     },
     {
       "name": "reedwater-bridge-modular-planks",
@@ -1148,7 +1148,7 @@
     {
       "name": "reload-reedwater-bridge-walk",
       "pass": true,
-      "detail": "end=Vec3 { X = 97.99949645996094, Y = 0.4276456832885742, Z = 5.959478855133057, LengthSquared = 9639.599575461109, Length = 98.18146248381672, HorizontalLength = 98.18053113846285, IsFinite = True } seconds=4.7"
+      "detail": "end=Vec3 { X = 97.999755859375, Y = 0.42757976055145264, Z = 5.959609508514404, LengthSquared = 9639.651918442712, Length = 98.18172904590097, HorizontalLength = 98.18079799019297, IsFinite = True } seconds=4.8"
     },
     {
       "name": "reload-reedwater-bridge-modular-planks",
@@ -1208,7 +1208,7 @@
     {
       "name": "reenter-supply-not-regranted",
       "pass": true,
-      "detail": "claimed=reedwater_bank food=3 silk=28"
+      "detail": "claimed=reedwater_bank food=4 silk=29"
     },
     {
       "name": "critical-bridge-present",
@@ -1238,27 +1238,27 @@
     {
       "name": "toast-visible-100",
       "pass": true,
-      "detail": "A dragonfly is caught! Walk close and press E."
+      "detail": "Clever Crossing earned. Keep exploring or use the trail to return."
     },
     {
       "name": "toast-inside-viewport-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87)"
+      "detail": "(934, 273.6), (330, 116)"
     },
     {
       "name": "toast-avoids-mission-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (820, 18), (440, 145)"
+      "detail": "(934, 273.6), (330, 116) vs (820, 18), (440, 145)"
     },
     {
       "name": "toast-avoids-actions-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (22, 82), (196, 177)"
+      "detail": "(934, 273.6), (330, 116) vs (22, 82), (196, 177)"
     },
     {
       "name": "toast-avoids-toolbar-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (0, 584), (1280, 62)"
+      "detail": "(934, 273.6), (330, 116) vs (0, 584), (1280, 62)"
     },
     {
       "name": "toolbar-inside-viewport-100",
@@ -1268,7 +1268,7 @@
     {
       "name": "toast-avoids-status-100",
       "pass": true,
-      "detail": "(934, 273.6), (330, 87) vs (0, 550), (1280, 27)"
+      "detail": "(934, 273.6), (330, 116) vs (0, 550), (1280, 27)"
     },
     {
       "name": "toast-avoids-camera-centre-100",
@@ -1628,7 +1628,7 @@
     {
       "name": "p1-walks-north-gate-across-boundary",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -5, Y = -0.3094256818294525, Z = -27.310443878173828, LengthSquared = 770.956089075458, Length = 27.766096035911456, HorizontalLength = 27.764371860765774, IsFinite = True } water=False"
+      "detail": "reached=True end=Vec3 { X = -5.000001430511475, Y = -0.30963072180747986, Z = -27.31079864501953, LengthSquared = 770.9756081178044, Length = 27.766447524265764, HorizontalLength = 27.764721085109382, IsFinite = True } water=False"
     },
     {
       "name": "p1-boundary-chunk-built",
@@ -1638,7 +1638,7 @@
     {
       "name": "p1-walks-east-gate-across-boundary",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 29.458951950073242, Y = -0.03521506488323212, Z = 8.500248908996582, LengthSquared = 940.0853216124164, Length = 30.66081084401416, HorizontalLength = 30.660790621111218, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 29.458934783935547, Y = -0.0352155938744545, Z = 8.500242233276367, LengthSquared = 940.0841967665948, Length = 30.660792500628467, HorizontalLength = 30.660772277105853, IsFinite = True }"
     },
     {
       "name": "p1-walks-south-gate-across-boundary",
@@ -1648,12 +1648,12 @@
     {
       "name": "p1-walks-west-gate-across-boundary",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -29.462242126464844, Y = -0.2462206929922104, Z = 8.500027656555176, LengthSquared = 940.3348059103001, Length = 30.664879029767917, HorizontalLength = 30.66389051116382, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -29.462251663208008, Y = -0.2466181218624115, Z = 8.500025749206543, LengthSquared = 940.3355313014082, Length = 30.66489085748404, HorizontalLength = 30.663899145467088, IsFinite = True }"
     },
     {
       "name": "p1-walks-diagonal-corner",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 28.14837646484375, Y = -0.22117355465888977, Z = 27.374488830566406, LengthSquared = 1541.742654082655, Length = 39.26503093189479, HorizontalLength = 39.26440800956223, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 28.14837074279785, Y = -0.2211732715368271, Z = 27.374488830566406, LengthSquared = 1541.7423318248452, Length = 39.26502682827105, HorizontalLength = 39.264403907468186, IsFinite = True }"
     },
     {
       "name": "p1-corner-chunk-loaded",
@@ -1703,7 +1703,7 @@
     {
       "name": "p1-reload-far-restores-position",
       "pass": true,
-      "detail": "end=(120.00829, 2.3117437, -95.99896)"
+      "detail": "end=(120.00829, 2.3117208, -95.99896)"
     },
     {
       "name": "p1-reload-far-grounded",
@@ -1763,7 +1763,7 @@
     {
       "name": "p3-walks-after-rebase",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 18005.033203125, Y = -0.8348162174224854, Z = -12000, LengthSquared = 468181221.3425518, Length = 21637.495727152713, HorizontalLength = 21637.4957110483, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 18005.033203125, Y = -0.834825873374939, Z = -12000, LengthSquared = 468181221.3425679, Length = 21637.495727153084, HorizontalLength = 21637.4957110483, IsFinite = True }"
     },
     {
       "name": "p3-far-save",
@@ -1783,7 +1783,7 @@
     {
       "name": "p3-reload-keeps-logical-position",
       "pass": true,
-      "detail": "player=(18005.018, -0.8357155, -11999.999)"
+      "detail": "player=(18005.018, -0.8358438, -11999.999)"
     },
     {
       "name": "p3-reload-chunk-loaded",
@@ -2029,6 +2029,86 @@
       "name": "p6-regrown-record-cleared",
       "pass": true,
       "detail": "food=0"
+    },
+    {
+      "name": "p7-helper-hatched",
+      "pass": true,
+      "detail": "Hatch a helper for the journey"
+    },
+    {
+      "name": "p7-worker-ready",
+      "pass": true,
+      "detail": "workers=1"
+    },
+    {
+      "name": "p7-worker-starts-at-garden",
+      "pass": true,
+      "detail": "region=garden_clearing worker=Vec3 { X = 10.912701751856163, Y = 0.15436491240719183, Z = 3.6617294339108066, LengthSquared = 132.5191504983158, Length = 11.511696247656808, HorizontalLength = 11.510661230882148, IsFinite = True } garden=Vec3 { X = 12, Y = 0, Z = 4, LengthSquared = 160, Length = 12.649110640673518, HorizontalLength = 12.649110640673518, IsFinite = True } reedwater=Vec3 { X = 107, Y = 0.1, Z = 5.8, LengthSquared = 11482.65, Length = 107.157127621078, HorizontalLength = 107.15708096061594, IsFinite = True }"
+    },
+    {
+      "name": "p7-enter-reedwater",
+      "pass": true,
+      "detail": "Move the colony story frame to Reedwater"
+    },
+    {
+      "name": "p7-journey-starts",
+      "pass": true,
+      "detail": "travelling=True world=Vec3 { X = 11.981971364885842, Y = 0.15436491240719183, Z = 4.057029945738663, LengthSquared = 160.05095829574705, Length = 12.651124783818513, HorizontalLength = 12.650182993520867, IsFinite = True }"
+    },
+    {
+      "name": "p7-worker-moves-physically",
+      "pass": true,
+      "detail": "world=Vec3 { X = 21.603259764327955, Y = 0.3, Z = 7.613944106954359, LengthSquared = 524.7629773088562, Length = 22.90770563170516, HorizontalLength = 22.90574114297235, IsFinite = True }"
+    },
+    {
+      "name": "p7-worker-arrives-reedwater",
+      "pass": true,
+      "detail": "region=reedwater_bank world=Vec3 { X = 107, Y = 0.1, Z = 5.8, LengthSquared = 11482.65, Length = 107.157127621078, HorizontalLength = 107.15708096061594, IsFinite = True }"
+    },
+    {
+      "name": "p7-enter-garden",
+      "pass": true,
+      "detail": "Return the colony frame to the garden"
+    },
+    {
+      "name": "p7-return-journey-starts",
+      "pass": true,
+      "detail": "target=garden_clearing"
+    },
+    {
+      "name": "p7-save-mid-journey",
+      "pass": true,
+      "detail": "Save while the helper is walking"
+    },
+    {
+      "name": "p7-mid-journey-loads",
+      "pass": true,
+      "detail": "Save loaded"
+    },
+    {
+      "name": "p7-reload-resumes-journey",
+      "pass": true,
+      "detail": "world=Vec3 { X = 92.18423642945898, Y = 0.3, Z = 5.8968350560166085, LengthSquared = 8532.796109760258, Length = 92.37313521668656, HorizontalLength = 92.37264806077748, IsFinite = True } saved=Vec3 { X = 96.74413903414292, Y = 0.3, Z = 5.867031771018674, LengthSquared = 9393.94049925972, Length = 96.92234262160464, HorizontalLength = 96.92187833126079, IsFinite = True }"
+    },
+    {
+      "name": "p7-reload-arrives-garden",
+      "pass": true,
+      "detail": "region=garden_clearing world=Vec3 { X = 12, Y = 0.1, Z = 4, LengthSquared = 160.01, Length = 12.649505919204907, HorizontalLength = 12.649110640673518, IsFinite = True }"
+    },
+    {
+      "name": "p7-start-bridge-journey",
+      "pass": true,
+      "detail": "southBank=Vec3 { X = 0, Y = -0.04123677434660222, Z = 75, LengthSquared = 5625.001700471558, Length = 75.00001133647619, HorizontalLength = 75, IsFinite = True }"
+    },
+    {
+      "name": "p7-route-uses-bridge",
+      "pass": true,
+      "detail": "travelling=True"
+    },
+    {
+      "name": "p7-bridge-arrival",
+      "pass": true,
+      "detail": "region=garden_clearing"
     }
   ]
 }

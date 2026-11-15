@@ -46,6 +46,7 @@ public sealed class GameSimulation
     private readonly HashSet<string> _visitedRegions = new(StringComparer.Ordinal) { RegionIds.GardenClearing };
     private readonly HashSet<string> _claimedSupplyCaches = new(StringComparer.Ordinal);
     private readonly Dictionary<string, FoodSourceState> _foodStates = new(StringComparer.Ordinal);
+    private readonly WorkerNavigator _navigator;
 
     public Tuning Tuning { get; }
     public MissionsConfig MissionsConfig { get; }
@@ -89,7 +90,7 @@ public sealed class GameSimulation
     public IReadOnlyList<InsectState> RegionInsects => _insects
         .Where(insect => insect.Definition.Region == ActiveRegionId).ToList();
     public IReadOnlyList<WorkerState> RegionWorkers => _workers
-        .Where(worker => worker.Region == ActiveRegionId).ToList();
+        .Where(worker => worker.Region == ActiveRegionId && !worker.Travelling).ToList();
     public IReadOnlyList<AnchorDefinition> RegionAnchors => _anchors.Values
         .Where(anchor => anchor.Region == ActiveRegionId).ToList();
     public IReadOnlyList<GameplayEvent> Events => _events;
@@ -127,6 +128,7 @@ public sealed class GameSimulation
             : WorldLayout.CreateGroundEdges();
         Graph = new WorldGraph(graphNodes, graphEdges);
         _rng = new Random(Tuning.Seed);
+        _navigator = new WorkerNavigator(Tuning.Seed);
 
         var routes = anchors is null
             ? RegionCatalog.All.SelectMany(region => region.InsectRoutes).ToList()
@@ -153,6 +155,23 @@ public sealed class GameSimulation
     private string NextWebId(WebType type) => $"{(type == WebType.Capture ? "capture" : "bridge")}_{++_webSequence:000}";
 
     public AnchorDefinition? GetAnchor(string id) => _anchors.GetValueOrDefault(id);
+
+    /// <summary>Probe/test instrumentation: place a worker and start a physical
+    /// journey from that world point without moving any other colony state.</summary>
+    public bool BeginWorkerJourneyForTest(string workerId, string targetRegion, Vec3 world)
+    {
+        var worker = _workers.FirstOrDefault(w => w.Id == workerId);
+        if (worker is null || !RegionIds.IsKnown(targetRegion)) return false;
+        var target = RegionCatalog.GetRequired(targetRegion);
+        if (!worker.Travelling) worker.JourneyFromRegion = worker.Region;
+        worker.JourneyPosition = world;
+        worker.Region = targetRegion;
+        worker.Position = target.NurseryPosition;
+        worker.CurrentNode = target.NurseryNode;
+        worker.Travelling = true;
+        BeginJourney(worker, targetRegion, preferReverse: false);
+        return true;
+    }
     public WebState? GetWeb(string id) => _webs.GetValueOrDefault(id);
     public InsectState? GetInsect(string id) => _insects.FirstOrDefault(i => i.Id == id);
     public WorkerState? GetWorker(string id) => _workers.FirstOrDefault(w => w.Id == id);
@@ -195,11 +214,24 @@ public sealed class GameSimulation
 
         foreach (var worker in _workers)
         {
+            if (worker.Travelling)
+            {
+                if (worker.JourneyTargetRegion == regionId) continue;
+                var reverse = worker.JourneyFromRegion == regionId;
+                worker.JourneyPosition = worker.WorldPosition;
+                worker.Region = regionId;
+                BeginJourney(worker, regionId, preferReverse: reverse);
+                continue;
+            }
+            if (worker.Region == regionId) continue;
+            var fromWorld = worker.WorldPosition;
+            worker.JourneyFromRegion = worker.Region;
+            worker.JourneyPosition = fromWorld;
             worker.Region = regionId;
             worker.CurrentNode = region.NurseryNode;
             worker.Position = region.NurseryPosition;
-            ReleaseWorkerTask(worker, "Travelled through the garden passage", keepPosition: true);
-            worker.PatrolCooldown = 2;
+            ReleaseWorkerTask(worker, "Travelling to " + region.DisplayName);
+            BeginJourney(worker, regionId, preferReverse: false);
         }
 
         // The first visit to the marshy outpost uncovers a small, exactly-once
@@ -217,6 +249,104 @@ public sealed class GameSimulation
 
         Emit(new GameplayEvent(NextKey($"region_travel_{regionId}"), "RegionChanged", TickCount,
             regionId, Detail: region.DisplayName, Region: regionId));
+    }
+
+    /// <summary>
+    /// Start a physical journey to a landmark's nursery. The worker walks the
+    /// coarse world route at its normal speed; tasks and regional bookkeeping
+    /// stay dormant until it arrives. A missing route leaves it visibly
+    /// blocked and it retries rather than teleporting.
+    /// </summary>
+    private void BeginJourney(WorkerState worker, string targetRegion, bool preferReverse)
+    {
+        var region = RegionCatalog.GetRequired(targetRegion);
+        var destination = LandmarkCatalog.ToWorld(targetRegion, region.NurseryPosition).Absolute;
+        var wasBlocked = worker.RouteBlocked;
+        WorkerRoute? route = null;
+        if (preferReverse && worker.JourneyRoute.Count > 1 && worker.JourneyIndex > 0)
+        {
+            var back = worker.JourneyRoute
+                .Take(Math.Min(worker.JourneyIndex + 1, worker.JourneyRoute.Count))
+                .Reverse()
+                .ToList();
+            back.Insert(0, worker.JourneyPosition);
+            if (Vec3.Distance(back[^1], destination) > 2.0) back.Add(destination);
+            var distance = 0.0;
+            for (var i = 1; i < back.Count; i++) distance += Vec3.Distance(back[i - 1], back[i]);
+            route = new WorkerRoute(back, worker.JourneyUsesBridge, distance);
+        }
+        else
+        {
+            route = _navigator.FindRoute(worker.JourneyPosition, destination);
+        }
+        worker.JourneyTargetRegion = targetRegion;
+        worker.Travelling = true;
+        worker.JourneyRoute = route?.Points.ToList() ?? new List<Vec3>();
+        worker.JourneyIndex = route is null ? 0 : 1;
+        worker.JourneyUsesBridge = route?.UsesBridge ?? false;
+        if (route is null)
+        {
+            worker.RouteBlocked = true;
+            worker.Activity = WorkerActivity.Waiting;
+            worker.PatrolCooldown = 4;
+            if (!wasBlocked)
+                Emit(new GameplayEvent(NextKey($"worker_blocked_{worker.Id}"), "WorkerRouteBlocked",
+                    TickCount, worker.Id, Detail: targetRegion, Region: targetRegion));
+            return;
+        }
+        worker.RouteBlocked = false;
+        worker.Activity = WorkerActivity.Travelling;
+        Emit(new GameplayEvent(NextKey($"worker_journey_{worker.Id}"), "WorkerJourneyStarted",
+            TickCount, worker.Id, Detail: targetRegion, Region: targetRegion,
+            Amount: (int)Math.Ceiling(route.Distance)));
+    }
+
+    private void TickWorkerJourney(WorkerState worker, double dt)
+    {
+        if (worker.RouteBlocked)
+        {
+            worker.PatrolCooldown -= dt;
+            if (worker.PatrolCooldown <= 0)
+                BeginJourney(worker, worker.JourneyTargetRegion, preferReverse: false);
+            return;
+        }
+        if (worker.JourneyIndex <= 0) worker.JourneyIndex = 1;
+        var remaining = 1.9 * dt;
+        while (remaining > 0 && worker.JourneyIndex < worker.JourneyRoute.Count)
+        {
+            var next = worker.JourneyRoute[worker.JourneyIndex];
+            var delta = next - worker.JourneyPosition;
+            var distance = delta.Length;
+            if (distance <= remaining + 0.01)
+            {
+                worker.JourneyPosition = next;
+                worker.JourneyIndex++;
+                remaining -= distance;
+                continue;
+            }
+            worker.JourneyPosition += delta / distance * remaining;
+            remaining = 0;
+        }
+        if (worker.JourneyIndex >= worker.JourneyRoute.Count)
+            ArriveJourney(worker);
+    }
+
+    private void ArriveJourney(WorkerState worker)
+    {
+        var region = RegionCatalog.Get(worker.JourneyTargetRegion) ?? RegionCatalog.Garden;
+        worker.Region = region.Id;
+        worker.Travelling = false;
+        worker.RouteBlocked = false;
+        worker.JourneyRoute.Clear();
+        worker.JourneyIndex = 0;
+        worker.JourneyTargetRegion = "";
+        worker.JourneyFromRegion = "";
+        worker.Position = region.NurseryPosition;
+        worker.CurrentNode = region.NurseryNode;
+        worker.Activity = WorkerActivity.Resting;
+        worker.PatrolCooldown = 1.5;
+        Emit(new GameplayEvent(NextKey($"worker_arrived_{worker.Id}"), "WorkerArrived",
+            TickCount, worker.Id, Detail: region.Id, Region: region.Id));
     }
 
     /// <summary>
@@ -643,7 +773,9 @@ public sealed class GameSimulation
             Position = hatchRegion.NurseryPosition,
             CurrentNode = hatchRegion.NurseryNode,
             Activity = WorkerActivity.Resting,
-            PatrolCooldown = 1.0
+            PatrolCooldown = 1.0,
+            JourneyPosition = LandmarkCatalog.ToWorld(hatchRegion.Id,
+                hatchRegion.NurseryPosition).Absolute
         };
         _workers.Add(worker);
         PendingHatch = null;
@@ -865,6 +997,11 @@ public sealed class GameSimulation
     {
         foreach (var worker in _workers)
         {
+            if (worker.Travelling)
+            {
+                TickWorkerJourney(worker, dt);
+                continue;
+            }
             if (worker.IsMoving) MoveWorker(worker, dt);
             else
             {
@@ -1288,7 +1425,13 @@ public sealed class GameSimulation
                 PatrolCooldown = w.PatrolCooldown,
                 CollectCount = w.CollectCount,
                 RepairCount = w.RepairCount,
-                BridgeCrossings = w.BridgeCrossings
+                BridgeCrossings = w.BridgeCrossings,
+                Travelling = w.Travelling,
+                JourneyTargetRegion = w.JourneyTargetRegion,
+                JourneyFromRegion = w.JourneyFromRegion,
+                JourneyX = w.JourneyPosition.X,
+                JourneyY = w.JourneyPosition.Y,
+                JourneyZ = w.JourneyPosition.Z
             }).ToList(),
             Insects = _insects.Select(i => new InsectSave
             {
@@ -1414,8 +1557,27 @@ public sealed class GameSimulation
                 PatrolCooldown = saved.PatrolCooldown,
                 CollectCount = saved.CollectCount,
                 RepairCount = saved.RepairCount,
-                BridgeCrossings = saved.BridgeCrossings
+                BridgeCrossings = saved.BridgeCrossings,
+                Travelling = saved.Travelling && RegionIds.IsKnown(saved.JourneyTargetRegion),
+                JourneyPosition = new Vec3(saved.JourneyX, saved.JourneyY, saved.JourneyZ),
+                JourneyTargetRegion = saved.JourneyTargetRegion,
+                JourneyFromRegion = saved.JourneyFromRegion
             };
+            if (worker.Travelling)
+            {
+                var target = RegionCatalog.GetRequired(saved.JourneyTargetRegion);
+                var destination = LandmarkCatalog.ToWorld(target.Id, target.NurseryPosition).Absolute;
+                var route = sim._navigator.FindRoute(worker.JourneyPosition, destination);
+                worker.JourneyRoute = route?.Points.ToList() ?? new List<Vec3>();
+                worker.JourneyIndex = route is null ? 0 : 1;
+                worker.JourneyUsesBridge = route?.UsesBridge ?? false;
+                worker.RouteBlocked = route is null;
+                worker.Activity = route is null ? WorkerActivity.Waiting : WorkerActivity.Travelling;
+            }
+            else if (worker.Activity == WorkerActivity.Travelling)
+            {
+                worker.Activity = WorkerActivity.Resting;
+            }
             worker.PathEdges = new List<GroundEdge>();
             for (var i = 0; i < worker.PathNodes.Count - 1; i++)
             {

@@ -180,6 +180,22 @@ public static class SaveValidator
                 error = "A worker position is invalid.";
                 return false;
             }
+            if (worker.Travelling)
+            {
+                if (!RegionIds.IsKnown(worker.JourneyTargetRegion))
+                {
+                    error = "A travelling worker names an unknown destination.";
+                    return false;
+                }
+                if (!IsFinite(worker.JourneyX, worker.JourneyY, worker.JourneyZ) ||
+                    Math.Abs(worker.JourneyX) > 1_000_000 ||
+                    Math.Abs(worker.JourneyZ) > 1_000_000 ||
+                    worker.JourneyY < -20 || worker.JourneyY > 100)
+                {
+                    error = "A travelling worker position is invalid.";
+                    return false;
+                }
+            }
             if (!Enum.TryParse<WorkerActivity>(worker.Activity, true, out _))
             {
                 error = "A worker task state is unknown.";

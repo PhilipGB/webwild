@@ -1,3 +1,78 @@
+## Webwild v0.3.0 — Never-Ending World
+
+A ten-phase expansion that turns the two authored regions into one continuous,
+deterministically generated world while preserving the six existing goals,
+controls, economy and saves.
+
+### World
+
+- Signed 64-bit chunk coordinates, 24 m chunks, deterministic terrain, world
+  manifest schema 4, per-chunk change records and an explicit ADR.
+- Procedural chunk streaming with a load ring, persistent build queue and
+  `ConcavePolygonShape3D` collision; authored landmark chunks are never
+  generated.
+- Reedwater Bank is embedded at world (96, 0) and reached on foot; the travel
+  dialog is replaced by physical connectivity and a bramble gate that opens
+  when the garden story completes.
+- Three biomes (meadow, moss, bloom) with blended colours, height offsets and
+  dressing; generated-style aprons feather the authored Reedwater edge.
+- Presentation origin rebasing at 16 km on a 64 m grid keeps movement precise
+  indefinitely while saves and simulation stay in logical world coordinates.
+- Deterministic meandering rivers with carved beds, hazard water, wet banks,
+  and generated low plank/silk crossings every 150 m.
+- A bounded exploration record, biome/river map, visited landmark markers,
+  Return Home, and a persistent `Wild Meadows · <biome>` exploration HUD.
+- Deterministic wild food (berries, mushrooms, sunflower seeds) with
+  once-per-generation harvesting, tick-based regeneration, depleted-only
+  per-chunk persistence and New-Garden chunk isolation.
+- Hierarchical worker world navigation: dry routes through landmark gates and
+  generated bridge decks, physical landmark journeys, recorded/reversed routes,
+  blocked waiting, off-screen simulation and summoning to the player.
+- Procedural props are positioned in chunk-local space, correcting the P1
+  double-origin prop offset and restoring close-up meadow density.
+
+### Saves and compatibility
+
+- New saves are schema-4 world manifests with per-save seeds, atomic writes,
+  rotating backups and a durable previous-garden archive.
+- Legacy schema 1–3 saves migrate through the existing chain and are adopted
+  into the manifest path on first load; the legacy file remains as rollback.
+- Corrupt manifests never silently fall back to older legacy progress.
+- Wild food depletion lives in small per-chunk records; only differing state is
+  written. Pre-river saves that resolve into deep water recover to the nearest
+  dry bank.
+
+### Verification
+
+- `dotnet clean && dotnet build -warnaserror`: clean, 0 warnings.
+- **231** pure deterministic tests, 0 failed.
+- **57/57** authored scene contract checks.
+- **432/432** headless runtime acceptance checks and **433/433** rendered Xvfb
+  checks at 1280×720, covering all ten phases in one integrated session.
+- Linux x64 export re-verified headlessly and rendered; Windows x64 export
+  builds but runtime is **NOT VERIFIED**.
+
+### Known limitations
+
+- A faint tint/material line remains where authored Reedwater ground meets
+  procedural ground.
+- River water is a stylised low-poly surface without flow animation or
+  reflections.
+- The map auto-fits explored ground with a window after 84 chunks but has no
+  free pan/zoom or manual markers.
+- Helpers do not gather wild food; summoned helpers wait rather than following
+  continuously, and summoning has no cooldown or cost.
+- Windows runtime, supervised child playtesting and actual full-screen
+  presentation on a desktop compositor remain **NOT VERIFIED**.
+
+### Delivery record
+
+- `docs/prs/v0.3.0.md`, `docs/adr/0001-never-ending-world.md`.
+- PRs [#27](https://github.com/PhilipGB/webwild/pull/27) through
+  [#35](https://github.com/PhilipGB/webwild/pull/35) (phases P0–P8), plus the
+  P9 integrated-acceptance PR.
+- Tag: `v0.3.0`.
+
 ## Webwild v0.2.1 — Reedwater shoreline correction (unreleased)
 
 Fixes the visible water-over-grass defect in Reedwater Bank without changing

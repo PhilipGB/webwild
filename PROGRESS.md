@@ -51,6 +51,9 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.0 P5 | Exploration map and Return Home: bounded exploration record saved once in the manifest, biome/river map modal, M toolbar and key, Return Home from anywhere, landmark visit filtering fix, fresh-save map honesty | DONE, merged PR [#32](https://github.com/PhilipGB/webwild/pull/32) | `docs/prs/v0.3.0.md`; `ExplorationTests`; 210 unit tests (203 existing + 7 new); 57 scene checks; 389 headless / 390 rendered runtime checks; Linux export re-verified; screenshots 38–39 |
 | v0.3.0 P6 | Wild food and regeneration: deterministic berries/mushrooms/seeds, tick-based once-per-generation harvest, depleted-only per-chunk records with seed guards, food views/prompts, New-Garden chunk archiving, probe evidence | DONE, merged PR [#33](https://github.com/PhilipGB/webwild/pull/33) | `docs/prs/v0.3.0.md`; `FoodTests`; 219 unit tests (210 existing + 9 new); 57 scene checks; 404 headless / 405 rendered runtime checks; Linux export re-verified; screenshots 40–42 |
 | v0.3.0 P7 | Physical worker navigation: hierarchical dry world routes through hedge gates and generated river bridges, no-teleport landmark journeys, recorded/reversed routes, blocked waiting and retries, mid-journey save/load, world-space helper rendering, probe instrumentation | DONE, merged PR [#34](https://github.com/PhilipGB/webwild/pull/34) | `docs/prs/v0.3.0.md`; `WorkerNavigationTests`; 227 unit tests (219 existing + 8 new); 57 scene checks; 420 headless / 421 rendered runtime checks; Linux export re-verified; screenshots 43–44 |
+| v0.3.0 P8 | Off-screen helpers and summon: summon to the player's world point, explicit journey destinations, wild summoned arrivals waiting with empty graph nodes, off-screen view culling and snapping, broad saved wild bounds, summon events/probes | DONE, merged PR [#35](https://github.com/PhilipGB/webwild/pull/35) | `docs/prs/v0.3.0.md`; sum contracts; 231 unit tests (227 existing + 4 new); 57 scene checks; 432 headless / 433 rendered runtime checks; Linux export re-verified; screenshot 45 |
+| v0.3.0 P9 | Integrated acceptance and release: version 0.3.0, README/CHANGELOG/ACCEPTANCE/EVIDENCE/EXPORTS rewrite, full integrated probe on the release tree, Linux and Windows exports, release record | DONE on `feat/v0.3-p9-integrated-acceptance` (release PR) | 231 unit tests; 57 scene checks; 432 headless / 433 rendered; Linux export 432/433; Windows export runtime NOT VERIFIED; 70 screenshots |
+| v0.3.0 | **Never-Ending World release**: one continuous procedural world, biomes, rivers/crossings, exploration map, Return Home, wild food regeneration, physical/off-screen/summoned helpers, schema-4 saves | **RELEASED as v0.3.0 after P9 merge** | `docs/prs/v0.3.0.md`; `docs/EVIDENCE.md#v030`; `docs/EXPORTS.md`; tag `v0.3.0`; Linux verified, Windows/child playtest NOT VERIFIED |
 
 ## Verification summary
 
@@ -76,24 +79,32 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 - Both regions are authored in `.tscn` scenes. Gameplay coordinates remain in
   `WorldLayout`/`Regions.cs` and are validated against scenes rather than
   auto-synchronised by an editor plugin.
-- Reedwater scenes are cached after first visit; collision, lights and environment
-  are disabled when inactive, but GPU resources stay loaded for instant switching.
+- Both landmarks are always resident; GPU resources for both authored scenes
+  stay loaded.
+- A faint material line remains where the authored Reedwater bank meets
+  procedural ground.
+- River water is a stylised low-poly surface without flow animation or
+  reflections.
+- The map auto-fits explored ground and windows after 84 chunks; there is no
+  free pan/zoom or manual marker placement.
+- Helpers do not gather wild food; summoned helpers wait rather than following,
+  and summoning has no cooldown or cost.
 - The dragonfly is a static model used as an insect; there is no skeletal flight
   animation.
 - The repository was restored to private visibility during the v0.1.1 hardening
   pass.
 
-## v0.3.0 — Never-Ending World (in progress)
+## v0.3.0 — Never-Ending World (release acceptance)
 
-- P0 foundations through P7 physical worker navigation are merged (see
-  `docs/prs/v0.3.0.md`). Reedwater Bank is walked to through generated
-  meadow; the travel dialog is gone and a physical bramble gate opens when
-  the garden story completes. Saves are schema-4 world manifests with
-  per-save seeds, with legacy schema-3 saves migrated on first load. The
-  procedural meadow has three biomes, presentation origin rebasing,
-  carved rivers with generated crossings, a durable exploration map with
-  Return Home, deterministic wild food with per-chunk depletion and
-  regeneration, and helpers that physically walk between landmarks through
-  gates and generated bridges. A faint tint line at the Reedwater apron
-  and low-poly river/water shader polish remain for P9; off-screen helpers
-  and summoning are P8.
+- P0 foundations through P8 off-screen helpers and summon are merged (see
+  `docs/prs/v0.3.0.md`). P9 is the integrated acceptance and release pass.
+  Reedwater Bank is walked to through generated meadow; the travel dialog is
+  gone and a physical bramble gate opens when the garden story completes.
+  Saves are schema-4 world manifests with per-save seeds, legacy migration,
+  a durable archive, per-chunk wild food state, and one exploration record.
+  The procedural meadow has three biomes, origin rebasing, carved rivers
+  with generated crossings, a map with Return Home, regenerating wild food,
+  physical helpers with off-screen simulation and summoning, and the six
+  original goals intact. Final counts: 231 unit tests, 57 scene checks,
+  432 headless / 433 rendered runtime checks; Linux export verified, Windows
+  runtime and child playtest NOT VERIFIED.

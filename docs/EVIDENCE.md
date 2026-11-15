@@ -687,3 +687,100 @@ d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
 - Windows runtime: **NOT VERIFIED**.
 - Actual full-screen presentation on a desktop compositor: **NOT VERIFIED**;
   the setting persists and calls Godot’s window-mode API.
+
+## v0.3.0 — Never-Ending World
+
+Integrated release acceptance on `feat/v0.3-p9-integrated-acceptance`; the
+`v0.3.0` tag is created after the P9 PR merges.
+
+### Environment
+
+- Godot `4.7.2.stable.mono.official.ed1daf0bf`
+- .NET SDK `10.0.114`, `net10.0`
+- Linux x64 build host, Xvfb 1280×720 for rendered checks
+- Windows export built but not launched (no Windows host/Wine)
+
+### Commands and results
+
+```text
+dotnet clean && dotnet build -warnaserror
+  0 warnings, 0 errors
+
+dotnet test
+  231 passed, 0 failed, 0 skipped
+
+godot --headless --path . --editor --quit
+  clean C# import/build
+
+godot --headless --path . -- --scene-validate
+  57 passed, 0 failed
+
+godot --headless --path . -- --runtime-probe   (twice)
+  432 passed, 0 failed   each run
+
+xvfb-run -a -s "-screen 0 1280x720x24" \
+  godot --path . --resolution 1280x720 -- --runtime-probe
+  433 passed, 0 failed
+```
+
+The integrated probe covers all ten phases in one session: title flow, garden
+missions, bridge/web construction, wind, colony and workers, Reedwater walking
+and objectives, chunk streaming, biomes, far rebasing, rivers and crossings,
+map/Return Home, wild food and regeneration, physical worker journeys,
+off-screen progress and summoning.
+
+### Ten-phase delivery
+
+| Phase | PR | Merge |
+|---|---|---|
+| P0 world foundations | [#27](https://github.com/PhilipGB/webwild/pull/27) | `faa5985` |
+| P1 chunk streaming | [#28](https://github.com/PhilipGB/webwild/pull/28) | `f141d28` |
+| P2 seamless world | [#29](https://github.com/PhilipGB/webwild/pull/29) | `b8f4800` |
+| P3 biomes and movement | [#30](https://github.com/PhilipGB/webwild/pull/30) | `d9da660` |
+| P4 rivers and crossings | [#31](https://github.com/PhilipGB/webwild/pull/31) | `55cb76f` |
+| P5 map and Return Home | [#32](https://github.com/PhilipGB/webwild/pull/32) | `6fa2a30` |
+| P6 wild food | [#33](https://github.com/PhilipGB/webwild/pull/33) | `7b35946` |
+| P7 worker navigation | [#34](https://github.com/PhilipGB/webwild/pull/34) | `d029d68` |
+| P8 off-screen and summon | [#35](https://github.com/PhilipGB/webwild/pull/35) | `4f932d0` |
+| P9 integrated acceptance | this release PR | after merge |
+
+The detailed per-phase delivery record, evidence and limitations are in
+`docs/prs/v0.3.0.md`; the architecture decisions are in
+`docs/adr/0001-never-ending-world.md`.
+
+### Screenshot evidence
+
+The current probe writes numbered captures in `artifacts/screenshots/`. The
+v0.3.0 additions are:
+
+- `30`/`31` procedural meadow and far reload
+- `33`/`34`/`35` moss biome, bloom biome, origin-rebase context
+- `36`/`37` river crossing and river water
+- `38`/`39` wilderness map and explored map
+- `40`/`41`/`42` wild food, depleted food and regrowth
+- `43`/`44` travelling helper and helper crossing a generated bridge
+- `45` summoned helpers waiting beside the player
+
+All are real rendered PNGs from the Xvfb probe; no mockups are committed.
+
+### Exports
+
+- Linux x64: `exports/linux/Webwild.x86_64`, launched and verified:
+  **432 headless / 433 rendered**, 0 failed. Exported probe counts:
+  **432 headless / 433 rendered**.
+- Windows x64: `exports/windows/Webwild.exe`, PE32+ x86-64, built; runtime
+  **NOT VERIFIED**.
+
+See `docs/EXPORTS.md` for checksums.
+
+### Honest limitations
+
+- A faint material line remains at the authored Reedwater/procedural seam.
+- River water is a stylised low-poly surface without flow animation or
+  reflections.
+- The map auto-fits and windows after 84 chunks; no free pan/zoom or manual
+  markers.
+- Helpers do not gather wild food; summoned helpers wait rather than follow
+  continuously; summoning has no cooldown or cost.
+- Windows runtime, supervised child playtesting and real full-screen
+  presentation remain **NOT VERIFIED**.

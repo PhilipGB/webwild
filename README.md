@@ -1,18 +1,20 @@
 # Webwild
 
-**A child-friendly spider colony adventure across a garden clearing and a reedwater bank.**
+**A child-friendly spider colony adventure across an endless low-poly meadow.**
 
 Webwild is an original, offline 3D game built with **Godot 4.7.2 .NET**, **C#** and
 **.NET 10 (`net10.0`)**. You play a friendly garden spider: spin capture webs to
 catch flying insects, build silk bridges, hatch helper spiders, weather a gust of
-wind and complete three short story goals.
+wind, forage wild food and complete the garden story before following the
+meadows to Reedwater Bank.
 
-This repository is the released **v0.2.2** build: two regions, scene-authored
-worlds, modular silk-and-bark bridges, arrival-based mastery and
-release-hardened saves. The deterministic game rules live
-in `src/Core` with no `Godot.*` dependency. Both regions are authored in reusable
-Godot `.tscn` scenes; C# adapts those rules to 3D presentation, physics, input and
-UI.
+This repository is the **v0.3.0 "Never-Ending World"** build. The two authored
+landmarks now sit in one continuous, deterministically generated world: three
+biomes, carved rivers with old plank crossings, a durable exploration map,
+Return Home, wild food that regrows, and helpers that physically walk between
+landmarks, keep simulating off screen and can be summoned. All deterministic
+rules live in `src/Core` with no `Godot.*` dependency; C# adapts those rules to
+3D presentation, physics, input and UI.
 
 ## Requirements
 
@@ -28,7 +30,7 @@ dotnet build -warnaserror
 dotnet test
 ```
 
-Final verified result: **106 passed, 0 failed, 0 skipped**.
+Final verified result: **231 passed, 0 failed, 0 skipped**.
 
 ## Run from source
 
@@ -45,7 +47,7 @@ If `godot` points at the non-.NET build, call the actual .NET executable, e.g.
 ```bash
 godot --headless --path . --editor --quit       # import and C# build
 godot --headless --path . -- --scene-validate   # authored scene contract
-godot --headless --path . -- --runtime-probe    # headless runtime acceptance
+godot --headless --path . -- --runtime-probe    # headless acceptance
 ```
 
 For rendered acceptance and real screenshots:
@@ -55,105 +57,90 @@ xvfb-run -a -s "-screen 0 1280x720x24" \
   godot --path . --resolution 1280x720 -- --runtime-probe
 ```
 
-The probe writes `artifacts/runtime_probe.json` and real PNGs in
-`artifacts/screenshots/` when run from the project. Final verified result:
-**307 passed, 0 failed** headlessly and **308 passed, 0 failed** rendered. The
-scene contract validation passes **55/55** across both regions, including the
-authored shoreline and modular bridge parts. The exported Linux build is
-re-tested for this milestone.
+Final verified result: **57/57 scene checks**, **432/432 headless runtime
+checks** and **433/433 rendered runtime checks**. The probe writes
+`artifacts/runtime_probe.json` and real PNGs in `artifacts/screenshots/`.
 
 ## How to play
 
-- **WASD / arrow keys** move, **Space** jumps, mouse wheel zooms.
-- Right-drag orbits the camera when no build tool is active.
+- **WASD / arrow keys** move, **Space** jumps, mouse wheel zooms; right-drag
+  orbits the camera when no build tool is active.
 - **1** capture web, **2** silk bridge. Click two glowing anchors; right-click or
   **Esc** cancels without spending silk. Green preview means safe, coral means
   the reason is shown.
-- **E** interacts (collect a trapped insect, use the nursery, repair a web).
-  The action column also provides mouse buttons for Interact, Remove web and Pause.
-- **X** dismantles a nearby web. **Tab** shows the colony. **Esc** pauses or
-  cancels a build.
-- Walk into the tall stem’s climb volume and push forward to climb.
+- **E** interacts: collect a trapped insect, forage ripe wild food, use the
+  nursery, or repair a damaged web. The action column also provides mouse
+  buttons for Interact, Remove web and Pause.
+- **X** dismantles a nearby web. **Tab** shows the colony. **M** opens the
+  wilderness map and Return Home. **Esc** pauses or cancels a build.
+- Walk into the tall stem's climb volume and push forward to climb.
 
 Story: build a capture web and collect food, build a silk bridge and hatch a
-helper, then protect a web through the wind and collect food afterwards. The
-optional **Clever Weaver** badge asks for three insects with two or fewer capture
-webs and is never required for victory.
+helper, then protect a web through the wind. After the three garden missions the
+bramble gate east of the garden opens; follow the meadows to **Reedwater Bank**
+on foot. In the marsh, build two silk bridges to reach the lily island, catch
+three insects at the reed flyways, then connect the far bank and let a helper
+collect prey there. The optional **Clever Weaver** and **Clever Crossing**
+badges are never required for victory.
 
-After the three story missions, follow the glowing reed passage by the east hedge
-to **Reedwater Bank**. Press **E** at the passage to travel. In the new marsh,
-build two silk bridges to reach the lily island, catch three insects at the reed
-flyways, then connect the far bank and let a helper collect prey there. The
-optional **Clever Crossing** badge asks for the lily island with exactly two
-silk bridges.
+Helpers are physical colony members: they walk between landmarks through the
+hedge gates and generated river bridges, keep making progress while off screen,
+and can be called to you from the colony panel (**Tab**). The wilderness map
+records explored chunks and offers Return Home from anywhere.
 
-## Implemented scope
+## World systems
 
-- Two authored regions. The 38 × 28 garden clearing is split by a real ravine;
-  Reedwater Bank adds a shallow pond, mossy islands, reed beds, a colony outpost
-  and a far bank. Both regions use editable `.tscn` scenes for environment,
-  terrain, paths, flora, boundaries, landmarks, collision and water volumes.
-- Reedwater's pond surface is a static authored shoreline mesh with a mossy shore
-  shelf and matching bed, not an oversized rectangle. It sits just below the
-  grass and is shaped around the banks, islands and channels, so translucent
-  water cannot render over dry ground.
-- Three new sequential Reedwater objectives (`R01`–`R03`), an optional
-  `Clever Crossing` mastery badge, three authored insect routes including a
-  dragonfly, and an explicit one-time outpost supply cache.
-- Region travel after the original story, with shared resources and helpers,
-  region-owned webs/insects, safe arrival points, save/load in either region,
-  and explicit generators-free scene loading.
-- Twelve authored anchor sockets whose transforms are validated against the
-  engine-free simulation on every startup, plus landmark markers for the
-  nursery, climb, bridge banks and all anchors.
-- Player walk/jump/assisted climb, orbit camera, collision-safe spring arm.
-- Twelve typed anchor sockets, capture-web and bridge previews, validation,
-  costs, cancellation, dismantling and walkable bridge ramps/deck collision.
-- Bridge approach ramps follow the real span and authored bank points, so they
-  stay on solid ground for either anchor selection order and for Z-axis spans.
-- Constructed and preview bridges use the supplied modular bark-plank, knot,
-  eyelet, support and woven-panel assets plus generated ivory silk rails. A pure
-  `BridgeLayout` plan keeps plank spacing, tangents, sag and bank ramps aligned
-  with the existing walkable collision; previews are green/coral ghosts with no
-  collision, and damage adds a restrained coral tint without changing physics.
-- Brief toasts occupy a compact right-hand notification lane below the mission
-  card, clear of the player, left action column, status hint and bottom toolbar.
-- Four authored insect routes with swept-segment capture, exactly-once rewards
-  and respawns.
-- Nursery hatching up to five spiders, named autonomous workers that collect,
-  repair and patrol across bridge edges.
-- Clearly communicated colony economy: silk production consumes food and scales
-  with the player plus each hatched helper.
-- Three sequential missions, escalating one-line hints, optional mastery,
-  victory screen and continued play.
-- Telegraph warning, deterministic exposed/sheltered wind damage, repair or
-  sheltered alternative, visible wind leaves and audio feedback.
-- Title/new game/continue, pause, help, colony, settings, save and quit flows.
-- Versioned JSON save with bounded, order-preserving histories, validation,
-  atomic write, healthy backup recovery, save-failed quit confirmation and
-  explicit failure messages. Failed settings writes clean up their temp file.
-  Schema v3 stores durable one-time supply-cache claims so Reedwater's +24 silk
-  and +6 food can never be replayed after the 512-key ledger history is evicted.
-- Accessibility: large labelled controls, 100/125/150% UI scale, reduced motion,
-  gentle-weather mode, volume controls, camera sensitivity and persisted settings.
+- **One continuous world.** The Garden Clearing (origin) and Reedwater Bank
+  (world x = 96) are embedded at constant world origins and always resident.
+  Procedural terrain connects them through deterministic 24 m chunks.
+- **Three biomes** (meadow, moss, bloom) with distinct colours, height offsets
+  and dressing, blended continuously across chunk borders.
+- **Rivers and crossings.** Meandering east-west rivers are carved into the
+  terrain with hazard water and wet banks; stable low plank bridges with woven
+  silk rails cross them every 150 m. Pre-river saves that land in water recover
+  to the nearest dry bank.
+- **Wild food.** Deterministic berries, mushrooms and sunflower seed heads grow
+  on dry generated land. Harvesting is once per generation with a tick-based
+  ledger key; depletion is stored only in that chunk's small change record and
+  regrows on the simulation clock, even while unloaded.
+- **Exploration map.** A bounded first-visit record of explored chunks is saved
+  once in the world manifest and drawn with biome tint, rivers, visited
+  landmarks and the player. Return Home is available from anywhere.
+- **Worker navigation.** Helpers follow hierarchical dry world routes through
+  landmark gates and generated bridges, record and reverse outbound journeys,
+  wait visibly when no route exists, and are simulated off screen. Summon them
+  to your current position from the colony panel.
+- **Origin rebasing.** Presentation coordinates recentre at 16 km on a 64 m grid;
+  saves, simulation, streaming and probe coordinates always stay logical.
+
+## Existing gameplay preserved
+
+- Two authored, editable landmark scenes with the original garden missions
+  (M01–M03), the three Reedwater objectives (R01–R03), optional mastery badges,
+  insects, webs, bridges, nursery, wind, recovery, settings and title flow.
+- Up to five spiders total, named autonomous helpers, capture and bridge webs,
+  dismantling, repair, silk economy and food costs.
+- Versioned world-manifest saves (schema 4) with per-save seed, atomic writes,
+  backup recovery, legacy schema 1–3 migration, a durable previous-garden
+  archive, and per-chunk food-changes. Corrupt manifests never silently
+  resurrect older legacy progress.
+- Accessibility: 100/125/150% UI scale, reduced motion, gentle weather, volume,
+  camera sensitivity and persisted settings.
 - Original synthesised WAV music/SFX; all gameplay information also appears
   visually. No online services, accounts, ads, telemetry or purchases.
 
 ## Repository layout
 
-- `src/Core/` — deterministic rules, simulation, validation, missions and saves
+- `src/Core/` — deterministic simulation, world generation, navigation, saves and validation
 - `scenes/world/` — authored garden environment and gameplay composition
-- `scenes/world/regions/ReedwaterBank/` — authored second-region world, water, landmarks and anchors
-- `art/models/reedwater/` — supplied original Reedwater GLB pack with vertex colours
-- `art/models/bridge/` — eleven supplied original modular bridge GLBs and wrappers
+- `scenes/world/regions/ReedwaterBank/` — authored second landmark, water, landmarks and anchors
 - `scripts/` and other `scenes/` — Godot presentation, input, physics and UI
-- `art/models/` — supplied original low-poly GLB starter assets (see `ATTRIBUTION.md`)
-- `art/meshes/` — authored static Reedwater water, shore-shelf and pond-bed meshes
-- `art/audio/` — original synthesised WAV files
+- `art/models/` — supplied original low-poly GLB assets (see `ATTRIBUTION.md`)
+- `art/meshes/` — authored Reedwater water, shore-shelf and pond-bed meshes
 - `tests/Webwild.Core.Tests/` — pure deterministic xUnit suite
 - `data/` — tuning, missions and scenario definitions
 - `artifacts/` — real runtime probe report and rendered screenshots
-- `docs/` — handoff specification, evidence, playtest and export notes
+- `docs/` — handoff specification, ADR, evidence, playtest and export notes
 
 ## Exports
 
@@ -164,25 +151,24 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The Linux export was launched, rendered and passed the 246/246 runtime probe. The
-Windows export built successfully as a PE32+ x86-64 executable, but **Windows
-runtime verification is NOT VERIFIED** because no Windows host was available.
+The Linux v0.3.0 export is launched and verified headlessly and rendered under
+Xvfb. The Windows export builds as a PE32+ x86-64 executable, but **Windows
+runtime verification is NOT VERIFIED** because no Windows host is available.
 See `docs/EXPORTS.md` for checksums and exact commands.
 
 ## Evidence and limitations
 
-- `docs/EVIDENCE.md` — commands, counts, screenshots and export evidence.
-- `ACCEPTANCE.md` — per-criterion PASS / FAIL / NOT VERIFIED table.
-- `PROGRESS.md` — phase status.
+- `docs/EVIDENCE.md` — commands, exact counts, screenshots and export evidence.
+- `ACCEPTANCE.md` — per-criterion PASS / PARTIAL / NOT VERIFIED acceptance.
+- `PROGRESS.md` — phase status and merge links.
+- `docs/prs/v0.3.0.md` — ten-phase delivery record.
 - `docs/PLAYTEST_NOTES.md` — child playtest is explicitly **NOT VERIFIED**.
-- Windows startup, child playtests and actual full-screen mode on a desktop
-  compositor remain unverified.
-- The persistent garden is authored in `scenes/world/**/*.tscn`. Runtime webs,
-  bridges, insects, workers, wind effects and UI remain dynamic.
-- `docs/SCENE_AUTHORING.md` documents the coordinate contract, editing workflow,
-  region layout and how to add a future region. Moving a landmark or anchor
-  without updating its gameplay marker fails validation by design.
-- Windows runtime and supervised child playtesting remain unverified.
+- Windows startup, supervised child playtesting and actual full-screen mode on
+  a desktop compositor remain unverified.
+- Known v0.3.0 polish limits: a faint material line where the authored
+  Reedwater bank meets procedural ground, low-poly river/water shading without
+  flow animation, no map pan/zoom or manual markers, helpers do not gather wild
+  food, and summoning has no cooldown or resource cost.
 
 ## Safety and scope
 

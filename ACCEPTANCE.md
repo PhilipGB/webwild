@@ -6,6 +6,42 @@ implementation commit and exact commands are in `docs/EVIDENCE.md`.
 Status key: **PASS** = observed in this delivery; **PARTIAL** = works with a
 documented limitation; **NOT VERIFIED** = not performed on this host.
 
+## v0.3.0 — Never-Ending World integrated acceptance
+
+This release acceptance covers the ten phases recorded in
+`docs/prs/v0.3.0.md`. All rows below were re-run on the final release head; the
+commands and exact counts are in `docs/EVIDENCE.md#v030`.
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| One continuous world from the garden through generated meadow to Reedwater Bank | PASS | Real-input `p2-walks-garden-to-reedwater` (~53 m), both landmarks resident; screenshot `20b-reedwater-path` |
+| Deterministic chunk streaming with no gaps, collision, unloading/reload identity | PASS | `p1-*` load-ring, boundary, authored-exclusion and hash-equality checks; `WorldStreamingTests` |
+| Three biomes with distinct palette, height and dressing, walkable slopes | PASS | `p3-moss-biome`, `p3-bloom-biome`, `p3-walks-*`, `BiomeTests`; screenshots `33/34` |
+| Presentation origin rebasing keeps logical saves and physics correct at 21 km | PASS | `p3-origin-rebases-at-distance`, `p3-rebase-keeps-logical-position`, far save/reload; screenshot `35-origin-rebase` |
+| Rivers carve hazard water, generated crossings are walkable, wading recovers safely | PASS | `p4-crosses-river-on-bridge`, `p4-river-recovery`, `p4-river-save-recovers-to-bank`, `RiverTests`; screenshots `36/37` |
+| Exploration record persists once, map draws explored ground, Return Home works | PASS | `p5-save-carries-exploration`, `p5-reload-restores-exploration`, `p5-return-home-teleports`; screenshots `38/39` |
+| Wild food is deterministic, harvestable once per generation and regrows off screen | PASS | `p6-food-granted-once`, `p6-reload-restores-depletion`, `p6-regenerates-offscreen`, `FoodTests`; screenshots `40–42` |
+| Helpers physically walk between landmarks instead of teleporting | PASS | `p7-journey-starts`, `p7-worker-arrives-reedwater`, `p7-save-mid-journey`, `WorkerNavigationTests`; screenshot `43` |
+| Helper routes use gates and generated bridge decks, not walls or water | PASS | Gate route contract, `p7-route-uses-bridge`, `p7-bridge-arrival`; screenshot `44` |
+| Off-screen helpers continue logically and summon to the player without teleporting | PASS | `p8-offscreen-journey-progresses`, `p8-summon-does-not-teleport`, `p8-summoned-helpers-arrive`; screenshot `45` |
+| Existing six objectives, controls, economy, webs, bridges, wind and recovery preserved | PASS | Full M01–M03, R01–R03, colony, wind, bridge, recovery and save suites; `dotnet test` 231/231 |
+| Schema-4 manifest saves, legacy migration, backups, per-chunk food and archive | PASS | `SeamlessWorldTests`, `ExplorationTests`, `FoodTests`, `WorldSaveTests`; runtime save/reload paths |
+| Offline, private repository with source, attribution, tests and real evidence | PASS | Repository private; README/ATTRIBUTION/EVIDENCE/PROGRESS; 70 PNG evidence captures |
+| Pure deterministic Core with no Godot dependency | PASS | `Webwild.Core` builds independently; 231 pure tests; no `Godot.*` references |
+| Linux x64 export builds, launches and passes headless and rendered probes | PASS | `exports/linux/Webwild.x86_64`; 432 headless / 433 rendered |
+| Windows x64 runtime | **NOT VERIFIED** | PE32+ export built; no Windows host or Wine |
+| Supervised child playtest | **NOT VERIFIED** | `docs/PLAYTEST_NOTES.md`; no supervised child session |
+| Actual full-screen mode on a desktop compositor | **NOT VERIFIED** | Setting persists and window mode applies; no compositor presentation test |
+
+Known release limitations:
+
+- A faint material line remains where the authored Reedwater bank meets
+  procedural ground.
+- River water is stylised with no flow animation or reflections.
+- The map has no free pan/zoom or manual markers.
+- Helpers do not gather wild food; summoned helpers wait rather than follow, and
+  summoning has no cooldown or cost.
+
 ## Experience and gameplay
 
 | Criterion | Status | Evidence |

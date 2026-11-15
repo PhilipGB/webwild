@@ -1,3 +1,44 @@
+## Linux x64 — v0.3.0 release build
+
+- Path: `exports/linux/Webwild.x86_64`
+- Payload: `exports/linux/Webwild.pck` and
+  `exports/linux/data_Webwild_linuxbsd_x86_64/`
+- Built with:
+
+```bash
+godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+```
+
+- Headless exported probe: **432/432 passed**.
+- Rendered exported probe under Xvfb 1280×720: **433/433 passed**.
+- SHA-256:
+
+```text
+d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
+1af861ad98c403b67fc4105e0c325517cff3ec7fc411c1d67c797a0036c34cea  Webwild.pck
+```
+
+## Windows x64 — v0.3.0 release build (runtime NOT VERIFIED)
+
+- Path: `exports/windows/Webwild.exe`
+- Payload: `exports/windows/Webwild.pck` and
+  `exports/windows/data_Webwild_windows_x86_64/`
+- Built with:
+
+```bash
+godot --headless --path . --export-release "Windows" exports/windows/Webwild.exe
+```
+
+- File type: `PE32+ executable for MS Windows 5.02 (GUI), x86-64`.
+- **Windows runtime: NOT VERIFIED.** No Windows host or Wine was available.
+  Export success is not a Windows startup test.
+- SHA-256:
+
+```text
+4760d3b83d01498d13ea6ff66b7867e4bf81fc5016f404c7472a5bc4cdc15647  Webwild.exe
+acf74526e0806b2ed3d0c7206ee1c308f1a0ea01238c2e92dcb48dcb565ee505  Webwild.pck
+```
+
 # Exports
 
 ## Linux x64 — v0.2.2 release build

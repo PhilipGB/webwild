@@ -1033,6 +1033,152 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- P4: rivers and generated crossings ----
+        var p4Game = _main.StartGame(null);
+        await Frames(10);
+        var crossing = p4Game.ProbeRiverCrossing(0, 0);
+        Check("p4-bridge-resident",
+            p4Game.ProbeRiverBridgeAt(0, 0) && p4Game.ProbeLoadedBridgeCount >= 1,
+            $"bridges={p4Game.ProbeLoadedBridgeCount} crossing={crossing}");
+        Check("p4-water-quads-loaded", p4Game.ProbeLoadedWaterQuadCount > 50,
+            $"quads={p4Game.ProbeLoadedWaterQuadCount}");
+        Check("p4-river-mask",
+            p4Game.ProbeRiverMaskAt(new Vec3(crossing.X, crossing.Y, crossing.Z)) &&
+            !p4Game.ProbeRiverMaskAt(new Vec3(crossing.X, crossing.Y, crossing.Z - 12)),
+            $"center={crossing}");
+        Check("p4-props-in-own-chunks", p4Game.ProbePropsInOwnChunks(),
+            "Rendered props stay inside their chunk bounds");
+
+        // Stand on the north bank and show the crossing in context.
+        var northZ = crossing.Z - 14.0;
+        var northY = p4Game.ProbeGroundHeightAt(new Vec3(0, 0, northZ)) + 0.6;
+        var northBank = new Vec3(0, northY, northZ);
+        p4Game.ProbeSetSafePosition(northBank);
+        p4Game.ProbeTeleport(northBank);
+        p4Game.ProbeLookAt(new Vec3(0, crossing.Y + 0.5, crossing.Z + 8));
+        p4Game.ProbeSetCameraZoom(15);
+        p4Game.ProbeSetCameraPitch(-22);
+        await Frames(10);
+        await Capture("36-river-crossing");
+
+        var bridgeWalk = await WalkRoute(p4Game, northBank, new[]
+        {
+            new Vec3(0, crossing.Y + 0.6, crossing.Z),
+            new Vec3(0, crossing.Y + 0.6, crossing.Z + 13)
+        }, 1.1f, 45f);
+        Check("p4-crosses-river-on-bridge",
+            bridgeWalk.Reached && !bridgeWalk.EnteredWater &&
+            bridgeWalk.End.Z > crossing.Z + 9 &&
+            bridgeWalk.End.Y > crossing.Y + 0.2,
+            $"reached={bridgeWalk.Reached} end={bridgeWalk.End} water={bridgeWalk.EnteredWater}");
+
+        // Show the water ribbon from the far bank, looking along the river.
+        var southZ = crossing.Z + 13.0;
+        var southY = p4Game.ProbeGroundHeightAt(new Vec3(-10, 0, southZ)) + 0.6;
+        p4Game.ProbeTeleport(new Vec3(-10, southY, southZ));
+        p4Game.ProbeLookAt(new Vec3(24, crossing.Y + 0.4, crossing.Z - 2));
+        p4Game.ProbeSetCameraZoom(15);
+        p4Game.ProbeSetCameraPitch(-18);
+        await Frames(8);
+        await Capture("37-river-water");
+
+        // Wading is refused: walking into the channel recovers to the last
+        // safe bank position and explains where crossings are.
+        var hazard = p4Game.ProbeRiverPoint(0, 22);
+        var hazardApproachZ = hazard.Z - 12.0;
+        var hazardApproach = new Vec3(22,
+            p4Game.ProbeGroundHeightAt(new Vec3(22, 0, hazardApproachZ)) + 0.6,
+            hazardApproachZ);
+        p4Game.ProbeClearToastHistory();
+        p4Game.ProbeSetSafePosition(hazardApproach);
+        p4Game.ProbeTeleport(hazardApproach);
+        p4Game.ProbeLookAt(new Vec3(22, hazard.Y + 0.2, hazard.Z));
+        await Frames(4);
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(210);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(10);
+        Check("p4-river-recovery",
+            !p4Game.ProbeRiverDangerAt(new Vec3(
+                p4Game.PlayerPosition.X, p4Game.PlayerPosition.Y, p4Game.PlayerPosition.Z)) &&
+            p4Game.PlayerPosition.Z < hazard.Z - 3.0,
+            $"player={p4Game.PlayerPosition} river={hazard}");
+        Check("p4-river-guidance-toast",
+            p4Game.ProbeToastHistory.Any(text =>
+                text.Contains("river", StringComparison.OrdinalIgnoreCase) &&
+                text.Contains("crossing", StringComparison.OrdinalIgnoreCase)),
+            string.Join(" | ", p4Game.ProbeToastHistory));
+
+        // Save and reload on the far bank: the crossing and water regenerate
+        // from the seed while the saved logical position stays stable.
+        var farBank = new Vec3(0, southY, southZ);
+        p4Game.ProbeSetSafePosition(farBank);
+        p4Game.ProbeTeleport(farBank);
+        await Frames(6);
+        Check("p4-far-bank-save", p4Game.ProbeSave(), "Save beyond the river");
+        var p4Loaded = _main.Saves.Load();
+        Check("p4-far-bank-loads", p4Loaded.Success && p4Loaded.Data is not null, p4Loaded.Message);
+        if (p4Loaded.Data is not null)
+        {
+            var p4Reloaded = _main.StartGame(p4Loaded.Data);
+            await Frames(20);
+            Check("p4-reload-bridge-resident", p4Reloaded.ProbeRiverBridgeAt(0, 0),
+                $"bridges={p4Reloaded.ProbeLoadedBridgeCount}");
+            Check("p4-reload-keeps-river-position",
+                Mathf.Sqrt(Mathf.Pow(p4Reloaded.PlayerPosition.X - farBank.X, 2) +
+                           Mathf.Pow(p4Reloaded.PlayerPosition.Z - farBank.Z, 2)) < 6.0,
+                $"player={p4Reloaded.PlayerPosition} expected={farBank}");
+            Check("p4-reload-far-bank-grounded",
+                p4Reloaded.PlayerPosition.Y > crossing.Y + 0.2,
+                $"y={p4Reloaded.PlayerPosition.Y:0.00} water={crossing.Y:0.00}");
+        }
+
+        // A save written before rivers existed can now sit in deep water. The
+        // load path must place the spider on the nearest dry bank instead of
+        // leaving them to an endless recovery loop.
+        var rescueSource = _main.Saves.Load();
+        Check("p4-rescue-source-loads",
+            rescueSource.Success && rescueSource.Data is not null, rescueSource.Message);
+        if (rescueSource.Data is not null)
+        {
+            var rescue = rescueSource.Data;
+            rescue.ActiveRegionId = RegionIds.GardenClearing;
+            rescue.Player.X = crossing.X;
+            rescue.Player.Y = crossing.Y - 0.5;
+            rescue.Player.Z = crossing.Z;
+            var gardenEntry = rescue.RegionPlayers.FirstOrDefault(
+                entry => entry.Region == RegionIds.GardenClearing);
+            if (gardenEntry is null)
+            {
+                gardenEntry = new RegionPlayerSave { Region = RegionIds.GardenClearing };
+                rescue.RegionPlayers.Add(gardenEntry);
+            }
+            gardenEntry.X = crossing.X;
+            gardenEntry.Y = crossing.Y - 0.5;
+            gardenEntry.Z = crossing.Z;
+            Check("p4-rescue-save-written", _main.Saves.Save(rescue).Success,
+                "Save intentionally placed in the river");
+            var rescueLoaded = _main.Saves.Load();
+            Check("p4-rescue-save-loads",
+                rescueLoaded.Success && rescueLoaded.Data is not null, rescueLoaded.Message);
+            if (rescueLoaded.Data is not null)
+            {
+                var rescued = _main.StartGame(rescueLoaded.Data);
+                await Frames(15);
+                Check("p4-river-save-recovers-to-bank",
+                    !rescued.ProbeRiverDangerAt(new Vec3(
+                        rescued.PlayerPosition.X, rescued.PlayerPosition.Y,
+                        rescued.PlayerPosition.Z)) &&
+                    rescued.PlayerPosition.Y > crossing.Y + 0.3,
+                    $"player={rescued.PlayerPosition} water={crossing.Y:0.00}");
+                Check("p4-river-save-recovery-feedback",
+                    rescued.ProbeToastHistory.Any(text => text.Contains("riverbank")),
+                    string.Join(" | ", rescued.ProbeToastHistory));
+            }
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;

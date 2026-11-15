@@ -18,6 +18,12 @@ public sealed class ChunkData
     /// <summary>Deterministic props for this chunk, sorted stably.</summary>
     public IReadOnlyList<PropPlacement> Props { get; init; } = Array.Empty<PropPlacement>();
 
+    /// <summary>Flat river-water quads owned by this chunk.</summary>
+    public IReadOnlyList<RiverWaterQuad> WaterQuads { get; init; } = Array.Empty<RiverWaterQuad>();
+
+    /// <summary>Generated crossings owned by this chunk.</summary>
+    public IReadOnlyList<RiverBridge> Bridges { get; init; } = Array.Empty<RiverBridge>();
+
     /// <summary>
     /// Stable content hash: two chunks are interchangeable only when this value
     /// and the coordinate match. Used by streaming, tests and regeneration checks.
@@ -37,6 +43,26 @@ public sealed class ChunkData
                 : BiomeWeights.PureMeadow;
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(biome.Moss));
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(biome.Bloom));
+        }
+        foreach (var water in WaterQuads)
+        {
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.CenterX));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.CenterZ));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.Level00));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.Level10));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.Level01));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.Level11));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(water.RiverIndex));
+        }
+        foreach (var bridge in Bridges)
+        {
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(bridge.Id));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(bridge.X));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(bridge.CenterZ));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(bridge.HalfSpan));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(bridge.WaterLevel));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(bridge.NorthGroundY));
+            h = DeterministicHash.Combine(h, DeterministicHash.Hash(bridge.SouthGroundY));
         }
         foreach (var prop in Props)
         {

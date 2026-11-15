@@ -369,7 +369,24 @@ public partial class GardenClearing : Node3D
         RebuildChunkStream();
         ActivateRegion(_sim.ActiveRegionId);
         ResetPresentation();
-        _player.GlobalPosition = ToEngine(ClampSavedPlayerPosition(savedWorld, region));
+        var spawnWorld = ClampSavedPlayerPosition(savedWorld, region);
+        // Rivers are regenerated from the seed, so a save from an earlier build
+        // can now sit in deep water. Recover to the nearest dry bank and update
+        // the remembered position so the next save is already safe.
+        if (_chunks is not null)
+        {
+            var river = _chunks.Generator.RiverAt(spawnWorld.X, spawnWorld.Z);
+            if (river.IsHazard && spawnWorld.Y < river.WaterLevel + 0.3)
+            {
+                var bank = _chunks.Generator.Rivers.SafeBankNear(spawnWorld.X, spawnWorld.Z);
+                spawnWorld = new Vec3(bank.X, bank.Y + 0.25, bank.Z);
+                _sim.SetRegionPlayerPosition(region.Id,
+                    LandmarkCatalog.ToLocal(region.Id, spawnWorld),
+                    savedPlayer.RotationY);
+                _ui.ShowToast("You scrambled up the riverbank.", UiKit.Coral, 3.5f);
+            }
+        }
+        _player.GlobalPosition = ToEngine(spawnWorld);
         _regionSafePosition = _player.GlobalPosition;
         _player.FallResetPosition = ToWorld(region.Id, region.PlayerSpawn);
         _player.CameraPivot.Rotation = new Vector3(0, (float)savedPlayer.RotationY, 0);
@@ -1685,8 +1702,32 @@ public partial class GardenClearing : Node3D
         if (_player is null || _sim is null) return;
         if (_activeRegionId != RegionIds.ReedwaterBank)
         {
+            // Procedural rivers are pure world data, not physics volumes. The
+            // player is in trouble when the horizontal hazard mask matches and
+            // they are actually down at water height; crossing decks stay safe.
+            var world = PlayerWorld;
+            var river = _chunks?.Generator.RiverAt(world.X, world.Z) ?? RiverSample.None;
+            var inDanger = river.IsHazard && world.Y < river.WaterLevel + 0.3;
+            if (inDanger && !_player.IsClimbing)
+            {
+                _player.GlobalPosition = _regionSafePosition;
+                _player.Velocity = Vector3.Zero;
+                if (!_waterToastShown)
+                {
+                    _waterToastShown = true;
+                    _ui.ShowToast("Splash! The river is too deep to wade. Seek an old silk crossing.",
+                        UiKit.Coral, 4.5f);
+                }
+                return;
+            }
             if (_player.IsOnFloor() && !_player.IsClimbing)
                 _regionSafePosition = _player.GlobalPosition;
+            // Re-arm the warning only well clear of the channel; otherwise a
+            // player holding forward against the current would re-trigger it
+            // every frame after each recovery.
+            if (_waterToastShown &&
+                (!river.HasRiver || river.Distance > river.HalfWidth + 3.0))
+                _waterToastShown = false;
             return;
         }
 
@@ -2075,6 +2116,7 @@ public partial class GardenClearing : Node3D
     /// <summary>Same water/ground decision used by UpdateWaterHazard at an arbitrary point.</summary>
     public bool ProbeWaterHazardAt(Vec3 world)
     {
+        if (ProbeRiverDangerAt(world)) return true;
         var value = ToEngine(world);
         var space = GetWorld3D().DirectSpaceState;
         using var query = new PhysicsShapeQueryParameters3D
@@ -2094,6 +2136,82 @@ public partial class GardenClearing : Node3D
         groundQuery.CollideWithAreas = false;
         groundQuery.CollideWithBodies = true;
         return space.IntersectRay(groundQuery).Count == 0;
+    }
+
+    /// <summary>Nearest procedural river at a logical world point.</summary>
+    public RiverSample ProbeRiverAt(Vec3 world) =>
+        _chunks?.Generator.RiverAt(world.X, world.Z) ?? RiverSample.None;
+
+    /// <summary>Horizontal river-hazard mask, independent of height.</summary>
+    public bool ProbeRiverMaskAt(Vec3 world) => ProbeRiverAt(world).IsHazard;
+
+    /// <summary>River hazard including the player's height.</summary>
+    public bool ProbeRiverDangerAt(Vec3 world)
+    {
+        var river = ProbeRiverAt(world);
+        return river.IsHazard && world.Y < river.WaterLevel + 0.3;
+    }
+
+    /// <summary>Centre of one generated crossing (for real-input probes).</summary>
+    public Vec3 ProbeRiverCrossing(int riverIndex, int crossingIndex)
+    {
+        var x = crossingIndex * RiverMap.CrossingSpacing;
+        var centerZ = RiverMap.CenterAt(riverIndex, x);
+        var level = _chunks?.Generator.Rivers.WaterLevelAt(riverIndex, x) ?? 0;
+        return new Vec3(x, level, centerZ);
+    }
+
+    /// <summary>Number of loaded generated bridge nodes.</summary>
+    public int ProbeLoadedBridgeCount => _chunks is null ? 0 : _chunks.Nodes.Values
+        .SelectMany(node => node.GetChildren())
+        .Count(child => child.Name.ToString().StartsWith("RiverBridge_", StringComparison.Ordinal));
+
+    /// <summary>River centre, surface and level at an arbitrary X on one band.</summary>
+    public Vec3 ProbeRiverPoint(int riverIndex, double x)
+    {
+        var centerZ = RiverMap.CenterAt(riverIndex, x);
+        var level = _chunks?.Generator.Rivers.WaterLevelAt(riverIndex, x) ?? 0;
+        return new Vec3(x, level, centerZ);
+    }
+
+    /// <summary>True when the generated bridge for one crossing is resident.</summary>
+    public bool ProbeRiverBridgeAt(int riverIndex, int crossingIndex)
+    {
+        var x = crossingIndex * RiverMap.CrossingSpacing;
+        var centerZ = RiverMap.CenterAt(riverIndex, x);
+        var coordinate = ChunkCoordinate.OfWorldPoint(x, centerZ);
+        if (_chunks is null || !_chunks.Nodes.TryGetValue(coordinate, out var node)) return false;
+        return node.GetNodeOrNull<Node3D>($"RiverBridge_river_{riverIndex}_{crossingIndex}") is not null;
+    }
+
+    /// <summary>Number of water quads in the loaded chunk ring.</summary>
+    public int ProbeLoadedWaterQuadCount => _chunks is null ? 0 : _chunks.Nodes.Keys
+        .Sum(coordinate => _chunks.Generator.GenerateChunk(coordinate)?.WaterQuads.Count ?? 0);
+
+    /// <summary>
+    /// Every rendered prop must sit inside its own chunk's world bounds. This
+    /// catches coordinate-frame regressions (props are stored world-space in
+    /// Core but are children of an origin-positioned chunk body).
+    /// </summary>
+    public bool ProbePropsInOwnChunks()
+    {
+        if (_chunks is null) return false;
+        foreach (var (coordinate, node) in _chunks.Nodes)
+        {
+            var origin = coordinate.OriginWorld;
+            foreach (var child in node.GetChildren())
+            {
+                if (child is not Node3D prop ||
+                    !prop.Name.ToString().StartsWith("Prop_", StringComparison.Ordinal)) continue;
+                var world = ToLogical(prop.GlobalPosition);
+                if (world.X < origin.X - 0.01 || world.X > origin.X + WorldChunk.Size + 0.01 ||
+                    world.Z < origin.Z - 0.01 || world.Z > origin.Z + WorldChunk.Size + 0.01)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public void ProbeSetCameraZoom(float length)
@@ -2190,6 +2308,9 @@ public partial class GardenClearing : Node3D
                 // Generated-land probes only: authored landmark ground is a
                 // different surface and may contain authored obstacles.
                 if (WorldGenerator.AuthoredRects.Any(rect => rect.DistanceOutside(x, z) < 28)) continue;
+                // Keep evidence walks on dry land and clear of the bank slope.
+                var river = generator.RiverAt(x, z);
+                if (river.HasRiver && river.Distance < river.HalfWidth + 6) continue;
                 var weight = generator.BiomeWeightAt(x, z, biome);
                 if (weight <= bestWeight) continue;
                 bestWeight = weight;

@@ -1,4 +1,4 @@
-# Progress — P0 to P8
+# Progress — P0 to P9 / v0.3.0
 
 Status legend: **DONE** = implemented and evidenced; **PARTIAL** = implemented
 with a listed limitation; **NOT VERIFIED** = not performed on this host.
@@ -52,8 +52,8 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.0 P6 | Wild food and regeneration: deterministic berries/mushrooms/seeds, tick-based once-per-generation harvest, depleted-only per-chunk records with seed guards, food views/prompts, New-Garden chunk archiving, probe evidence | DONE, merged PR [#33](https://github.com/PhilipGB/webwild/pull/33) | `docs/prs/v0.3.0.md`; `FoodTests`; 219 unit tests (210 existing + 9 new); 57 scene checks; 404 headless / 405 rendered runtime checks; Linux export re-verified; screenshots 40–42 |
 | v0.3.0 P7 | Physical worker navigation: hierarchical dry world routes through hedge gates and generated river bridges, no-teleport landmark journeys, recorded/reversed routes, blocked waiting and retries, mid-journey save/load, world-space helper rendering, probe instrumentation | DONE, merged PR [#34](https://github.com/PhilipGB/webwild/pull/34) | `docs/prs/v0.3.0.md`; `WorkerNavigationTests`; 227 unit tests (219 existing + 8 new); 57 scene checks; 420 headless / 421 rendered runtime checks; Linux export re-verified; screenshots 43–44 |
 | v0.3.0 P8 | Off-screen helpers and summon: summon to the player's world point, explicit journey destinations, wild summoned arrivals waiting with empty graph nodes, off-screen view culling and snapping, broad saved wild bounds, summon events/probes | DONE, merged PR [#35](https://github.com/PhilipGB/webwild/pull/35) | `docs/prs/v0.3.0.md`; sum contracts; 231 unit tests (227 existing + 4 new); 57 scene checks; 432 headless / 433 rendered runtime checks; Linux export re-verified; screenshot 45 |
-| v0.3.0 P9 | Integrated acceptance and release: version 0.3.0, README/CHANGELOG/ACCEPTANCE/EVIDENCE/EXPORTS rewrite, full integrated probe on the release tree, Linux and Windows exports, release record | DONE on `feat/v0.3-p9-integrated-acceptance` (release PR) | 231 unit tests; 57 scene checks; 432 headless / 433 rendered; Linux export 432/433; Windows export runtime NOT VERIFIED; 70 screenshots |
-| v0.3.0 | **Never-Ending World release**: one continuous procedural world, biomes, rivers/crossings, exploration map, Return Home, wild food regeneration, physical/off-screen/summoned helpers, schema-4 saves | **RELEASED as v0.3.0 after P9 merge** | `docs/prs/v0.3.0.md`; `docs/EVIDENCE.md#v030`; `docs/EXPORTS.md`; tag `v0.3.0`; Linux verified, Windows/child playtest NOT VERIFIED |
+| v0.3.0 P9 | Integrated acceptance and release: version 0.3.0, README/CHANGELOG/ACCEPTANCE/EVIDENCE/EXPORTS rewrite, full integrated probe on the release tree, Linux and Windows exports, release record | DONE, merged PR [#36](https://github.com/PhilipGB/webwild/pull/36) | 231 unit tests; 57 scene checks; 432 headless / 433 rendered; Linux export 432/433; Windows export runtime NOT VERIFIED; 70 screenshots |
+| v0.3.0 | **Never-Ending World release**: one continuous procedural world, biomes, rivers/crossings, exploration map, Return Home, wild food regeneration, physical/off-screen/summoned helpers, schema-4 saves | **RELEASED as v0.3.0** (merge `4d8faf3`, tag `v0.3.0`) | `docs/prs/v0.3.0.md`; `docs/EVIDENCE.md#v030`; `docs/EXPORTS.md`; Linux verified, Windows/child playtest NOT VERIFIED |
 
 ## Verification summary
 
@@ -96,8 +96,8 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 
 ## v0.3.0 — Never-Ending World (release acceptance)
 
-- P0 foundations through P8 off-screen helpers and summon are merged (see
-  `docs/prs/v0.3.0.md`). P9 is the integrated acceptance and release pass.
+- P0 foundations through P9 integrated acceptance are merged and released as
+  **v0.3.0** (merge `4d8faf3`, tag `v0.3.0`); see `docs/prs/v0.3.0.md`.
   Reedwater Bank is walked to through generated meadow; the travel dialog is
   gone and a physical bramble gate opens when the garden story completes.
   Saves are schema-4 world manifests with per-save seeds, legacy migration,

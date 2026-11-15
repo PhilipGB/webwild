@@ -690,8 +690,8 @@ d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
 
 ## v0.3.0 — Never-Ending World
 
-Integrated release acceptance on `feat/v0.3-p9-integrated-acceptance`; the
-`v0.3.0` tag is created after the P9 PR merges.
+Integrated release acceptance on `feat/v0.3-p9-integrated-acceptance`; merged in
+`4d8faf3` and tagged **v0.3.0**.
 
 ### Environment
 
@@ -742,7 +742,7 @@ off-screen progress and summoning.
 | P6 wild food | [#33](https://github.com/PhilipGB/webwild/pull/33) | `7b35946` |
 | P7 worker navigation | [#34](https://github.com/PhilipGB/webwild/pull/34) | `d029d68` |
 | P8 off-screen and summon | [#35](https://github.com/PhilipGB/webwild/pull/35) | `4f932d0` |
-| P9 integrated acceptance | this release PR | after merge |
+| P9 integrated acceptance | [#36](https://github.com/PhilipGB/webwild/pull/36) | `4d8faf3` |
 
 The detailed per-phase delivery record, evidence and limitations are in
 `docs/prs/v0.3.0.md`; the architecture decisions are in

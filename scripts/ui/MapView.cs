@@ -19,15 +19,21 @@ public partial class MapView : Control
     private IReadOnlyCollection<string> _visited = Array.Empty<string>();
     private WorldGenerator? _generator;
     private BiomeMap? _biomes;
+    private IReadOnlyList<WorldMarker> _markers = Array.Empty<WorldMarker>();
+    private readonly Dictionary<string, Vector2> _markerPixels = new(StringComparer.Ordinal);
+
+    public event Action<string>? MarkerSelected;
 
     /// <summary>Cells actually painted in the last draw (probe/diagnostic).</summary>
     public int LastDrawnCells { get; private set; }
+    public int LastDrawnMarkers { get; private set; }
 
     public void Configure(
         IReadOnlyCollection<ChunkCoordinate> explored,
         Vec3 player,
         WorldGenerator generator,
-        IReadOnlyCollection<string> visitedLandmarks)
+        IReadOnlyCollection<string> visitedLandmarks,
+        IReadOnlyCollection<WorldMarker>? markers = null)
     {
         _explored = explored.ToList();
         _exploredSet = _explored.ToHashSet();
@@ -35,8 +41,10 @@ public partial class MapView : Control
         _generator = generator;
         _biomes = new BiomeMap(generator.Seed);
         _visited = visitedLandmarks;
+        _markers = markers?.ToList() ?? new List<WorldMarker>();
+        _markerPixels.Clear();
         CustomMinimumSize = new Vector2(560, 280);
-        MouseFilter = MouseFilterEnum.Ignore;
+        MouseFilter = MouseFilterEnum.Stop;
         QueueRedraw();
     }
 
@@ -126,6 +134,8 @@ public partial class MapView : Control
             DrawLandmark("Reedwater", LandmarkCatalog.OriginOf(LandmarkCatalog.Reedwater),
                 ToPx, minX, maxX, minZ, maxZ, font);
 
+        DrawMarkers(ToPx, minX, maxX, minZ, maxZ, font);
+
         var player = ToPx(_player.X, _player.Z);
         DrawCircle(player, 7.5f, new Color(0.06f, 0.1f, 0.08f, 0.95f));
         DrawCircle(player, 5.5f, new Color(0.35f, 0.86f, 0.78f));
@@ -136,6 +146,68 @@ public partial class MapView : Control
         var note = cropped ? "Most recent explored area" : "All explored ground";
         DrawString(font, new Vector2(10, size.Y - 8), note,
             HorizontalAlignment.Left, -1, 12, new Color(0.82f, 0.88f, 0.76f, 0.8f));
+    }
+
+    private void DrawMarkers(Func<double, double, Vector2> toPx,
+        long minX, long maxX, long minZ, long maxZ, Font font)
+    {
+        LastDrawnMarkers = 0;
+        _markerPixels.Clear();
+        foreach (var marker in _markers)
+        {
+            var chunk = ChunkCoordinate.OfWorldPoint(marker.Position.X, marker.Position.Z);
+            if (chunk.X < minX || chunk.X > maxX || chunk.Z < minZ || chunk.Z > maxZ) continue;
+            var point = toPx(marker.Position.X, marker.Position.Z);
+            _markerPixels[marker.Id] = point;
+            LastDrawnMarkers++;
+            if (marker.Kind == WorldMarkerKind.Food)
+            {
+                DrawCircle(point, 7.5f, new Color(0.09f, 0.12f, 0.08f, 0.95f));
+                DrawCircle(point, 5.2f, new Color(0.96f, 0.65f, 0.24f));
+                DrawCircle(point + new Vector2(-1.5f, -1.5f), 1.5f,
+                    new Color(1f, 0.9f, 0.65f));
+            }
+            else
+            {
+                var colour = marker.Kind == WorldMarkerKind.Home
+                    ? new Color(0.36f, 0.77f, 0.91f)
+                    : new Color(0.78f, 0.86f, 0.94f);
+                DrawColoredPolygon(new[]
+                {
+                    point + new Vector2(0, -7), point + new Vector2(7, 0),
+                    point + new Vector2(0, 7), point + new Vector2(-7, 0)
+                }, colour);
+            }
+            var label = marker.Kind == WorldMarkerKind.Food
+                ? (marker.Label.Length > 0 ? marker.Label : "food")
+                : marker.Label;
+            if (!string.IsNullOrWhiteSpace(label) && label.Length <= 22)
+                DrawString(font, point + new Vector2(10, 4), label,
+                    HorizontalAlignment.Left, -1, 11, new Color(0.97f, 0.93f, 0.76f));
+        }
+    }
+
+    public Rect2 MarkerGlobalRect(string markerId) =>
+        _markerPixels.TryGetValue(markerId, out var point)
+            ? new Rect2(GlobalPosition + point - new Vector2(16, 16), new Vector2(32, 32))
+            : new Rect2();
+
+    public override void _GuiInput(InputEvent @event)
+    {
+        if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } click)
+            return;
+        string? best = null;
+        var bestDistance = 16.0f;
+        foreach (var (id, point) in _markerPixels)
+        {
+            var distance = point.DistanceTo(click.Position);
+            if (distance > bestDistance) continue;
+            best = id;
+            bestDistance = distance;
+        }
+        if (best is null) return;
+        MarkerSelected?.Invoke(best);
+        AcceptEvent();
     }
 
     private void DrawRivers(Func<double, double, Vector2> toPx,

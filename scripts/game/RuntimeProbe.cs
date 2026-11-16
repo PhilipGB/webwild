@@ -1739,6 +1739,170 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- H2: mark wild food and send a named helper ----
+        var h2Game = _main.StartGame(null);
+        await Frames(10);
+        h2Game.Simulation!.Ledger.Restore(50, 50);
+        h2Game.Simulation.Tuning.SilkProduction.SilkPerFedWorkerEverySeconds = 0;
+        Check("h2-helper", h2Game.ProbeHatch(), "Hatch a forager");
+        h2Game.ProbeAdvance(4);
+        await Frames(6);
+        var h2Worker = h2Game.Simulation.Workers.FirstOrDefault();
+        Check("h2-worker-ready", h2Worker is not null, $"workers={h2Game.Simulation.Workers.Count}");
+        if (h2Worker is not null)
+        {
+            var h2Crossing = h2Game.ProbeRiverCrossing(0, 0);
+            var search = new Vec3(0, 0, 90);
+            var h2Source = h2Game.ProbeNearestFood(search, 140);
+            if (h2Source is null || h2Source.Position.Z < h2Crossing.Z + 8)
+            {
+                h2Game.ProbeTeleport(new Vec3(0, 0, 110));
+                await Frames(8);
+                h2Source = h2Game.ProbeNearestFood(new Vec3(0, 0, 110), 140);
+            }
+            Check("h2-food-found", h2Source is not null,
+                $"source={h2Source?.Id} z={h2Source?.Position.Z:0.0} river={h2Crossing.Z:0.0}");
+            if (h2Source is not null)
+            {
+                var sourcePos = h2Source.Position;
+                var approach = new Vec3(sourcePos.X - 1.6, 0, sourcePos.Z);
+                approach = new Vec3(approach.X,
+                    h2Game.ProbeGroundHeightAt(approach) + 0.6, approach.Z);
+                h2Game.ProbeTeleport(approach);
+                h2Game.ProbeLookAt(new Vec3(sourcePos.X, sourcePos.Y + 0.2, sourcePos.Z));
+                await Frames(8);
+                // Real movement into the procedural biome before marking.
+                var walkedFrom = h2Game.PlayerPosition;
+                Input.ActionPress("move_forward");
+                await PhysicsFrames(25);
+                Input.ActionRelease("move_forward");
+                await PhysicsFrames(10);
+                Check("h2-walks-procedural-biome",
+                    h2Game.PlayerPosition.DistanceTo(walkedFrom) > 0.5f &&
+                    h2Game.PlayerPosition.Z > 40,
+                    $"from={walkedFrom} to={h2Game.PlayerPosition}");
+
+                var headlessH2 = DisplayServer.GetName() == "headless";
+                if (headlessH2) h2Game.ProbeMarkFood();
+                else await TapKey(Key.R);
+                Check("h2-food-marked", h2Game.Simulation.MapMarkers.Any(marker =>
+                    marker.FoodId == h2Source.Id),
+                    string.Join("|", h2Game.Simulation.MapMarkers.Select(marker => marker.Id)));
+
+                if (headlessH2) h2Game.ProbeOpenMap();
+                else await TapKey(Key.M);
+                await Frames(6);
+                Check("h2-map-opens", h2Game.ProbeMapOpen, "The map opens");
+                var markerId = h2Game.ProbeFoodMarkerId(h2Source.Id);
+                var markerRect = h2Game.ProbeMapMarkerRect(markerId);
+                Check("h2-map-shows-food-marker",
+                    h2Game.ProbeMapMarkerCount >= 1 && markerRect.Size.X > 0,
+                    $"markers={h2Game.ProbeMapMarkerCount} rect={markerRect}");
+                if (!headlessH2) await Capture("48-food-marker-map");
+
+                if (headlessH2) h2Game.ProbeSelectMapMarker(markerId);
+                else await ClickUi(markerRect.GetCenter());
+                await Frames(6);
+                Check("h2-assignment-opens", h2Game.ProbeFoodTaskOpen,
+                    "Marked food opens the named-helper assignment");
+                var sendRect = h2Game.ProbeFoodSendRect(h2Worker.Id);
+                Check("h2-send-button", sendRect.Size.X > 0, $"{sendRect}");
+                var foodBeforeForage = h2Game.Simulation.Ledger.Food;
+                if (headlessH2) h2Game.ProbeAssignFood(h2Worker.Id);
+                else await ClickUi(sendRect.GetCenter());
+                await Frames(4);
+                Check("h2-helper-assigned",
+                    h2Game.ProbeWorkerFoodTask(h2Worker.Id) &&
+                    h2Game.ProbeWorkerFoodPhase(h2Worker.Id) is "ToSource" or "WaitingForRegrowth",
+                    $"task={h2Game.ProbeWorkerFoodTask(h2Worker.Id)} " +
+                    $"phase={h2Game.ProbeWorkerFoodPhase(h2Worker.Id)}");
+                Check("h2-return-route-uses-bridge",
+                    h2Game.ProbeWorkerFoodRouteUsesBridge(h2Worker.Id) ||
+                    h2Source.Position.Z < h2Crossing.Z,
+                    $"usesBridge={h2Game.ProbeWorkerFoodRouteUsesBridge(h2Worker.Id)} " +
+                    $"sourceZ={h2Source.Position.Z:0.0} riverZ={h2Crossing.Z:0.0}");
+
+                for (var i = 0; i < 240 && h2Game.ProbeWorkerCarriedFood(h2Worker.Id) == 0; i++)
+                {
+                    h2Game.ProbeAdvance(0.5);
+                    await Frames(1);
+                }
+                Check("h2-source-depleted",
+                    !h2Game.ProbeFoodAvailable(h2Source.Id),
+                    $"available={h2Game.ProbeFoodAvailable(h2Source.Id)}");
+                Check("h2-helper-carries-food",
+                    h2Game.ProbeWorkerCarriedFood(h2Worker.Id) == h2Source.Amount &&
+                    h2Game.Simulation.Ledger.Food == foodBeforeForage,
+                    $"carried={h2Game.ProbeWorkerCarriedFood(h2Worker.Id)} " +
+                    $"food={h2Game.Simulation.Ledger.Food} before={foodBeforeForage}");
+                Check("h2-return-route-uses-bridge",
+                    h2Game.ProbeWorkerFoodPhase(h2Worker.Id) == "ToHome" &&
+                    h2Game.ProbeWorkerFoodRouteUsesBridge(h2Worker.Id),
+                    $"phase={h2Game.ProbeWorkerFoodPhase(h2Worker.Id)} " +
+                    $"usesBridge={h2Game.ProbeWorkerFoodRouteUsesBridge(h2Worker.Id)}");
+
+                var gatherPos = h2Game.ProbeWorkerWorldPosition(h2Worker.Id);
+                var gatherCam = new Vec3(gatherPos.X - 2.2, 0, gatherPos.Z + 2.2);
+                gatherCam = new Vec3(gatherCam.X,
+                    h2Game.ProbeGroundHeightAt(gatherCam) + 0.6, gatherCam.Z);
+                h2Game.ProbeTeleport(gatherCam);
+                h2Game.ProbeLookAt(new Vec3(gatherPos.X, gatherPos.Y + 0.3, gatherPos.Z));
+                h2Game.ProbeSetCameraZoom(6);
+                h2Game.ProbeSetCameraPitch(-14);
+                await Frames(6);
+                await Capture("49-worker-foraging");
+
+                // Player is far away and the helper is off screen for the return.
+                h2Game.ProbeTeleport(new Vec3(300, 0, -120));
+                await Frames(6);
+                for (var i = 0; i < 500 && h2Game.ProbeWorkerFoodTask(h2Worker.Id); i++)
+                {
+                    h2Game.ProbeAdvance(1);
+                    await Frames(1);
+                }
+                Check("h2-delivered-home",
+                    !h2Game.ProbeWorkerFoodTask(h2Worker.Id) &&
+                    h2Game.ProbeWorkerCarriedFood(h2Worker.Id) == 0,
+                    $"task={h2Game.ProbeWorkerFoodTask(h2Worker.Id)} " +
+                    $"carried={h2Game.ProbeWorkerCarriedFood(h2Worker.Id)}");
+                Check("h2-credits-exactly-once",
+                    h2Game.Simulation.Ledger.Food == foodBeforeForage + h2Source.Amount &&
+                    h2Game.EventLog.Count(e => e.Type == "WorkerFoodDelivered") == 1,
+                    $"food={h2Game.Simulation.Ledger.Food} expected={foodBeforeForage + h2Source.Amount} " +
+                    $"events={h2Game.EventLog.Count(e => e.Type == "WorkerFoodDelivered")}");
+                var h2DeliveredFood = h2Game.Simulation.Ledger.Food;
+                h2Game.ProbeAdvance(60);
+                await Frames(4);
+                Check("h2-no-second-credit", h2Game.Simulation.Ledger.Food == h2DeliveredFood,
+                    $"food={h2Game.Simulation.Ledger.Food}");
+                var deliveredAt = h2Game.ProbeWorkerWorldPosition(h2Worker.Id);
+                var deliveryCam = new Vec3(deliveredAt.X - 2.4, 0, deliveredAt.Z + 2.4);
+                deliveryCam = new Vec3(deliveryCam.X,
+                    h2Game.ProbeGroundHeightAt(deliveryCam) + 0.6, deliveryCam.Z);
+                h2Game.ProbeTeleport(deliveryCam);
+                h2Game.ProbeLookAt(new Vec3(deliveredAt.X, deliveredAt.Y + 0.3, deliveredAt.Z));
+                h2Game.ProbeSetCameraZoom(6);
+                h2Game.ProbeSetCameraPitch(-16);
+                await Frames(6);
+                await Capture("50-food-delivered");
+                Check("h2-save", h2Game.ProbeSave(), h2Game.LastSaveError);
+                var h2Loaded = _main.Saves.Load();
+                Check("h2-save-loads", h2Loaded.Success && h2Loaded.Data is not null, h2Loaded.Message);
+                if (h2Loaded.Data is not null)
+                {
+                    var h2Reloaded = _main.StartGame(h2Loaded.Data);
+                    await Frames(20);
+                    Check("h2-reload-keeps-credit-and-marker",
+                        h2Reloaded.Simulation!.Ledger.Food == h2DeliveredFood &&
+                        h2Reloaded.Simulation.MapMarkers.Any(marker => marker.FoodId == h2Source.Id),
+                        $"food={h2Reloaded.Simulation.Ledger.Food} " +
+                        $"markers={h2Reloaded.Simulation.MapMarkers.Count}");
+                }
+            }
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // ---- H0: transactional in-game New Garden and verified restore ----
         // Clear any archive left by the earlier title-screen section so this
         // phase proves the in-game action archived the garden itself.
@@ -2626,6 +2790,22 @@ public partial class RuntimeProbe : Node
         };
         GetViewport().PushInput(up);
         await Frames(3);
+    }
+
+    private async Task TapKey(Key key)
+    {
+        var down = new InputEventKey
+        {
+            PhysicalKeycode = key, Keycode = key, Pressed = true
+        };
+        Input.ParseInputEvent(down);
+        await Frames(3);
+        var up = new InputEventKey
+        {
+            PhysicalKeycode = key, Keycode = key, Pressed = false
+        };
+        Input.ParseInputEvent(up);
+        await Frames(4);
     }
 
     private async Task Click(Vector2 position)

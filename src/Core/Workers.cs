@@ -7,7 +7,20 @@ public enum WorkerActivity
     Repairing,
     Patrolling,
     Travelling,
-    Waiting
+    Waiting,
+    Gathering,
+    Hauling
+}
+
+/// <summary>Persistent lifecycle for a wild-food task. The activity enum is
+/// the broad HUD state; this enum is the authoritative task step.</summary>
+public enum WorkerFoodPhase
+{
+    None,
+    ToSource,
+    ToHome,
+    WaitingForRegrowth,
+    Blocked
 }
 
 public sealed class WorkerState
@@ -52,20 +65,37 @@ public sealed class WorkerState
     /// <summary>Transient throttle for re-routing a follower; not persisted.</summary>
     public double FollowCooldown { get; set; }
 
+    // Wild-food task. Food is credited only when CarriedFood reaches home.
+    public string? TargetFoodId { get; set; }
+    public WorkerFoodPhase FoodPhase { get; set; }
+    public Vec3 FoodSourcePosition { get; set; }
+    public int CarriedFood { get; set; }
+    public string FoodDeliveryId { get; set; } = "";
+    public List<Vec3> WorldPath { get; set; } = new();
+    public int WorldPathIndex { get; set; }
+    public List<Vec3> OutboundPath { get; set; } = new();
+    public bool WorldPathUsesBridge { get; set; }
+    public double TaskRetryCooldown { get; set; }
+
     /// <summary>Stable world position used for rendering and distance checks.</summary>
     public Vec3 WorldPosition => Travelling
         ? JourneyPosition
         : LandmarkCatalog.ToWorld(Region, Position).Absolute;
 
     public bool IsMoving => Activity is WorkerActivity.Collecting or WorkerActivity.Repairing
-        or WorkerActivity.Patrolling or WorkerActivity.Travelling;
+        or WorkerActivity.Patrolling or WorkerActivity.Travelling
+        or WorkerActivity.Gathering or WorkerActivity.Hauling;
     public string DisplayState => Activity switch
     {
         WorkerActivity.Collecting => "Collecting",
         WorkerActivity.Repairing => "Repairing",
         WorkerActivity.Patrolling => "Exploring",
         WorkerActivity.Travelling => RouteBlocked ? "No safe route" : "Travelling",
-        WorkerActivity.Waiting => RouteBlocked ? "No safe route" : "Waiting",
+        WorkerActivity.Gathering => FoodPhase == WorkerFoodPhase.WaitingForRegrowth
+            ? "Waiting for food" : "Gathering food",
+        WorkerActivity.Hauling => "Carrying food home",
+        WorkerActivity.Waiting => RouteBlocked || FoodPhase == WorkerFoodPhase.Blocked
+            ? "No safe route" : "Waiting",
         _ => "Resting"
     };
 }

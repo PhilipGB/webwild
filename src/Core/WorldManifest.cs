@@ -15,6 +15,9 @@ public sealed class WorldPosSave
         LocalX = pos.LocalX, Y = pos.Y, LocalZ = pos.LocalZ
     };
 
+    public static WorldPosSave FromAbsolute(Vec3 point) =>
+        FromPos(WorldPos.FromAbsolute(point));
+
     public WorldPos ToPos() => new(ChunkX, ChunkZ, LocalX, Y, LocalZ);
 
     public Vec3 Absolute => ToPos().Absolute;
@@ -89,6 +92,8 @@ public sealed class MapMarkerSave
     /// <summary>Marker meaning: "food", "home", "note".</summary>
     public string Kind { get; set; } = "note";
     public string Label { get; set; } = "";
+    /// <summary>Deterministic food id for a "food" marker; null for notes.</summary>
+    public string? FoodId { get; set; }
 }
 
 /// <summary>

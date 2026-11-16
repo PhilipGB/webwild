@@ -221,6 +221,53 @@ public static class SaveValidator
                 error = "A worker task state is unknown.";
                 return false;
             }
+            if (!Enum.TryParse<WorkerFoodPhase>(worker.FoodPhase, true, out _))
+            {
+                error = "A worker food task state is unknown.";
+                return false;
+            }
+            if ((worker.TargetFoodId?.Length ?? 0) > 120 ||
+                (worker.FoodDeliveryId?.Length ?? 0) > 160 ||
+                worker.CarriedFood is < 0 or > 20)
+            {
+                error = "A worker food task is invalid.";
+                return false;
+            }
+            if (!ValidateWorldPath(worker.WorldPath, out error) ||
+                !ValidateWorldPath(worker.OutboundPath, out error) ||
+                worker.WorldPathIndex < 0 ||
+                worker.WorldPathIndex > Math.Max(0, worker.WorldPath.Count))
+            {
+                error = "A worker world path is invalid.";
+                return false;
+            }
+        }
+        if (data.MapMarkers is null || data.MapMarkers.Count > 200)
+        {
+            error = "The map marker list is invalid.";
+            return false;
+        }
+        var markerIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var marker in data.MapMarkers)
+        {
+            if (marker is null || string.IsNullOrWhiteSpace(marker.Id) ||
+                marker.Id.Length > 80 || !markerIds.Add(marker.Id) ||
+                !WorldMarkerKind.IsKnown(marker.Kind) ||
+                !IsFinite(marker.X, marker.Y, marker.Z) ||
+                Math.Abs(marker.X) > 1_000_000 || Math.Abs(marker.Z) > 1_000_000 ||
+                marker.Y < -20 || marker.Y > 100 ||
+                (marker.Label?.Length ?? 0) > 60 ||
+                (marker.FoodId?.Length ?? 0) > 120)
+            {
+                error = "A map marker is invalid.";
+                return false;
+            }
+            if (marker.Kind == WorldMarkerKind.Food &&
+                !marker.FoodId!.StartsWith("food:", StringComparison.Ordinal))
+            {
+                error = "A food marker has no valid food id.";
+                return false;
+            }
         }
         var routeRegions = RegionCatalog.All
             .SelectMany(region => region.InsectRoutes.Select(route => new { route.Id, Region = region.Id }))
@@ -313,6 +360,25 @@ public static class SaveValidator
             return false;
         }
         data.Settings?.Normalise();
+        return true;
+    }
+
+    private static bool ValidateWorldPath(IReadOnlyList<WorldPosSave>? path, out string error)
+    {
+        error = "";
+        if (path is null || path.Count > 2_000)
+        {
+            error = "The path is too long.";
+            return false;
+        }
+        foreach (var point in path)
+        {
+            if (point is null || !point.IsValid)
+            {
+                error = "The path contains an invalid point.";
+                return false;
+            }
+        }
         return true;
     }
 

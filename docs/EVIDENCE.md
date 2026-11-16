@@ -909,3 +909,49 @@ $ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 H1 payload SHA-256: `Webwild.x86_64` `d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc`,
 `Webwild.pck` `60292bdb14ba601651988afbe385f2cc979b895610a9b5cfbbf124e0b389f7e2`.
+
+### H2 — food markers and physical worker collection
+
+Source verification on the H2 head:
+
+```text
+$ dotnet build -warnaserror
+0 Warning(s), 0 Error(s)
+$ dotnet test
+Passed! - Failed: 0, Passed: 249, Skipped: 0, Total: 249
+$ godot --headless --path . --editor --quit
+exit 0
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=482 failures=0   (run twice)
+```
+
+The rendered run marks a wild sunflower-seed source through a real R key,
+opens the map with M, clicks the orange food marker, clicks Pip's Send button,
+and observes the helper travel, deplete the source, carry the food across a
+generated bridge and deliver it. Food is unchanged while carried and rises by
+exactly the source amount once; the delivery event fires once and a later save
+and reload keeps both the credit and the marker. Screenshots
+`48-food-marker-map.png`, `49-worker-foraging.png` and
+`50-food-delivered.png` were inspected: the marker is visible on the map, the
+carrying helper and regrowth prompt are readable, and the delivered garden
+shows the updated food total.
+
+H2 exported Linux x64 build:
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+$ cd exports/linux
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=482 failures=0
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=483 failures=0
+```
+
+H2 payload SHA-256: `Webwild.x86_64` `d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc`,
+`Webwild.pck` `77619457b4b7a136952771237aa1de4adadf7641086261090ee81137f2465283`.

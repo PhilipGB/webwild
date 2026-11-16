@@ -24,6 +24,48 @@ public sealed class WorkerNavigator
 
     public WorldGenerator Generator => _generator;
 
+    /// <summary>Check that an existing route is still walkable. Bridge-deck
+    /// points are allowed above water; ground points inside a river are not.</summary>
+    public bool IsRouteDry(IReadOnlyList<Vec3> points)
+    {
+        if (points.Count < 2) return false;
+        for (var i = 0; i < points.Count - 1; i++)
+        {
+            var a = points[i];
+            var b = points[i + 1];
+            if (!a.IsFinite || !b.IsFinite) return false;
+            var distance = Vec3.Distance(a, b);
+            var steps = Math.Max(1, (int)Math.Ceiling(distance / 3.0));
+            for (var step = 1; step < steps; step++)
+            {
+                var t = step / (double)steps;
+                var x = a.X + (b.X - a.X) * t;
+                var y = a.Y + (b.Y - a.Y) * t;
+                var z = a.Z + (b.Z - a.Z) * t;
+                if (!IsWet(x, z)) continue;
+                if (!IsBridgeDeck(x, y, z)) return false;
+            }
+        }
+        return true;
+    }
+
+    private bool IsBridgeDeck(double x, double y, double z)
+    {
+        var river = _generator.RiverAt(x, z);
+        if (!river.HasRiver) return false;
+        var crossing = (long)Math.Round(x / RiverMap.CrossingSpacing);
+        for (var n = crossing - 1; n <= crossing + 1; n++)
+        {
+            var bridge = _generator.Rivers.BridgeAt(river.Index, (int)n, _generator);
+            if (bridge is null) continue;
+            if (Math.Abs(x - bridge.X) > 1.9) continue;
+            if (Math.Abs(z - bridge.CenterZ) > bridge.HalfSpan + 1.5) continue;
+            if (y < bridge.WaterLevel + 0.2) continue;
+            return true;
+        }
+        return false;
+    }
+
     public WorkerRoute? FindRoute(Vec3 start, Vec3 target)
     {
         if (!start.IsFinite || !target.IsFinite) return null;

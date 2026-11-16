@@ -23,6 +23,7 @@ public partial class GameUI : CanvasLayer
     public event Action? ReturnHomeRequested;
     public event Action<string>? WorkerSummonRequested;
     public event Action<string>? WorkerReleaseRequested;
+    public event Action<string>? MapMarkerSelected;
 
     private Control _root = null!;
     private Label _foodLabel = null!;
@@ -79,6 +80,7 @@ public partial class GameUI : CanvasLayer
     private bool _travelOpen;
     private bool _regionCompleteOpen;
     private bool _mapOpen;
+    private bool _foodTaskOpen;
     private MapView? _mapView;
     private Button? _mapHomeButton;
     private float _toastTimer;
@@ -92,10 +94,11 @@ public partial class GameUI : CanvasLayer
     private readonly Dictionary<string, Button> _workerSummonButtons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Button> _workerReleaseButtons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _workerRowTexts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Button> _foodSendButtons = new(StringComparer.Ordinal);
     private readonly List<string> _probeToastHistory = new();
 
-    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen || _mapOpen;
-    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen || _mapOpen;
+    public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen || _mapOpen || _foodTaskOpen;
+    public bool PausesSimulation => _pauseOpen || _victoryOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen || _mapOpen || _foodTaskOpen;
     public bool BlocksWorldInput => IsModalOpen;
     public bool ProbeToastVisible => _toastPanel.Visible;
     public string ProbeToastText => _toastLabel.Text;
@@ -136,6 +139,11 @@ public partial class GameUI : CanvasLayer
         _workerReleaseButtons.TryGetValue(id, out var button) ? button.GetGlobalRect() : new Rect2();
     public string ProbeWorkerRowText(string id) =>
         _workerRowTexts.TryGetValue(id, out var text) ? text : "";
+    public bool ProbeFoodTaskOpen => _foodTaskOpen;
+    public Rect2 ProbeMapMarkerRect(string id) => _mapView?.MarkerGlobalRect(id) ?? new Rect2();
+    public int ProbeMapMarkerCount => _mapView?.LastDrawnMarkers ?? 0;
+    public Rect2 ProbeFoodSendRect(string id) =>
+        _foodSendButtons.TryGetValue(id, out var button) ? button.GetGlobalRect() : new Rect2();
 
     public override void _Ready()
     {
@@ -447,7 +455,8 @@ public partial class GameUI : CanvasLayer
         _pauseNewGameButton = null;
         _confirmNewGameButton = null;
         _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen =
-            _saveFailedOpen = _travelOpen = _regionCompleteOpen = _mapOpen = false;
+            _saveFailedOpen = _travelOpen = _regionCompleteOpen = _mapOpen = _foodTaskOpen = false;
+        _foodSendButtons.Clear();
         _mapView = null;
         _mapHomeButton = null;
         _nurserySignature = "";
@@ -471,7 +480,7 @@ public partial class GameUI : CanvasLayer
 
     private void ConfigureModalState(bool pause = false, bool nursery = false, bool victory = false,
         bool colony = false, bool help = false, bool confirm = false, bool saveFailed = false,
-        bool travel = false, bool regionComplete = false, bool map = false)
+        bool travel = false, bool regionComplete = false, bool map = false, bool foodTask = false)
     {
         _pauseOpen = pause;
         _nurseryOpen = nursery;
@@ -483,6 +492,7 @@ public partial class GameUI : CanvasLayer
         _travelOpen = travel;
         _regionCompleteOpen = regionComplete;
         _mapOpen = map;
+        _foodTaskOpen = foodTask;
         _modalRoot.Visible = true;
     }
 
@@ -811,16 +821,22 @@ public partial class GameUI : CanvasLayer
         IReadOnlyCollection<ChunkCoordinate> explored,
         Vec3 player,
         WorldGenerator generator,
-        IReadOnlyCollection<string> visitedLandmarks)
+        IReadOnlyCollection<string> visitedLandmarks,
+        IReadOnlyCollection<WorldMarker> markers)
     {
         OpenModal("Wilderness Map", 620);
         ConfigureModalState(map: true);
         _mapView = new MapView { Name = "MapView" };
         _modalContent.AddChild(_mapView);
-        _mapView.Configure(explored, player, generator, visitedLandmarks);
+        _mapView.Configure(explored, player, generator, visitedLandmarks, markers);
+        _mapView.MarkerSelected += id =>
+        {
+            CloseModal();
+            MapMarkerSelected?.Invoke(id);
+        };
         var summary = explored.Count == 0
             ? "No ground explored yet. Walk out and the map will grow."
-            : $"{explored.Count} chunks explored. The pale dot is you; gold circles are landmarks. Rivers are safest at the old plank crossings.";
+            : $"{explored.Count} chunks explored. The pale dot is you; gold circles are landmarks; orange berries are marked food. Click a food marker to send a helper.";
         _modalContent.AddChild(UiKit.Label(summary, 16, new Color(UiKit.Ink, 0.86f), true));
         var home = UiKit.Button("Return to Garden Clearing", 420, 52, true);
         home.Pressed += () => ReturnHomeRequested?.Invoke();
@@ -830,6 +846,46 @@ public partial class GameUI : CanvasLayer
         close.Pressed += CloseModal;
         _modalContent.AddChild(close);
     }
+
+    public void ShowFoodAssignment(FoodSourceDefinition source,
+        IReadOnlyList<WorkerState> workers, Action<string> send)
+    {
+        OpenModal($"Send a helper to the {source.Label}", 560);
+        ConfigureModalState(foodTask: true);
+        _modalContent.AddChild(UiKit.Label(
+            $"{Cap(source.Label)} · {source.Amount} food at the marked source. The helper walks there, carries it home and only then credits the colony.",
+            18, new Color(UiKit.Ink, 0.86f), true));
+        foreach (var worker in workers)
+        {
+            var panel = new PanelContainer();
+            panel.AddThemeStyleboxOverride("panel", UiKit.Panel(UiKit.CreamDim, 12));
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", 10);
+            row.AddChild(UiKit.Label(worker.Name, 20, UiKit.Pine));
+            row.AddChild(UiKit.Label(
+                worker.Travelling || worker.Summoned ? "Travelling" : worker.DisplayState,
+                17, UiKit.TealDark));
+            var spacer = new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            row.AddChild(spacer);
+            var assign = UiKit.Button("Send", 120, 42, true);
+            assign.Disabled = worker.Travelling || worker.Summoned;
+            assign.Pressed += () =>
+            {
+                CloseModal();
+                send(worker.Id);
+            };
+            _foodSendButtons[worker.Id] = assign;
+            row.AddChild(assign);
+            panel.AddChild(row);
+            _modalContent.AddChild(panel);
+        }
+        var cancel = UiKit.Button("Not now", 220, 48);
+        cancel.Pressed += CloseModal;
+        _modalContent.AddChild(cancel);
+    }
+
+    private static string Cap(string text) =>
+        string.IsNullOrEmpty(text) ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     public void OpenHelp()
     {
@@ -844,6 +900,7 @@ public partial class GameUI : CanvasLayer
             ("food", "Walk to a caught insect and press E to collect food."),
             ("repair", "Press E beside a damaged web to repair it for 2 silk."),
             ("food", "Ripe berries, mushrooms and seed heads grow in the meadows. Press E to forage; they regrow after a while."),
+            ("food", "Press R beside wild food to mark it, then press M and click the orange marker to send a named helper. Food is credited only when the helper carries it home."),
             ("spider", "Helpers walk between landmarks. If no safe route exists they wait visibly and keep trying."),
             ("nest", "Press E at the leaf nursery to hatch a helper (up to 5 spiders)."),
             ("wind", "Wind is forecast before it arrives. Sheltered webs near the log take less damage."),

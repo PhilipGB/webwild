@@ -111,6 +111,10 @@ records explored chunks and offers Return Home from anywhere.
   walks a dry world route through landmark gates and generated bridges, then
   follows you until released. Helpers wait visibly when no route exists and
   keep simulating off screen.
+- **Helper foraging.** Mark wild food on the map and send a named helper. It
+  walks to the source, depletes it, carries the food home and the colony is
+  credited only on arrival, exactly once. Return routes prefer the outbound
+  path, including generated bridges, and waiting-for-regrowth is visible.
 - **Origin rebasing.** Presentation coordinates recentre at 16 km on a 64 m grid;
   saves, simulation, streaming and probe coordinates always stay logical.
 
@@ -171,8 +175,8 @@ verification is NOT VERIFIED** because no Windows host is available. See
   a desktop compositor remain unverified.
 - Known v0.3.0 polish limits: a faint material line where the authored
   Reedwater bank meets procedural ground, low-poly river/water shading without
-  flow animation, no map pan/zoom or manual markers, helpers do not gather wild
-  food, and summoning has no cooldown or resource cost.
+  flow animation, no map pan/zoom or manual markers, and summoning has no
+  cooldown or resource cost.
 
 ## Safety and scope
 

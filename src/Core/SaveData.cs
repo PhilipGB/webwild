@@ -61,6 +61,18 @@ public sealed class WorkerSave
     public double DestinationY { get; set; }
     public double DestinationZ { get; set; }
     public bool Summoned { get; set; }
+    public string? TargetFoodId { get; set; }
+    public string FoodPhase { get; set; } = "None";
+    public double FoodX { get; set; }
+    public double FoodY { get; set; }
+    public double FoodZ { get; set; }
+    public int CarriedFood { get; set; }
+    public string FoodDeliveryId { get; set; } = "";
+    public List<WorldPosSave> WorldPath { get; set; } = new();
+    public int WorldPathIndex { get; set; }
+    public List<WorldPosSave> OutboundPath { get; set; } = new();
+    public bool WorldPathUsesBridge { get; set; }
+    public double TaskRetryCooldown { get; set; }
 }
 
 public sealed class InsectSave
@@ -192,6 +204,7 @@ public sealed class SaveGameData
     public List<WebSave> Webs { get; set; } = new();
     public List<WorkerSave> Workers { get; set; } = new();
     public List<InsectSave> Insects { get; set; } = new();
+    public List<MapMarkerSave> MapMarkers { get; set; } = new();
     public MissionSave Missions { get; set; } = new();
     public RegionalObjectiveSave RegionalObjectives { get; set; } = new();
     public WeatherSave Weather { get; set; } = new();

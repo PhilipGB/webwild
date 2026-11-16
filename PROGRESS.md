@@ -56,17 +56,18 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.0 | **Never-Ending World release**: one continuous procedural world, biomes, rivers/crossings, exploration map, Return Home, wild food regeneration, physical/off-screen/summoned helpers, schema-4 saves | **RELEASED as v0.3.0** (merge `4d8faf3`, tag `v0.3.0`) | `docs/prs/v0.3.0.md`; `docs/EVIDENCE.md#v030`; `docs/EXPORTS.md`; Linux verified, Windows/child playtest NOT VERIFIED |
 | v0.3.1 H0 | Save integrity: one safe New Garden workflow, verified transactional archive/restore including chunk modifications, mid-transaction rollback, in-game confirmation | DONE, merged (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `NewGardenWorkflowTests`; 240 unit tests; 57 scene checks; 450 headless / 451 rendered runtime checks; Linux export 450 headless / 451 rendered; screenshots 46–47 |
 | v0.3.1 H1 | Worker autonomy: players and story regions no longer redirect helpers; named individual summon, physical follow, release home, durable home region and colony panel | DONE, PR open (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `WorkerNavigationTests`; 242 unit tests; 462 headless / 463 rendered runtime checks; screenshots 43–45a |
+| v0.3.1 H2 | Food markers and physical worker collection: map-marked sources, named assignment, travel/collect/carry/deliver, exactly-once credit, bridge return routes, regrowth waiting | DONE, PR open (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `WorkerForagingTests`; 249 unit tests; 482 headless / 483 rendered runtime checks; screenshots 48–50 |
 
 ## Verification summary
 
 Current v0.3.1 H0 state; the per-phase history is in `docs/prs/v0.3.1.md`.
 
-- `dotnet test`: **242 passed, 0 failed** (231 v0.3.0 + 9 save-integrity + 2 net worker-autonomy tests after rewrites).
+- `dotnet test`: **249 passed, 0 failed** (231 v0.3.0 + save-integrity + worker-autonomy rewrites + 7 foraging cases).
 - Scene contract validation: **57 passed, 0 failed** across both regions.
-- Headless runtime probe: **462 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **463 passed, 0 failed**.
-- Exported Linux build, headless probe: **462 passed, 0 failed** (H1).
-- Exported Linux build, rendered Xvfb probe: **463 passed, 0 failed** (H1).
+- Headless runtime probe: **482 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **483 passed, 0 failed**.
+- Exported Linux build, headless probe: **482 passed, 0 failed** (H2).
+- Exported Linux build, rendered Xvfb probe: **483 passed, 0 failed** (H2).
 - Linux x64 export: built successfully and launched.
 - Windows x64 export: built successfully; runtime **NOT VERIFIED** (no Windows host).
 - Legacy saves v0.1.0/v0.1.1/v0.1.2 and v0.2.x/v0.3.0: migration tests pass with real fixtures.

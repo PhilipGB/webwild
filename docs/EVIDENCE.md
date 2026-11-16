@@ -937,3 +937,21 @@ and reload keeps both the credit and the marker. Screenshots
 `50-food-delivered.png` were inspected: the marker is visible on the map, the
 carrying helper and regrowth prompt are readable, and the delivered garden
 shows the updated food total.
+
+H2 exported Linux x64 build:
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+$ cd exports/linux
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=482 failures=0
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=483 failures=0
+```
+
+H2 payload SHA-256: `Webwild.x86_64` `d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc`,
+`Webwild.pck` `77619457b4b7a136952771237aa1de4adadf7641086261090ee81137f2465283`.

@@ -356,6 +356,7 @@ public partial class Main : Node3D
         return _game is not null;
     }
 
+    public Rect2 ProbeRestoreButtonRect => _restoreButton?.GetGlobalRect() ?? new Rect2();
     public long ProbeSaveTick() => Saves.Load().Data?.Tick ?? -1;
     public long ProbeArchiveTick() => Saves.LoadArchive().Data?.Tick ?? -1;
 
@@ -437,10 +438,22 @@ public partial class Main : Node3D
     private void ConfirmNewGarden()
     {
         if (_newGardenConfirm is null) return;
-        if (Saves.HasAnySave && !Saves.ArchiveExisting(out var archiveMessage))
+        if (Saves.HasAnySave)
         {
-            ShowMessage(archiveMessage, UiKit.Coral);
-            return;
+            // The title path and the in-game action share one workflow: save,
+            // archive and verify the previous garden before replacing it.
+            var existing = Saves.Load();
+            if (!existing.Success || existing.Data is null)
+            {
+                ShowMessage("Couldn't read the current garden, so it was not replaced. " +
+                            existing.Message, UiKit.Coral);
+                return;
+            }
+            if (!Saves.PrepareNewGarden(existing.Data, out var archiveMessage))
+            {
+                ShowMessage(archiveMessage, UiKit.Coral);
+                return;
+            }
         }
         HideNewGardenConfirmation();
         StartGame(null);
@@ -448,7 +461,7 @@ public partial class Main : Node3D
 
     private void RestorePreviousGarden()
     {
-        var result = Saves.LoadArchive();
+        var result = Saves.RestoreArchive();
         if (!result.Success || result.Data is null)
         {
             ShowMessage(result.Message, UiKit.Coral);

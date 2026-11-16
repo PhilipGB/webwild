@@ -403,6 +403,18 @@ public class SaveTests : IDisposable
             if (FailCopy) throw new IOException("Simulated copy failure");
             _inner.Copy(source, destination, overwrite);
         }
+        public void MoveDirectory(string source, string destination)
+        {
+            if (FailMove) throw new IOException("Simulated directory move failure");
+            _inner.MoveDirectory(source, destination);
+        }
+        public void DeleteDirectory(string path)
+        {
+            if (FailDelete) throw new IOException("Simulated directory delete failure");
+            _inner.DeleteDirectory(path);
+        }
+        public IReadOnlyList<string> ListFiles(string directory, string pattern) =>
+            _inner.ListFiles(directory, pattern);
         public void Delete(string path)
         {
             if (FailDelete) throw new IOException("Simulated delete failure");

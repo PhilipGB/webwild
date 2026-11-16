@@ -20,6 +20,7 @@ public partial class RuntimeProbe : Node
         _main = main;
         try
         {
+            ApplyProbeSettings();
             await Execute();
         }
         catch (Exception ex)
@@ -28,10 +29,41 @@ public partial class RuntimeProbe : Node
         }
         finally
         {
+            // Never leave accessibility or UI-scale changes behind, even when
+            // a check fails mid-run. The next launch starts from the defaults.
+            try
+            {
+                ApplyProbeSettings();
+                await Frames(2);
+            }
+            catch { }
             WriteReport();
             await Frames(3);
             GetTree().Quit(_failures == 0 ? 0 : 1);
         }
+    }
+
+    /// <summary>
+    /// Probes must be reproducible on any machine. Settings persist in user://
+    /// and an interrupted run can leave reduced motion or a larger UI scale
+    /// behind, which would change animation and layout checks on the next run.
+    /// </summary>
+    private void ApplyProbeSettings()
+    {
+        var defaults = new SettingsData();
+        var settings = _main.Settings;
+        settings.MasterVolume = defaults.MasterVolume;
+        settings.MusicVolume = defaults.MusicVolume;
+        settings.SfxVolume = defaults.SfxVolume;
+        settings.UiScalePercent = defaults.UiScalePercent;
+        settings.ReducedMotion = defaults.ReducedMotion;
+        settings.LowThreat = defaults.LowThreat;
+        settings.Fullscreen = defaults.Fullscreen;
+        settings.CameraSensitivity = defaults.CameraSensitivity;
+        settings.TutorialPrompts = defaults.TutorialPrompts;
+        try { GameData.CreateSettingsService().Save(settings); } catch { }
+        GameData.ApplyUiScale(settings);
+        GameData.ApplyFullscreen(settings);
     }
 
     private async Task Execute()
@@ -1627,6 +1659,143 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- H0: transactional in-game New Garden and verified restore ----
+        // Clear any archive left by the earlier title-screen section so this
+        // phase proves the in-game action archived the garden itself.
+        try { if (System.IO.File.Exists(_main.Saves.ArchivePath)) System.IO.File.Delete(_main.Saves.ArchivePath); } catch { }
+        var h0Game = _main.StartGame(null);
+        await Frames(10);
+        Check("h0-helper", h0Game.ProbeHatch(), "Hatch a helper to keep in the archive");
+        h0Game.ProbeAdvance(4);
+        await Frames(4);
+        var h0Source = h0Game.ProbeNearestFood(new Vec3(0, 0, 8.5), 500);
+        Check("h0-food-found", h0Source is not null, "A wild source for archive evidence");
+        if (h0Source is not null)
+        {
+            var sourcePos = h0Source.Position;
+            var approach = new Vec3(sourcePos.X - 1.4,
+                h0Game.ProbeGroundHeightAt(new Vec3(sourcePos.X - 1.4, 0, sourcePos.Z)) + 0.6,
+                sourcePos.Z);
+            h0Game.ProbeTeleport(approach);
+            await Frames(6);
+            Check("h0-forage", h0Game.ProbeForageNearest(), "Deplete a source before archiving");
+        }
+        var h0Seed = h0Game.ProbeWorldSeed;
+        var h0SaveId = h0Game.ProbeSaveId;
+        var h0Food = h0Game.Simulation!.Ledger.Food;
+        var h0Explored = h0Game.ExploredChunkCount;
+        h0Game.ProbeTeleport(new Vec3(300, 0.6, -120));
+        await Frames(8);
+        Check("h0-progress-saved", h0Game.ProbeSave(), "Save progress before New Garden");
+
+        // Open the pause menu with the real cancel action, then click the real
+        // New game button and its confirmation with mouse input.
+        var headless = DisplayServer.GetName() == "headless";
+        if (headless)
+        {
+            h0Game.ProbeOpenPause();
+            await Frames(4);
+        }
+        else
+        {
+            var escapeDown = new InputEventKey
+            {
+                PhysicalKeycode = Key.Escape, Keycode = Key.Escape, Pressed = true
+            };
+            var escapeUp = new InputEventKey
+            {
+                PhysicalKeycode = Key.Escape, Keycode = Key.Escape, Pressed = false
+            };
+            Input.ParseInputEvent(escapeDown);
+            await Frames(3);
+            Input.ParseInputEvent(escapeUp);
+            await Frames(4);
+        }
+        Check("h0-pause-opens", h0Game.PauseModalOpen, "Esc opens the pause menu");
+        var newGameRect = h0Game.ProbePauseNewGameRect;
+        Check("h0-new-game-button", newGameRect.Size.X > 0, $"{newGameRect}");
+        if (headless)
+        {
+            h0Game.ProbeOpenNewGardenConfirm();
+            await Frames(5);
+        }
+        else
+        {
+            await ClickUi(newGameRect.GetCenter());
+            await Frames(5);
+        }
+        Check("h0-confirm-visible", h0Game.ProbeNewGardenConfirmVisible,
+            "In-game New Garden requires confirmation");
+        await Capture("46-new-garden-confirm");
+        var confirmRect = h0Game.ProbeConfirmNewGardenRect;
+        Check("h0-confirm-button", confirmRect.Size.X > 0, $"{confirmRect}");
+        if (headless)
+        {
+            h0Game.ProbePressConfirmNewGarden();
+            await Frames(15);
+        }
+        else
+        {
+            await ClickUi(confirmRect.GetCenter());
+            await Frames(15);
+        }
+        Check("h0-new-world-identity",
+            _main.Game is not null && _main.Game.ProbeSaveId != h0SaveId &&
+            _main.Game.ProbeWorldSeed != 0,
+            $"old={h0SaveId} new={_main.Game?.ProbeSaveId} seed={_main.Game?.ProbeWorldSeed}");
+        var h0New = _main.Game;
+        Check("h0-new-garden-starts-fresh",
+            h0New is not null && h0New.Simulation!.Workers.Count == 0 &&
+            h0New.Simulation.Missions.CompletedMissions.Count == 0,
+            $"workers={h0New?.Simulation?.Workers.Count}");
+        Check("h0-archive-available", h0New!.ProbeArchiveAvailable,
+            "The previous garden is kept");
+        Check("h0-new-save", h0New.ProbeSave(), h0New.LastSaveError);
+        _main.ProbeReturnToTitle();
+        await Frames(8);
+
+        Check("h0-title-after-new-garden", _main.TitleVisible, "Returned to the title screen");
+        var restoreRect = _main.ProbeRestoreButtonRect;
+        Check("h0-restore-button",
+            restoreRect.Size.X > 0 && _main.ArchiveAvailable, $"{restoreRect}");
+        if (headless)
+        {
+            _main.ProbeRestorePreviousGarden();
+            await Frames(20);
+        }
+        else
+        {
+            await ClickUi(restoreRect.GetCenter());
+            await Frames(20);
+        }
+        var h0Restored = _main.Game;
+        Check("h0-restores-previous-world",
+            h0Restored is not null && h0Restored.ProbeWorldSeed == h0Seed,
+            $"seed={h0Restored?.ProbeWorldSeed} expected={h0Seed}");
+        Check("h0-restores-resources-and-workers",
+            h0Restored is not null && h0Restored.Simulation!.Ledger.Food == h0Food &&
+            h0Restored.Simulation.Workers.Count == 1,
+            $"food={h0Restored?.Simulation?.Ledger.Food} workers={h0Restored?.Simulation?.Workers.Count}");
+        Check("h0-restores-exploration",
+            h0Restored is not null && h0Restored.ExploredChunkCount >= h0Explored,
+            $"explored={h0Restored?.ExploredChunkCount} expected={h0Explored}");
+        if (h0Source is not null && h0Restored is not null)
+        {
+            // Chunk-owned depletion arrives with its chunk, exactly as during
+            // normal play: walk back to the source and verify it is still bare.
+            var restoredSourcePos = h0Source.Position;
+            h0Restored.ProbeTeleport(new Vec3(restoredSourcePos.X - 1.4,
+                h0Restored.ProbeGroundHeightAt(new Vec3(restoredSourcePos.X - 1.4, 0,
+                    restoredSourcePos.Z)) + 0.6, restoredSourcePos.Z));
+            await Frames(20);
+            Check("h0-restores-food-depletion",
+                !h0Restored.ProbeFoodAvailable(h0Source.Id),
+                $"available={h0Restored.ProbeFoodAvailable(h0Source.Id)} id={h0Source.Id}");
+        }
+        await Capture("47-restored-garden");
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;
@@ -2335,15 +2504,26 @@ public partial class RuntimeProbe : Node
         return copy;
     }
 
+    /// <summary>Viewport coordinates are logical; OS input is in window
+    /// coordinates. The final transform includes the content scale, so clicks
+    /// stay accurate on scaled desktops and under Xvfb.</summary>
+    private Vector2 ToWindowPoint(Vector2 position) =>
+        GetViewport().GetFinalTransform() * position;
+
     private async Task MouseMove(Vector2 position)
     {
-        var motion = new InputEventMouseMotion { Position = position, GlobalPosition = position };
+        var window = ToWindowPoint(position);
+        var motion = new InputEventMouseMotion { Position = window, GlobalPosition = window };
         Input.ParseInputEvent(motion);
         await Frames(2);
     }
 
-    private async Task Click(Vector2 position)
+    /// <summary>Send a real mouse click through the viewport GUI path.</summary>
+    private async Task ClickUi(Vector2 position)
     {
+        var motion = new InputEventMouseMotion { Position = position, GlobalPosition = position };
+        GetViewport().PushInput(motion);
+        await Frames(2);
         var down = new InputEventMouseButton
         {
             ButtonIndex = MouseButton.Left,
@@ -2351,7 +2531,7 @@ public partial class RuntimeProbe : Node
             Position = position,
             GlobalPosition = position
         };
-        Input.ParseInputEvent(down);
+        GetViewport().PushInput(down);
         await Frames(2);
         var up = new InputEventMouseButton
         {
@@ -2359,6 +2539,29 @@ public partial class RuntimeProbe : Node
             Pressed = false,
             Position = position,
             GlobalPosition = position
+        };
+        GetViewport().PushInput(up);
+        await Frames(3);
+    }
+
+    private async Task Click(Vector2 position)
+    {
+        var window = ToWindowPoint(position);
+        var down = new InputEventMouseButton
+        {
+            ButtonIndex = MouseButton.Left,
+            Pressed = true,
+            Position = window,
+            GlobalPosition = window
+        };
+        Input.ParseInputEvent(down);
+        await Frames(2);
+        var up = new InputEventMouseButton
+        {
+            ButtonIndex = MouseButton.Left,
+            Pressed = false,
+            Position = window,
+            GlobalPosition = window
         };
         Input.ParseInputEvent(up);
         await Frames(2);

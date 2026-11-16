@@ -125,9 +125,27 @@ public sealed class WorldSaveService
     }
 
     /// <summary>
+    /// Save the current session and then archive it as one safe New-Garden
+    /// preparation step. A failed save or archive returns false and leaves the
+    /// current garden live; only a verified archive permits replacement.
+    /// </summary>
+    public bool PrepareNewGarden(SaveGameData current, out string message)
+    {
+        var saved = Save(current);
+        if (!saved.Success)
+        {
+            message = "Couldn't save the current garden before starting a new one. " + saved.Message;
+            return false;
+        }
+        return ArchiveExisting(out message);
+    }
+
+    /// <summary>
     /// Keep the current garden as a durable previous-garden archive before a
-    /// confirmed New Garden replaces it. Returns false when there is no valid
-    /// save to keep, so the caller can refuse to discard anything.
+    /// confirmed New Garden replaces it. The manifest and every chunk record
+    /// are staged and verified before publication; live data is only retired
+    /// after the archive is complete. Returns false when the existing garden
+    /// could not be kept, so the caller can refuse to discard anything.
     /// </summary>
     public bool ArchiveExisting(out string message)
     {
@@ -159,29 +177,116 @@ public sealed class WorldSaveService
             return false;
         }
 
-        string? temp = null;
+        var staging = Path.Combine(Directory, "archive-staging-" + Guid.NewGuid().ToString("N"));
+        var chunkStaging = Path.Combine(staging, "chunks");
+        string? tempManifest = null;
         try
         {
-            var directory = Path.GetDirectoryName(ArchivePath);
-            if (!string.IsNullOrWhiteSpace(directory) && !_fs.DirectoryExists(directory))
-                _fs.CreateDirectory(directory);
-            temp = ArchivePath + ".tmp-" + Guid.NewGuid().ToString("N");
-            _fs.WriteAllBytes(temp, WorldSaveMigrator.ToBytes(manifest));
-            var check = WorldSaveMigrator.FromBytes(_fs.ReadAllBytes(temp), out var error, out _);
-            if (check is null)
+            if (!_fs.DirectoryExists(staging)) _fs.CreateDirectory(staging);
+
+            // Stage and verify the manifest bytes first.
+            tempManifest = Path.Combine(staging, ArchiveFileName);
+            _fs.WriteAllBytes(tempManifest, WorldSaveMigrator.ToBytes(manifest));
+            var check = WorldSaveMigrator.FromBytes(_fs.ReadAllBytes(tempManifest), out var error, out _);
+            if (check is null || check.Seed != manifest.Seed || check.SaveId != manifest.SaveId)
             {
-                _fs.Delete(temp);
-                message = "Couldn't keep the previous garden. " + error;
+                message = "Couldn't verify the previous garden archive. " + error;
                 return false;
             }
-            _fs.Move(temp, ArchivePath, true);
-            temp = null;
-            // Chunk-owned food depletion belongs to the old world. Move those
-            // records out of the live directory before a new garden starts.
-            var chunkArchive = _world.ArchiveChunkChanges(Path.Combine(Directory, "previous-chunks"));
-            if (!chunkArchive.Success)
+
+            // Copy and verify every chunk record while stamping the world seed.
+            var chunks = _world.StageChunkArchive(chunkStaging, manifest.Seed);
+            if (!chunks.Success)
             {
-                message = chunkArchive.Message + " " + chunkArchive.Error;
+                message = chunks.Message + " " + chunks.Error;
+                return false;
+            }
+
+            // Publish the manifest and chunks as one transaction. The old
+            // archive is moved aside first; any failure restores it exactly,
+            // and the live garden is never touched until both are verified.
+            var archiveChunks = Path.Combine(Directory, "previous-chunks");
+            var hadManifest = _fs.FileExists(ArchivePath);
+            var hadChunks = _fs.DirectoryExists(archiveChunks);
+            string? manifestBackup = null;
+            string? chunksBackup = null;
+            var manifestPublished = false;
+            var chunksInstalled = false;
+            try
+            {
+                if (hadManifest)
+                {
+                    var backup = ArchivePath + ".backup-" + Guid.NewGuid().ToString("N");
+                    _fs.Move(ArchivePath, backup, true);
+                    manifestBackup = backup;
+                }
+                if (hadChunks)
+                {
+                    var backup = archiveChunks + ".backup-" + Guid.NewGuid().ToString("N");
+                    _fs.MoveDirectory(archiveChunks, backup);
+                    chunksBackup = backup;
+                }
+
+                _fs.Move(tempManifest, ArchivePath, true);
+                tempManifest = null;
+                manifestPublished = true;
+                var installed = _world.InstallStagedChunkArchive(chunkStaging, archiveChunks);
+                if (!installed.Success)
+                    throw new IOException(installed.Message + " " + installed.Error);
+                chunksInstalled = true;
+
+                // Verify the published archive before retiring live records.
+                if (!HasArchive)
+                    throw new IOException("The published previous garden archive could not be verified.");
+            }
+            catch (Exception publishError)
+            {
+                try
+                {
+                    if (manifestPublished && _fs.FileExists(ArchivePath)) _fs.Delete(ArchivePath);
+                }
+                catch { }
+                try
+                {
+                    if (manifestBackup is not null)
+                    {
+                        _fs.Move(manifestBackup, ArchivePath, true);
+                        manifestBackup = null;
+                    }
+                }
+                catch { }
+                try
+                {
+                    if (chunksInstalled || chunksBackup is not null || !hadChunks)
+                    {
+                        if (_fs.DirectoryExists(archiveChunks)) _fs.DeleteDirectory(archiveChunks);
+                    }
+                }
+                catch { }
+                try
+                {
+                    if (chunksBackup is not null)
+                    {
+                        _fs.MoveDirectory(chunksBackup, archiveChunks);
+                        chunksBackup = null;
+                    }
+                }
+                catch { }
+                message = "Couldn't keep the previous garden. " + publishError.Message;
+                return false;
+            }
+            try { if (manifestBackup is not null && _fs.FileExists(manifestBackup)) _fs.Delete(manifestBackup); }
+            catch { }
+            try { if (chunksBackup is not null && _fs.DirectoryExists(chunksBackup)) _fs.DeleteDirectory(chunksBackup); }
+            catch { }
+            var retired = Path.Combine(Directory, "chunks.previous-" + Guid.NewGuid().ToString("N"));
+            var retire = _world.RetireLiveChunkChanges(retired);
+            if (!retire.Success)
+            {
+                // The archive is complete and the old live garden is untouched;
+                // refusing the replacement is the safe outcome.
+                message = retire.Message + " " + retire.Error +
+                          " Your previous garden is safe in the archive; the current garden is unchanged.";
                 return false;
             }
             message = "Your previous garden is safe in the garden archive.";
@@ -189,24 +294,143 @@ public sealed class WorldSaveService
         }
         catch (Exception ex)
         {
-            if (temp is not null)
-            {
-                try { if (_fs.FileExists(temp)) _fs.Delete(temp); } catch { }
-            }
             message = "Couldn't keep the previous garden. " + ex.Message;
             return false;
         }
+        finally
+        {
+            if (tempManifest is not null)
+            {
+                try { if (_fs.FileExists(tempManifest)) _fs.Delete(tempManifest); } catch { }
+            }
+            try
+            {
+                if (_fs.DirectoryExists(staging)) _fs.DeleteDirectory(staging);
+            }
+            catch { }
+        }
     }
 
+    /// <summary>
+    /// Restore the previous garden manifest and its archived chunk records.
+    /// Chunks are staged and verified, then swapped atomically; the live save
+    /// is only replaced after the restore payload is complete.
+    /// </summary>
+    public LoadResult RestoreArchive()
+    {
+        if (!_fs.FileExists(ArchivePath))
+            return LoadResult.Fail("No previous garden is saved.");
+        WorldManifestSave? manifest;
+        try
+        {
+            manifest = WorldSaveMigrator.FromBytes(
+                _fs.ReadAllBytes(ArchivePath), out var error, out _);
+            if (manifest is null || !WorldSaveMigrator.Validate(manifest, out var manifestError))
+            {
+                return new LoadResult(false, null, false,
+                    "The previous garden could not be read.", error ?? "The archive is invalid.");
+            }
+        }
+        catch (Exception ex)
+        {
+            return new LoadResult(false, null, false,
+                "The previous garden could not be read.", ex.Message);
+        }
+
+        var staging = Path.Combine(Directory, "restore-staging-" + Guid.NewGuid().ToString("N"));
+        var archivedChunks = Path.Combine(Directory, "previous-chunks");
+        try
+        {
+            if (!_fs.DirectoryExists(staging)) _fs.CreateDirectory(staging);
+            foreach (var coordinate in _world.ListChunkRecordsIn(archivedChunks))
+            {
+                var source = Path.Combine(archivedChunks, $"chunk_{coordinate.Id}.json");
+                try
+                {
+                    if (_fs.Length(source) > WorldSaveStore.MaxChunkRecordBytes) continue;
+                    var record = System.Text.Json.JsonSerializer.Deserialize<ChunkChangeSave>(
+                        _fs.ReadAllBytes(source), SaveValidator.JsonOptions);
+                    if (record is null || !WorldSaveStore.ValidateChunkRecord(record, out _)) continue;
+                    // Ignore records from another world generation. Stamped
+                    // archives always match; pre-stamp records with seed 0 are
+                    // adopted only when the archive has no stamps.
+                    if (record.WorldSeed != 0 && record.WorldSeed != manifest.Seed) continue;
+                    record.WorldSeed = manifest.Seed;
+                    _fs.WriteAllBytes(Path.Combine(staging, $"chunk_{coordinate.Id}.json"),
+                        System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(
+                            record, SaveValidator.JsonOptions));
+                }
+                catch
+                {
+                    // A single unreadable archived chunk must not make the whole
+                    // previous garden unusable; baseline content regenerates.
+                }
+            }
+
+            var chunksDirectory = Path.Combine(Directory, "chunks");
+            var previousLive = Path.Combine(Directory, "chunks.pre-restore-" + Guid.NewGuid().ToString("N"));
+            var hadLive = _fs.DirectoryExists(chunksDirectory);
+            if (hadLive) _fs.MoveDirectory(chunksDirectory, previousLive);
+            try
+            {
+                _fs.MoveDirectory(staging, chunksDirectory);
+            }
+            catch
+            {
+                if (hadLive && !_fs.DirectoryExists(chunksDirectory))
+                    _fs.MoveDirectory(previousLive, chunksDirectory);
+                throw;
+            }
+
+            var save = _world.SaveManifest(manifest);
+            if (!save.Success)
+            {
+                // Put the new garden's live chunk directory back; its manifest
+                // was never replaced, so the session is still coherent.
+                try
+                {
+                    var failedRestore = chunksDirectory + ".failed-" + Guid.NewGuid().ToString("N");
+                    _fs.MoveDirectory(chunksDirectory, failedRestore);
+                    if (hadLive) _fs.MoveDirectory(previousLive, chunksDirectory);
+                    _fs.DeleteDirectory(failedRestore);
+                }
+                catch { }
+                return new LoadResult(false, null, false,
+                    "The previous garden could not be restored.", save.Error ?? save.Message);
+            }
+            if (hadLive)
+            {
+                try { _fs.DeleteDirectory(previousLive); } catch { }
+            }
+            return LoadResult.Ok(WorldSaveMigrator.ExtractGame(manifest), false);
+        }
+        catch (Exception ex)
+        {
+            return new LoadResult(false, null, false,
+                "The previous garden could not be restored.", ex.Message);
+        }
+        finally
+        {
+            try
+            {
+                if (_fs.DirectoryExists(staging)) _fs.DeleteDirectory(staging);
+            }
+            catch { }
+        }
+    }
+
+    /// <summary>Read the previous garden without changing the live world.</summary>
     public LoadResult LoadArchive()
     {
         if (!_fs.FileExists(ArchivePath))
             return LoadResult.Fail("No previous garden is saved.");
         try
         {
-            var manifest = WorldSaveMigrator.FromBytes(_fs.ReadAllBytes(ArchivePath), out var error, out _);
+            var manifest = WorldSaveMigrator.FromBytes(
+                _fs.ReadAllBytes(ArchivePath), out var error, out _);
             if (manifest is null)
-                return new LoadResult(false, null, false, "The previous garden could not be read.", error);
+                return new LoadResult(false, null, false,
+                    "The previous garden could not be read.", error);
             return LoadResult.Ok(WorldSaveMigrator.ExtractGame(manifest), false);
         }
         catch (Exception ex)
@@ -214,5 +438,4 @@ public sealed class WorldSaveService
             return new LoadResult(false, null, false,
                 "The previous garden could not be read.", ex.Message);
         }
-    }
-}
+    }}

@@ -7,6 +7,12 @@ older v0.2 acceptance tables below remain as historical milestone evidence.
 Status key: **PASS** = observed in this delivery; **PARTIAL** = works with a
 documented limitation; **NOT VERIFIED** = not performed on this host.
 
+## v0.3.1 — Requirements completion (in progress)
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| F1: every New Garden path requires confirmation, archives a verified manifest and all chunk modifications, refuses on failure, and can restore the previous garden | PASS | `NewGardenWorkflowTests`; real-input H0 probe (Esc → New game → confirm → title restore); screenshots `46-new-garden-confirm`, `47-restored-garden` |
+
 ## v0.3.0 — Never-Ending World integrated acceptance
 
 This release acceptance covers the ten phases recorded in

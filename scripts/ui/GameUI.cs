@@ -57,6 +57,8 @@ public partial class GameUI : CanvasLayer
     private Button _bridgeButton = null!;
     private Button _helpButton = null!;
     private Button _mapButton = null!;
+    private Button? _pauseNewGameButton;
+    private Button? _confirmNewGameButton;
     private Button _colonyButton = null!;
     private Button _interactButton = null!;
     private Button _dismantleButton = null!;
@@ -120,6 +122,9 @@ public partial class GameUI : CanvasLayer
     public bool IsMapOpen => _mapOpen;
     public int ProbeMapCells => _mapView?.LastDrawnCells ?? -1;
     public Rect2 ProbeMapHomeRect => _mapHomeButton?.GetGlobalRect() ?? new Rect2();
+    public Rect2 ProbePauseNewGameRect => _pauseNewGameButton?.GetGlobalRect() ?? new Rect2();
+    public Rect2 ProbeConfirmNewGardenRect => _confirmNewGameButton?.GetGlobalRect() ?? new Rect2();
+    public bool ProbeNewGardenConfirmVisible => _confirmNewGameButton?.IsVisibleInTree() ?? false;
 
     public override void _Ready()
     {
@@ -425,6 +430,8 @@ public partial class GameUI : CanvasLayer
 
     public void CloseModal()
     {
+        _pauseNewGameButton = null;
+        _confirmNewGameButton = null;
         _pauseOpen = _nurseryOpen = _victoryOpen = _colonyOpen = _helpOpen = _confirmOpen =
             _saveFailedOpen = _travelOpen = _regionCompleteOpen = _mapOpen = false;
         _mapView = null;
@@ -726,6 +733,7 @@ public partial class GameUI : CanvasLayer
         _modalContent.AddChild(settings);
         var newGame = UiKit.Button("New game…", 360, 54);
         newGame.Pressed += ConfirmNewGame;
+        _pauseNewGameButton = newGame;
         _modalContent.AddChild(newGame);
         var quit = UiKit.Button("Save and quit to menu", 360, 54);
         quit.Pressed += () => QuitToMenuRequested?.Invoke();
@@ -765,9 +773,13 @@ public partial class GameUI : CanvasLayer
     {
         OpenModal("Start a new garden?", 560);
         ConfigureModalState(confirm: true);
-        _modalContent.AddChild(UiKit.Label("This replaces the garden you are playing now. Your last save will stay as a backup.", 19, UiKit.Ink, true));
-        var yes = UiKit.Button("Start a new garden", 360, 58, true);
+        _modalContent.AddChild(UiKit.Label(
+            "This saves and archives your current garden — its world, webs, helpers and wild-food changes — then starts a fresh one. If the archive cannot be verified, nothing is replaced.", 19, UiKit.Ink, true));
+        _modalContent.AddChild(UiKit.Label(
+            "You can restore the previous garden from the title screen later.", 17, UiKit.TealDark, true));
+        var yes = UiKit.Button("Save, archive and start new", 360, 58, true);
         yes.Pressed += () => NewGameRequested?.Invoke();
+        _confirmNewGameButton = yes;
         _modalContent.AddChild(yes);
         var no = UiKit.Button("Go back", 360, 54);
         no.Pressed += OpenPause;
@@ -962,6 +974,10 @@ public partial class GameUI : CanvasLayer
         panel.AddChild(label);
         return panel;
     }
+
+    public void ProbeOpenNewGardenConfirm() => ConfirmNewGame();
+    public void ProbePressConfirmNewGarden() =>
+        _confirmNewGameButton?.EmitSignal(Button.SignalName.Pressed);
 
     public void ToggleColony()
     {

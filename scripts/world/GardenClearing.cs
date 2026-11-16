@@ -1886,16 +1886,32 @@ public partial class GardenClearing : Node3D
         _ui?.ShowToast("Couldn't save settings. Open Settings to retry.", UiKit.Coral, 6f);
     }
 
-    public bool SaveGame(bool showToast, bool quiet = false)
+    private bool TryBuildSaveData(out SaveGameData data, out string error)
     {
-        if (_sim is null || _player is null) return false;
-        var data = _sim.ExportSave(PlayerLocal, _player.CameraPivot.Rotation.Y, Settings);
+        data = new SaveGameData();
+        error = "";
+        if (_sim is null || _player is null)
+        {
+            error = "There is no garden to save yet.";
+            return false;
+        }
+        data = _sim.ExportSave(PlayerLocal, _player.CameraPivot.Rotation.Y, Settings);
         data.ExploredChunks = _explored.ToIds();
         if (!SimulateSaveFailureForProbe && !SaveFoodChunkChanges(out var chunkError))
         {
-            LastSaveError = chunkError;
-            if (showToast) _ui.ShowSaveResult(false, chunkError);
-            else if (!quiet) _ui.ShowSaveResult(false, chunkError);
+            error = chunkError;
+            return false;
+        }
+        return true;
+    }
+
+    public bool SaveGame(bool showToast, bool quiet = false)
+    {
+        if (!TryBuildSaveData(out var data, out var error))
+        {
+            LastSaveError = error;
+            if (showToast) _ui.ShowSaveResult(false, error);
+            else if (!quiet) _ui.ShowSaveResult(false, error);
             return false;
         }
         var result = SimulateSaveFailureForProbe
@@ -1907,10 +1923,35 @@ public partial class GardenClearing : Node3D
         return result.Success;
     }
 
+    /// <summary>
+    /// In-game New Garden follows the same safe workflow as the title screen:
+    /// save the live garden, archive the manifest and every chunk modification,
+    /// verify the archive, and only then replace the live world. Any failure
+    /// keeps the current garden running and explains what happened.
+    /// </summary>
     private void RestartNewGame()
     {
         _ui.CloseModal();
+        if (_sim is null || _player is null)
+        {
+            StartNew();
+            return;
+        }
+        if (!TryBuildSaveData(out var data, out var error))
+        {
+            _ui.ShowToast(error, UiKit.Coral, 5f);
+            return;
+        }
+        if (!_saves.PrepareNewGarden(data, out var message))
+        {
+            _ui.ShowToast(message, UiKit.Coral, 6f);
+            return;
+        }
         StartNew();
+        SaveGame(false, true);
+        _ui.ShowToast(
+            "A new garden has begun. Your previous garden is safe in the garden archive.",
+            UiKit.TealDark, 5f);
     }
 
     public void ApplySettings(SettingsData settings)
@@ -2569,6 +2610,14 @@ public partial class GardenClearing : Node3D
     public int ResidentWebCount => _webViews.Count;
     public bool VictoryModalOpen => _ui.IsVictoryOpen;
     public bool PauseModalOpen => _ui.IsPauseOpen;
+    public int ProbeWorldSeed => _worldSeed;
+    public string ProbeSaveId => _saves.Load().Data?.SaveId ?? "";
+    public bool ProbeArchiveAvailable => _saves.HasArchive;
+    public Rect2 ProbePauseNewGameRect => _ui.ProbePauseNewGameRect;
+    public Rect2 ProbeConfirmNewGardenRect => _ui.ProbeConfirmNewGardenRect;
+    public bool ProbeNewGardenConfirmVisible => _ui.ProbeNewGardenConfirmVisible;
+    public void ProbeOpenNewGardenConfirm() => _ui.ProbeOpenNewGardenConfirm();
+    public void ProbePressConfirmNewGarden() => _ui.ProbePressConfirmNewGarden();
     public bool HelpModalOpen => _ui.IsHelpOpen;
     public bool ColonyModalOpen => _ui.IsColonyOpen;
     public bool SaveFailedPromptOpen => _ui.IsSaveFailedOpen;

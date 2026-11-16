@@ -11,7 +11,10 @@ public interface ISaveFileSystem
     void WriteAllBytes(string path, byte[] bytes);
     void Move(string source, string destination, bool overwrite);
     void Copy(string source, string destination, bool overwrite);
+    void MoveDirectory(string source, string destination);
+    void DeleteDirectory(string path);
     void Delete(string path);
+    IReadOnlyList<string> ListFiles(string directory, string pattern);
     long Length(string path);
 }
 
@@ -24,7 +27,11 @@ public sealed class DefaultSaveFileSystem : ISaveFileSystem
     public void WriteAllBytes(string path, byte[] bytes) => File.WriteAllBytes(path, bytes);
     public void Move(string source, string destination, bool overwrite) => File.Move(source, destination, overwrite);
     public void Copy(string source, string destination, bool overwrite) => File.Copy(source, destination, overwrite);
+    public void MoveDirectory(string source, string destination) => Directory.Move(source, destination);
+    public void DeleteDirectory(string path) => Directory.Delete(path, true);
     public void Delete(string path) => File.Delete(path);
+    public IReadOnlyList<string> ListFiles(string directory, string pattern) =>
+        Directory.Exists(directory) ? Directory.GetFiles(directory, pattern) : Array.Empty<string>();
     public long Length(string path) => new FileInfo(path).Length;
 }
 

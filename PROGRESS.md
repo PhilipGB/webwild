@@ -54,18 +54,21 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.0 P8 | Off-screen helpers and summon: summon to the player's world point, explicit journey destinations, wild summoned arrivals waiting with empty graph nodes, off-screen view culling and snapping, broad saved wild bounds, summon events/probes | DONE, merged PR [#35](https://github.com/PhilipGB/webwild/pull/35) | `docs/prs/v0.3.0.md`; sum contracts; 231 unit tests (227 existing + 4 new); 57 scene checks; 432 headless / 433 rendered runtime checks; Linux export re-verified; screenshot 45 |
 | v0.3.0 P9 | Integrated acceptance and release: version 0.3.0, README/CHANGELOG/ACCEPTANCE/EVIDENCE/EXPORTS rewrite, full integrated probe on the release tree, Linux and Windows exports, release record | DONE, merged PR [#36](https://github.com/PhilipGB/webwild/pull/36) | 231 unit tests; 57 scene checks; 432 headless / 433 rendered; Linux export 432/433; Windows export runtime NOT VERIFIED; 70 screenshots |
 | v0.3.0 | **Never-Ending World release**: one continuous procedural world, biomes, rivers/crossings, exploration map, Return Home, wild food regeneration, physical/off-screen/summoned helpers, schema-4 saves | **RELEASED as v0.3.0** (merge `4d8faf3`, tag `v0.3.0`) | `docs/prs/v0.3.0.md`; `docs/EVIDENCE.md#v030`; `docs/EXPORTS.md`; Linux verified, Windows/child playtest NOT VERIFIED |
+| v0.3.1 H0 | Save integrity: one safe New Garden workflow, verified transactional archive/restore including chunk modifications, mid-transaction rollback, in-game confirmation | DONE, merged (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `NewGardenWorkflowTests`; 240 unit tests; 57 scene checks; 450 headless / 451 rendered runtime checks; Linux export 450 headless / 451 rendered; screenshots 46–47 |
 
 ## Verification summary
 
-- `dotnet test`: **227 passed, 0 failed** (219 existing + 8 new worker-navigation tests).
+Current v0.3.1 H0 state; the per-phase history is in `docs/prs/v0.3.1.md`.
+
+- `dotnet test`: **240 passed, 0 failed** (231 v0.3.0 + 9 save-integrity tests).
 - Scene contract validation: **57 passed, 0 failed** across both regions.
-- Headless runtime probe: **420 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **421 passed, 0 failed**.
-- Exported Linux build, headless probe: **420 passed, 0 failed**.
-- Exported Linux build, rendered Xvfb probe: **421 passed, 0 failed**.
+- Headless runtime probe: **450 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **451 passed, 0 failed**.
+- Exported Linux build, headless probe: **450 passed, 0 failed**.
+- Exported Linux build, rendered Xvfb probe: **451 passed, 0 failed**.
 - Linux x64 export: built successfully and launched.
 - Windows x64 export: built successfully; runtime **NOT VERIFIED** (no Windows host).
-- Legacy saves v0.1.0/v0.1.1/v0.1.2: migration tests pass with real fixtures.
+- Legacy saves v0.1.0/v0.1.1/v0.1.2 and v0.2.x/v0.3.0: migration tests pass with real fixtures.
 - Child playtest: **NOT VERIFIED** — see `docs/PLAYTEST_NOTES.md`.
 
 ## Known limitations

@@ -512,7 +512,8 @@ public sealed class WorldSaveStore
             if (marker is null || string.IsNullOrWhiteSpace(marker.Id) || marker.Id.Length > 60 ||
                 !double.IsFinite(marker.X) || !double.IsFinite(marker.Y) || !double.IsFinite(marker.Z) ||
                 Math.Abs(marker.X) > 1e9 || Math.Abs(marker.Z) > 1e9 ||
-                (marker.Label?.Length ?? 0) > 60)
+                (marker.Label?.Length ?? 0) > 60 ||
+                (marker.FoodId?.Length ?? 0) > 120)
             {
                 error = "A chunk marker entry is invalid.";
                 return false;

@@ -302,6 +302,7 @@ public partial class GardenClearing : Node3D
         _ui.ReturnHomeRequested += ReturnHome;
         _ui.WorkerSummonRequested += SummonWorker;
         _ui.WorkerReleaseRequested += ReleaseWorker;
+        _ui.MapMarkerSelected += OnMapMarkerSelected;
 
         _audio = new AudioDirector { Name = "AudioDirector" };
         AddChild(_audio);
@@ -693,7 +694,74 @@ public partial class GardenClearing : Node3D
         if (_sim is null || _player is null || _chunks is null) return;
         if (_ui.IsModalOpen) return;
         ClearBuild();
-        _ui.OpenMap(_explored.Snapshot(), PlayerWorld, _chunks.Generator, _sim.VisitedRegions);
+        _ui.OpenMap(_explored.Snapshot(), PlayerWorld, _chunks.Generator,
+            _sim.VisitedRegions, _sim.MapMarkers);
+    }
+
+    private void MarkNearestFood()
+    {
+        if (_sim is null)
+        {
+            return;
+        }
+        var source = NearestFood(PlayerWorld, 3.4, availableOnly: false);
+        if (source is null)
+        {
+            _ui.ShowToast("No wild food is close enough to mark.", UiKit.Coral, 3.5f);
+            return;
+        }
+        if (_sim.MarkFoodSource(source, out var reason))
+            _ui.ShowToast($"{Cap(source.Label)} marked. Open M and click the food marker to send a helper.",
+                UiKit.Gold, 4.2f);
+        else
+            _ui.ShowToast(reason, UiKit.Coral, 3.5f);
+    }
+
+    private FoodSourceDefinition? _pendingFoodSource;
+
+    private void OnMapMarkerSelected(string markerId)
+    {
+        if (_sim is null || _chunks is null) return;
+        var marker = _sim.MapMarkers.FirstOrDefault(item => item.Id == markerId);
+        if (marker is null) return;
+        if (marker.Kind != WorldMarkerKind.Food || string.IsNullOrWhiteSpace(marker.FoodId))
+        {
+            _ui.ShowToast(string.IsNullOrWhiteSpace(marker.Label) ? "Marker" : marker.Label,
+                UiKit.TealDark, 3.2f);
+            return;
+        }
+        var source = _chunks.Generator.FoodSourceById(marker.FoodId);
+        if (source is null)
+        {
+            _ui.ShowToast("That food is no longer in this world.", UiKit.Coral, 3.5f);
+            return;
+        }
+        if (!_sim.IsFoodAvailable(source.Id))
+        {
+            var seconds = Math.Max(1, (int)Math.Ceiling(_sim.FoodSecondsRemaining(source.Id)));
+            _ui.ShowToast($"{Cap(source.Label)} regrow in {seconds}s.", UiKit.Coral, 3.5f);
+            return;
+        }
+        _pendingFoodSource = source;
+        _ui.ShowFoodAssignment(source, _sim.Workers, AssignFood);
+    }
+
+    private void AssignFood(string workerId)
+    {
+        if (_sim is null || _pendingFoodSource is null) return;
+        if (_sim.TryAssignFoodGather(workerId, _pendingFoodSource.Id, out var reason))
+        {
+            var worker = _sim.GetWorker(workerId);
+            _ui.ShowToast(reason.Length > 0
+                ? $"{worker?.Name ?? "Helper"}: {reason}"
+                : $"{worker?.Name ?? "Helper"} is going for {_pendingFoodSource.Label}.",
+                reason.Length > 0 ? UiKit.Coral : UiKit.LeafDark, 4f);
+        }
+        else
+        {
+            _ui.ShowToast(reason, UiKit.Coral, 4f);
+        }
+        _pendingFoodSource = null;
     }
 
     /// <summary>
@@ -1338,6 +1406,29 @@ public partial class GardenClearing : Node3D
                 _audio.Play("click");
                 _ui.ShowToast("A tiny spider is hatching…", UiKit.TealDark, 3f);
                 break;
+            case "WorkerForageAssigned":
+                var forageWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{forageWorker?.Name ?? "A helper"} is going for {evt.Detail ?? "food"}.",
+                    UiKit.LeafDark, 3.4f);
+                break;
+            case "WorkerFoodCollected":
+                var gatherWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{gatherWorker?.Name ?? "A helper"} gathered {evt.Detail ?? "food"} " +
+                              $"and is carrying it home.", UiKit.Gold, 3.8f);
+                break;
+            case "WorkerFoodDelivered":
+                var deliverWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{deliverWorker?.Name ?? "A helper"} delivered {evt.Amount} food home!",
+                    UiKit.LeafDark, 4f);
+                if (deliverWorker is not null &&
+                    _workerViews.TryGetValue(deliverWorker.Id, out var deliveredView))
+                    deliveredView.FlashActivity();
+                break;
+            case "WorkerFoodBlocked":
+                var blockedForager = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{blockedForager?.Name ?? "A helper"} has no safe route to the food " +
+                              "and is waiting.", UiKit.Coral, 4f);
+                break;
             case "WorkerSummoned":
                 var summonedWorker = _sim.GetWorker(evt.SubjectId ?? "");
                 _ui.ShowToast($"{summonedWorker?.Name ?? "A helper"} is walking to you.",
@@ -1481,6 +1572,11 @@ public partial class GardenClearing : Node3D
         else if (@event.IsActionPressed("build_bridge"))
         {
             SetTool(WebType.Bridge);
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed("mark_food"))
+        {
+            MarkNearestFood();
             GetViewport().SetInputAsHandled();
         }
         else if (@event.IsActionPressed("interact"))
@@ -2676,6 +2772,27 @@ public partial class GardenClearing : Node3D
         _sim?.ReleaseWorkerSummon(id, out _) == true;
     public void ProbeSetPlayerWorld(Vec3 position) => _sim?.SetPlayerWorldPosition(position);
     public Rect2 ProbeColonyButtonRect => _ui.ProbeColonyButtonRect;
+    public bool ProbeMarkFood() { MarkNearestFood(); return _sim?.MapMarkers.Count > 0; }
+    public string ProbeFoodMarkerId(string foodId) => "food:" + foodId;
+    public Rect2 ProbeMapMarkerRect(string id) => _ui.ProbeMapMarkerRect(id);
+    public int ProbeMapMarkerCount => _ui.ProbeMapMarkerCount;
+    public bool ProbeFoodTaskOpen => _ui.ProbeFoodTaskOpen;
+    public Rect2 ProbeFoodSendRect(string id) => _ui.ProbeFoodSendRect(id);
+    public bool ProbeAssignFood(string workerId) {
+        if (_sim is null || _pendingFoodSource is null) return false;
+        var source = _pendingFoodSource;
+        _pendingFoodSource = null;
+        _ui.CloseModal();
+        return _sim.TryAssignFoodGather(workerId, source.Id, out _);
+    }
+    public bool ProbeWorkerFoodTask(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.TargetFoodId is not null;
+    public int ProbeWorkerCarriedFood(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.CarriedFood ?? 0;
+    public bool ProbeWorkerFoodRouteUsesBridge(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.WorldPathUsesBridge == true;
+    public string ProbeWorkerFoodPhase(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.FoodPhase.ToString() ?? "";
     public Rect2 ProbeWorkerSummonRect(string id) => _ui.ProbeWorkerSummonRect(id);
     public Rect2 ProbeWorkerReleaseRect(string id) => _ui.ProbeWorkerReleaseRect(id);
     public string ProbeWorkerRowText(string id) => _ui.ProbeWorkerRowText(id);
@@ -2721,6 +2838,11 @@ public partial class GardenClearing : Node3D
     public Rect2 ProbeMapButtonRect => _ui.ProbeMapButtonRect;
     public Rect2 ProbeMapHomeRect => _ui.ProbeMapHomeRect;
     public void ProbeOpenMap() => OpenMap();
+    public void ProbeSelectMapMarker(string id)
+    {
+        if (_ui.IsMapOpen) _ui.CloseModal();
+        OnMapMarkerSelected(id);
+    }
     public void ProbeCloseMap() => _ui.CloseModal();
     public bool ProbeEnterLandmark(string regionId)
     {

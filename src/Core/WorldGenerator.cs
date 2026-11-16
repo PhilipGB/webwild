@@ -186,6 +186,18 @@ public sealed class WorldGenerator
     /// generated land. IDs are stable across unload/reload and carry the owning
     /// chunk, so state can be stored in that chunk's small change record.
     /// </summary>
+    /// <summary>Resolve one deterministic food definition from its stable id,
+    /// including chunks that are not currently loaded by the presentation.</summary>
+    public FoodSourceDefinition? FoodSourceById(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        var parts = id.Split(':');
+        if (parts.Length < 4 || parts[0] != "food") return null;
+        if (!ChunkCoordinate.TryParse(parts[1], out var coordinate)) return null;
+        var data = GenerateChunk(coordinate);
+        return data?.FoodSources.FirstOrDefault(source => source.Id == id);
+    }
+
     public List<FoodSourceDefinition> GenerateFoodSources(ChunkCoordinate coordinate)
     {
         var sources = new List<FoodSourceDefinition>();

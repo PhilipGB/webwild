@@ -18,7 +18,7 @@ public sealed class PendingHatch
 /// The authoritative engine-free game simulation. Godot adapters only translate
 /// input and render this state; tests drive exactly the same code path.
 /// </summary>
-public sealed class GameSimulation
+public sealed partial class GameSimulation
 {
     public const int HistoryRetentionLimit = 512;
 
@@ -47,6 +47,7 @@ public sealed class GameSimulation
     private readonly HashSet<string> _claimedSupplyCaches = new(StringComparer.Ordinal);
     private readonly Dictionary<string, FoodSourceState> _foodStates = new(StringComparer.Ordinal);
     private Vec3? _playerWorldPosition;
+    private readonly List<WorldMarker> _markers = new();
     private readonly WorkerNavigator _navigator;
 
     public Tuning Tuning { get; }
@@ -350,6 +351,10 @@ public sealed class GameSimulation
         worker.CurrentNode = region.NurseryNode;
         worker.Activity = WorkerActivity.Resting;
         worker.PatrolCooldown = 1.5;
+        // A released forager reaches its home nursery carrying food or with a
+        // suspended gathering task; finish it before ordinary duties resume.
+        if (worker.CarriedFood > 0) DeliverFoodAtHome(worker);
+        else if (worker.TargetFoodId is not null) ReplanFoodTask(worker);
         Emit(new GameplayEvent(NextKey($"worker_arrived_{worker.Id}"), "WorkerArrived",
             TickCount, worker.Id, Detail: region.Id, Region: region.Id));
     }
@@ -455,6 +460,8 @@ public sealed class GameSimulation
                 home.NurseryNode;
             worker.Activity = WorkerActivity.Resting;
             worker.PatrolCooldown = 0.5;
+            if (worker.CarriedFood > 0) DeliverFoodAtHome(worker);
+            else if (worker.TargetFoodId is not null) ReplanFoodTask(worker);
         }
         else
         {
@@ -1179,6 +1186,11 @@ public sealed class GameSimulation
                 worker.Activity = WorkerActivity.Waiting;
                 continue;
             }
+            if (worker.TargetFoodId is not null)
+            {
+                TickFoodTask(worker, dt);
+                continue;
+            }
             if (worker.IsMoving) MoveWorker(worker, dt);
             else
             {
@@ -1613,7 +1625,25 @@ public sealed class GameSimulation
                 DestinationX = w.JourneyDestination.X,
                 DestinationY = w.JourneyDestination.Y,
                 DestinationZ = w.JourneyDestination.Z,
-                Summoned = w.Summoned
+                Summoned = w.Summoned,
+                TargetFoodId = w.TargetFoodId,
+                FoodPhase = w.FoodPhase.ToString(),
+                FoodX = w.FoodSourcePosition.X,
+                FoodY = w.FoodSourcePosition.Y,
+                FoodZ = w.FoodSourcePosition.Z,
+                CarriedFood = w.CarriedFood,
+                FoodDeliveryId = w.FoodDeliveryId,
+                WorldPath = w.WorldPath.Select(WorldPosSave.FromAbsolute).ToList(),
+                WorldPathIndex = w.WorldPathIndex,
+                OutboundPath = w.OutboundPath.Select(WorldPosSave.FromAbsolute).ToList(),
+                WorldPathUsesBridge = w.WorldPathUsesBridge,
+                TaskRetryCooldown = w.TaskRetryCooldown
+            }).ToList(),
+            MapMarkers = _markers.Select(marker => new MapMarkerSave
+            {
+                Id = marker.Id, Kind = marker.Kind,
+                X = marker.Position.X, Y = marker.Position.Y, Z = marker.Position.Z,
+                Label = marker.Label, FoodId = marker.FoodId
             }).ToList(),
             Insects = _insects.Select(i => new InsectSave
             {
@@ -1746,7 +1776,19 @@ public sealed class GameSimulation
                 JourneyTargetRegion = saved.JourneyTargetRegion,
                 JourneyFromRegion = saved.JourneyFromRegion,
                 Summoned = saved.Summoned,
-                JourneyDestination = new Vec3(saved.DestinationX, saved.DestinationY, saved.DestinationZ)
+                JourneyDestination = new Vec3(saved.DestinationX, saved.DestinationY, saved.DestinationZ),
+                TargetFoodId = saved.TargetFoodId,
+                FoodPhase = Enum.TryParse<WorkerFoodPhase>(saved.FoodPhase, true, out var foodPhase)
+                    ? foodPhase : WorkerFoodPhase.None,
+                FoodSourcePosition = new Vec3(saved.FoodX, saved.FoodY, saved.FoodZ),
+                CarriedFood = Math.Max(0, saved.CarriedFood),
+                FoodDeliveryId = saved.FoodDeliveryId ?? "",
+                WorldPath = saved.WorldPath.Select(p => p.ToPos().Absolute).ToList(),
+                WorldPathIndex = Math.Clamp(saved.WorldPathIndex, 0,
+                    Math.Max(0, saved.WorldPath.Count - 1)),
+                OutboundPath = saved.OutboundPath.Select(p => p.ToPos().Absolute).ToList(),
+                WorldPathUsesBridge = saved.WorldPathUsesBridge,
+                TaskRetryCooldown = saved.TaskRetryCooldown
             };
             if (worker.Travelling)
             {
@@ -1778,6 +1820,17 @@ public sealed class GameSimulation
                 worker.PathEdges.Add(edge);
             }
             sim._workers.Add(worker);
+        }
+
+        sim._markers.Clear();
+        foreach (var marker in data.MapMarkers ?? new List<MapMarkerSave>())
+        {
+            if (marker is null || string.IsNullOrWhiteSpace(marker.Id) ||
+                !WorldMarkerKind.IsKnown(marker.Kind)) continue;
+            var position = new Vec3(marker.X, marker.Y, marker.Z);
+            if (!position.IsFinite) continue;
+            sim._markers.Add(new WorldMarker(marker.Id, marker.Kind!, position,
+                marker.FoodId, marker.Label ?? ""));
         }
 
         sim._insects.Clear();

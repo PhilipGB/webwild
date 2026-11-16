@@ -300,7 +300,8 @@ public partial class GardenClearing : Node3D
         _ui.BuildCancelled += ClearBuild;
         _ui.MapRequested += OpenMap;
         _ui.ReturnHomeRequested += ReturnHome;
-        _ui.SummonRequested += SummonHelpers;
+        _ui.WorkerSummonRequested += SummonWorker;
+        _ui.WorkerReleaseRequested += ReleaseWorker;
 
         _audio = new AudioDirector { Name = "AudioDirector" };
         AddChild(_audio);
@@ -563,6 +564,7 @@ public partial class GardenClearing : Node3D
         {
             var step = Math.Max(0.05, _sim.Tuning.FixedSimulationTickSeconds);
             _accumulator += delta;
+            _sim.SetPlayerWorldPosition(PlayerWorld);
             var guard = 0;
             while (_accumulator >= step && guard++ < 20)
             {
@@ -670,14 +672,20 @@ public partial class GardenClearing : Node3D
         _explored.VisitArea(coordinate, 1);
     }
 
-    private void SummonHelpers()
+    private void SummonWorker(string workerId)
     {
         if (_sim is null) return;
-        if (_sim.TrySummonWorkers(PlayerWorld, _sim.ActiveRegionId, out var reason))
-            _ui.ShowToast("Helpers are on their way. They will walk to you.", UiKit.TealDark, 4f);
-        else
+        if (!_sim.TrySummonWorker(workerId, PlayerWorld, _sim.ActiveRegionId, out var reason))
             _ui.ShowToast(reason, UiKit.Coral, 3.5f);
-        _ui.RefreshOpenPanels(_sim);
+        _ui.RefreshColonyPanel();
+    }
+
+    private void ReleaseWorker(string workerId)
+    {
+        if (_sim is null) return;
+        if (!_sim.ReleaseWorkerSummon(workerId, out var reason))
+            _ui.ShowToast(reason, UiKit.Coral, 3.5f);
+        _ui.RefreshColonyPanel();
     }
 
     private void OpenMap()
@@ -1329,6 +1337,26 @@ public partial class GardenClearing : Node3D
             case "HatchStarted":
                 _audio.Play("click");
                 _ui.ShowToast("A tiny spider is hatching…", UiKit.TealDark, 3f);
+                break;
+            case "WorkerSummoned":
+                var summonedWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{summonedWorker?.Name ?? "A helper"} is walking to you.",
+                    UiKit.Violet, 3.6f);
+                break;
+            case "WorkerSummonedArrived":
+                var arrivedWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{arrivedWorker?.Name ?? "A helper"} arrived and will follow you.",
+                    UiKit.Violet, 3.6f);
+                break;
+            case "WorkerReleased":
+                var releasedWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{releasedWorker?.Name ?? "A helper"} is heading home.",
+                    UiKit.TealDark, 3.4f);
+                break;
+            case "WorkerRouteBlocked":
+                var blockedWorker = _sim.GetWorker(evt.SubjectId ?? "");
+                _ui.ShowToast($"{blockedWorker?.Name ?? "A helper"} has no safe route and is waiting.",
+                    UiKit.Coral, 4f);
                 break;
             case "WorkerUsedBridge":
                 if (!_bridgeCrossToastShown)
@@ -2642,9 +2670,22 @@ public partial class GardenClearing : Node3D
         _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.CurrentNode ?? "";
     public bool ProbeWorkerViewVisible(string id) =>
         _workerViews.TryGetValue(id, out var view) && view.Visible;
-    public bool ProbeSummonHelpers() =>
-        _sim?.TrySummonWorkers(PlayerWorld, _sim.ActiveRegionId, out _) == true;
+    public bool ProbeSummonWorker(string id) =>
+        _sim?.TrySummonWorker(id, PlayerWorld, _sim.ActiveRegionId, out _) == true;
+    public bool ProbeReleaseWorker(string id) =>
+        _sim?.ReleaseWorkerSummon(id, out _) == true;
+    public void ProbeSetPlayerWorld(Vec3 position) => _sim?.SetPlayerWorldPosition(position);
+    public Rect2 ProbeColonyButtonRect => _ui.ProbeColonyButtonRect;
+    public Rect2 ProbeWorkerSummonRect(string id) => _ui.ProbeWorkerSummonRect(id);
+    public Rect2 ProbeWorkerReleaseRect(string id) => _ui.ProbeWorkerReleaseRect(id);
+    public string ProbeWorkerRowText(string id) => _ui.ProbeWorkerRowText(id);
 
+    public string ProbeWorkerActivity(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.Activity.ToString() ?? "";
+    public string? ProbeWorkerTargetInsect(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.TargetInsectId;
+    public int ProbeWorkerCollectCount(string id) =>
+        _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.CollectCount ?? 0;
     public bool ProbeWorkerTravelling(string id) =>
         _sim?.Workers.FirstOrDefault(worker => worker.Id == id)?.Travelling == true;
     public string ProbeWorkerJourneyTarget(string id) =>

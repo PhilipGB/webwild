@@ -1,8 +1,8 @@
 {
-  "generatedUtc": "2026-11-16T09:58:39.5537318Z",
+  "generatedUtc": "2026-11-16T11:04:20.4415459Z",
   "engine": "{ \u0022major\u0022: 4, \u0022minor\u0022: 7, \u0022patch\u0022: 2, \u0022hex\u0022: 263938, \u0022status\u0022: \u0022stable\u0022, \u0022build\u0022: \u0022official\u0022, \u0022hash\u0022: \u0022ed1daf0bf001b61586d9930840f2f1394092c079\u0022, \u0022timestamp\u0022: 0, \u0022string\u0022: \u00224.7.2-stable (official)\u0022 }",
   "renderer": "headless",
-  "passes": 450,
+  "passes": 462,
   "failures": 0,
   "checks": [
     {
@@ -393,7 +393,7 @@
     {
       "name": "climb-stem",
       "pass": true,
-      "detail": "height=4.20"
+      "detail": "height=4.19"
     },
     {
       "name": "build-tool-open",
@@ -783,7 +783,7 @@
     {
       "name": "p2-walks-garden-to-reedwater",
       "pass": true,
-      "detail": "reached=True region=reedwater_bank end=Vec3 { X = 79.23497772216797, Y = 0.0008308415417559445, Z = 6.032896518707275, LengthSquared = 6314.577535728182, Length = 79.46431611565144, HorizontalLength = 79.46431611130801, IsFinite = True }"
+      "detail": "reached=True region=reedwater_bank end=Vec3 { X = 79.23560333251953, Y = 0.0008341727661900222, Z = 6.032860279083252, LengthSquared = 6314.676239311165, Length = 79.46493716923939, HorizontalLength = 79.46493716486108, IsFinite = True }"
     },
     {
       "name": "p2-bramble-gate-open",
@@ -808,7 +808,7 @@
     {
       "name": "p2-entered-reedwater-on-foot",
       "pass": true,
-      "detail": "player=(79.23498, 0.00083084154, 6.0328965)"
+      "detail": "player=(79.2356, 0.00083417277, 6.0328603)"
     },
     {
       "name": "reedwater-anchors-visible",
@@ -893,7 +893,7 @@
     {
       "name": "anchor-screen-nearest-target",
       "pass": true,
-      "detail": "pick=rw_island_b_post islandB=(612.1526, 290.73096) lilyB=(650.1041, 254.56528)"
+      "detail": "pick=rw_island_b_post islandB=(612.1467, 290.09372) lilyB=(650.1068, 253.88885)"
     },
     {
       "name": "anchor-screen-empty-space-does-not-select",
@@ -938,7 +938,7 @@
     {
       "name": "player-walks-bridge-one-back-to-bank",
       "pass": true,
-      "detail": "end=Vec3 { X = 104.76998901367188, Y = 0.0008246764773502946, Z = 8.346953392028809, LengthSquared = 11046.422229533717, Length = 105.10196111174004, HorizontalLength = 105.10196110850465, IsFinite = True } seconds=1.6"
+      "detail": "end=Vec3 { X = 104.76996612548828, Y = 0.000824098358862102, Z = 8.346939086914062, LengthSquared = 11046.417194735754, Length = 105.10193715976767, HorizontalLength = 105.10193715653682, IsFinite = True } seconds=1.6"
     },
     {
       "name": "player-stops-and-resumes-at-deck-joint",
@@ -983,7 +983,7 @@
     {
       "name": "player-walks-bridge-three-back-to-island-b",
       "pass": true,
-      "detail": "end=Vec3 { X = 92.97978210449219, Y = 0.5112535953521729, Z = 2.183290719985962, LengthSquared = 8650.268018805584, Length = 93.00681705555557, HorizontalLength = 93.00541187784087, IsFinite = True } seconds=1.6"
+      "detail": "end=Vec3 { X = 92.97978210449219, Y = 0.5112535953521729, Z = 2.183290719985962, LengthSquared = 8650.268018805584, Length = 93.00681705555557, HorizontalLength = 93.00541187784087, IsFinite = True } seconds=1.7"
     },
     {
       "name": "reedwater-bridge-modular-planks",
@@ -1203,7 +1203,7 @@
     {
       "name": "reenter-supply-not-regranted",
       "pass": true,
-      "detail": "claimed=reedwater_bank food=5 silk=26"
+      "detail": "claimed=reedwater_bank food=10 silk=25"
     },
     {
       "name": "critical-bridge-present",
@@ -1623,7 +1623,7 @@
     {
       "name": "p1-walks-north-gate-across-boundary",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -5.000001430511475, Y = -0.30961912870407104, Z = -27.310697555541992, LengthSquared = 770.9700792802636, Length = 27.766347964402225, HorizontalLength = 27.76462164833881, IsFinite = True } water=False"
+      "detail": "reached=True end=Vec3 { X = -5.000001430511475, Y = -0.3096255362033844, Z = -27.31070327758789, LengthSquared = 770.970395794236, Length = 27.766353663998373, HorizontalLength = 27.76462727683494, IsFinite = True } water=False"
     },
     {
       "name": "p1-boundary-chunk-built",
@@ -1638,7 +1638,7 @@
     {
       "name": "p1-walks-south-gate-across-boundary",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 4.700170040130615, Y = -0.10655516386032104, Z = 27.42228889465332, LengthSquared = 774.0848806309135, Length = 27.822380930303456, HorizontalLength = 27.822176885139097, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 4.700170516967773, Y = -0.10655658692121506, Z = 27.422317504882812, LengthSquared = 774.0864545333917, Length = 27.82240921511636, HorizontalLength = 27.822205164709274, IsFinite = True }"
     },
     {
       "name": "p1-walks-west-gate-across-boundary",
@@ -1648,7 +1648,7 @@
     {
       "name": "p1-walks-diagonal-corner",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 28.148454666137695, Y = -0.2211752086877823, Z = 27.37420654296875, LengthSquared = 1541.7316024216602, Length = 39.2648902000459, HorizontalLength = 39.26426726616354, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 28.148454666137695, Y = -0.2211746722459793, Z = 27.3741512298584, LengthSquared = 1541.7285738824103, Length = 39.26485163453964, HorizontalLength = 39.26422870306721, IsFinite = True }"
     },
     {
       "name": "p1-corner-chunk-loaded",
@@ -1658,12 +1658,12 @@
     {
       "name": "p1-far-chunk-unloaded",
       "pass": true,
-      "detail": "loaded=63 centre=5_-5"
+      "detail": "loaded=61 centre=5_-4"
     },
     {
       "name": "p1-load-ring-complete",
       "pass": true,
-      "detail": "loaded=63"
+      "detail": "loaded=61"
     },
     {
       "name": "p1-save-while-far",
@@ -1693,12 +1693,12 @@
     {
       "name": "p1-regenerated-chunk-walkable",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -5.000004291534424, Y = -0.6677529811859131, Z = -29.428308486938477, LengthSquared = 891.4712773616604, Length = 29.857516262436505, HorizontalLength = 29.850048296741125, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -5.000003337860107, Y = -0.6675533652305603, Z = -29.426624298095703, LengthSquared = 891.3718784553193, Length = 29.85585166186554, HorizontalLength = 29.848387744732356, IsFinite = True }"
     },
     {
       "name": "p1-reload-far-restores-position",
       "pass": true,
-      "detail": "end=(120.00315, 2.3116703, -96.00386)"
+      "detail": "end=(120.00844, 2.3117719, -95.99895)"
     },
     {
       "name": "p1-reload-far-grounded",
@@ -1733,12 +1733,12 @@
     {
       "name": "p3-walks-moss-terrain",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = -26.17513656616211, Y = -2.3685388565063477, Z = -102.71514892578125, LengthSquared = 11241.149569417437, Length = 106.02428763928309, HorizontalLength = 105.99782824710447, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = -26.181049346923828, Y = -2.3683021068573, Z = -102.71516418457031, LengthSquared = 11241.46115323864, Length = 106.02575702742537, HorizontalLength = 105.99930329190516, IsFinite = True }"
     },
     {
       "name": "p3-walks-bloom-terrain",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 25.900867462158203, Y = 0.23105697333812714, Z = 57.06340408325195, LengthSquared = 3927.1404081857095, Length = 62.66690041948548, HorizontalLength = 62.66647445692777, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 25.644634246826172, Y = 0.22259537875652313, Z = 57.06338119506836, LengthSquared = 3913.9262877698147, Length = 62.56138016196426, HorizontalLength = 62.56098415999521, IsFinite = True }"
     },
     {
       "name": "p3-origin-rebases-at-distance",
@@ -1758,7 +1758,7 @@
     {
       "name": "p3-walks-after-rebase",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 18005.03515625, Y = -0.8348054885864258, Z = -12000, LengthSquared = 468181291.67469865, Length = 21637.49735239033, HorizontalLength = 21637.49733628634, IsFinite = True }"
+      "detail": "reached=True end=Vec3 { X = 18005.03515625, Y = -0.8348146080970764, Z = -12000, LengthSquared = 468181291.6747139, Length = 21637.497352390685, HorizontalLength = 21637.49733628634, IsFinite = True }"
     },
     {
       "name": "p3-far-save",
@@ -1778,7 +1778,7 @@
     {
       "name": "p3-reload-keeps-logical-position",
       "pass": true,
-      "detail": "player=(18005.02, -0.8353388, -11999.999)"
+      "detail": "player=(18005.02, -0.8353392, -11999.999)"
     },
     {
       "name": "p3-reload-chunk-loaded",
@@ -1808,7 +1808,7 @@
     {
       "name": "p4-crosses-river-on-bridge",
       "pass": true,
-      "detail": "reached=True end=Vec3 { X = 5.947503086645156E-05, Y = -0.5143684148788452, Z = 73.974365234375, LengthSquared = 5472.471286698471, Length = 73.97615350029001, HorizontalLength = 73.9743652343989, IsFinite = True } water=False"
+      "detail": "reached=True end=Vec3 { X = 5.8809884649235755E-05, Y = -0.5143675804138184, Z = 73.97438049316406, LengthSquared = 5472.473543358651, Length = 73.97616875290753, HorizontalLength = 73.97438049318744, IsFinite = True } water=False"
     },
     {
       "name": "p4-river-recovery",
@@ -2038,55 +2038,80 @@
     {
       "name": "p7-worker-starts-at-garden",
       "pass": true,
-      "detail": "region=garden_clearing worker=Vec3 { X = 11.637567250618721, Y = 0.11812163746906394, Z = 3.8872431446369355, LengthSquared = 150.55758349943864, Length = 12.270190850163605, HorizontalLength = 12.269622275286238, IsFinite = True } garden=Vec3 { X = 12, Y = 0, Z = 4, LengthSquared = 160, Length = 12.649110640673518, HorizontalLength = 12.649110640673518, IsFinite = True } reedwater=Vec3 { X = 107, Y = 0.1, Z = 5.8, LengthSquared = 11482.65, Length = 107.157127621078, HorizontalLength = 107.15708096061594, IsFinite = True }"
+      "detail": "region=garden_clearing worker=Vec3 { X = 10.187836253093606, Y = 0.1906081873453197, Z = 3.4362157231846777, LengthSquared = 115.63591749719302, Length = 10.753414225128363, HorizontalLength = 10.751724792613972, IsFinite = True }"
+    },
+    {
+      "name": "p7-helper-has-task",
+      "pass": true,
+      "detail": "task=Collecting target=fly_twins"
     },
     {
       "name": "p7-enter-reedwater",
       "pass": true,
-      "detail": "Move the colony story frame to Reedwater"
+      "detail": "Move the player/story frame to Reedwater"
     },
     {
-      "name": "p7-journey-starts",
+      "name": "p7-landmark-does-not-redirect-helper",
       "pass": true,
-      "detail": "travelling=True world=Vec3 { X = 11.637567250618721, Y = 0.11812163746906394, Z = 3.8872431446369355, LengthSquared = 150.55758349943864, Length = 12.270190850163605, HorizontalLength = 12.269622275286238, IsFinite = True }"
+      "detail": "region=garden_clearing task=Collecting travelling=False"
     },
     {
-      "name": "p7-worker-moves-physically",
+      "name": "p7-helper-keeps-working",
       "pass": true,
-      "detail": "world=Vec3 { X = 20.534641665392183, Y = 0.3, Z = 7.206981405819842, LengthSquared = 473.70208930989355, Length = 21.76469823613214, HorizontalLength = 21.762630569623095, IsFinite = True }"
+      "detail": "task=Collecting collect=0"
     },
     {
-      "name": "p7-worker-arrives-reedwater",
+      "name": "p7-summon-single-helper",
       "pass": true,
-      "detail": "region=reedwater_bank world=Vec3 { X = 107, Y = 0.1, Z = 5.8, LengthSquared = 11482.65, Length = 107.157127621078, HorizontalLength = 107.15708096061594, IsFinite = True }"
+      "detail": "The named helper is called"
     },
     {
-      "name": "p7-enter-garden",
+      "name": "p7-summon-does-not-teleport",
       "pass": true,
-      "detail": "Return the colony frame to the garden"
+      "detail": "worker=Vec3 { X = -8.656653363317156, Y = 1.1591780545110781, Z = 1.5481017454349022, LengthSquared = 78.6779602289089, Length = 8.870059764675146, HorizontalLength = 8.793990360857169, IsFinite = True }"
     },
     {
-      "name": "p7-return-journey-starts",
+      "name": "p7-summoned-helper-walks",
+      "pass": true,
+      "detail": "worker=Vec3 { X = 0.5900671403871898, Y = 0.5587002322375891, Z = 3.5165294166659384, LengthSquared = 13.026304317943936, Length = 3.6091971846858044, HorizontalLength = 3.565691849899764, IsFinite = True }"
+    },
+    {
+      "name": "p7-summoned-arrives-at-player",
+      "pass": true,
+      "detail": "region=reedwater_bank world=Vec3 { X = 107, Y = 0.7597222089767456, Z = 5.800000190734863, LengthSquared = 11483.217180047337, Length = 107.15977407613053, HorizontalLength = 107.15708097093969, IsFinite = True }"
+    },
+    {
+      "name": "p7-release-helper",
+      "pass": true,
+      "detail": "Release the summoned helper"
+    },
+    {
+      "name": "p7-release-heads-home",
       "pass": true,
       "detail": "target=garden_clearing"
     },
     {
-      "name": "p7-save-mid-journey",
+      "name": "p7-enter-garden",
       "pass": true,
-      "detail": "Save while the helper is walking"
+      "detail": "Return the player/story frame to the garden"
     },
     {
-      "name": "p7-mid-journey-loads",
+      "name": "p7-save-mid-return",
+      "pass": true,
+      "detail": "Save the return journey: "
+    },
+    {
+      "name": "p7-mid-return-loads",
       "pass": true,
       "detail": "Save loaded"
     },
     {
-      "name": "p7-reload-resumes-journey",
+      "name": "p7-reload-resumes-return",
       "pass": true,
-      "detail": "world=Vec3 { X = 96.7438900962506, Y = 0.28729874588336235, Z = 5.867033398063721, LengthSquared = 9393.884892418797, Length = 96.92205575831952, HorizontalLength = 96.9216299483733, IsFinite = True } saved=Vec3 { X = 97.12388197997426, Y = 0.28729874588336235, Z = 5.8645497909805595, LengthSquared = 9467.523935680245, Length = 97.30120212864918, HorizontalLength = 97.30077797793221, IsFinite = True }"
+      "detail": "travelling=True target=garden_clearing"
     },
     {
-      "name": "p7-reload-arrives-garden",
+      "name": "p7-return-arrives-home",
       "pass": true,
       "detail": "region=garden_clearing world=Vec3 { X = 12, Y = 0.1, Z = 4, LengthSquared = 160.01, Length = 12.649505919204907, HorizontalLength = 12.649110640673518, IsFinite = True }"
     },
@@ -2126,34 +2151,69 @@
       "detail": "visible=False/False"
     },
     {
-      "name": "p8-summon",
+      "name": "p8-colony-opens",
       "pass": true,
-      "detail": "Call both helpers to the player"
+      "detail": "The named helper list is available"
+    },
+    {
+      "name": "p8-colony-row-shows-location-task",
+      "pass": true,
+      "detail": "Exploring \u00B7 Garden Clearing \u00B7 320 m away"
+    },
+    {
+      "name": "p8-summon-button",
+      "pass": true,
+      "detail": "(370, 625), (150, 63)"
+    },
+    {
+      "name": "p8-only-pip-responds",
+      "pass": true,
+      "detail": "pip=True bramble=False"
     },
     {
       "name": "p8-summon-does-not-teleport",
       "pass": true,
-      "detail": "worker=Vec3 { X = 4.026479513611864, Y = 0.4986760243194068, Z = 1.5193491820125808, LengthSquared = 18.769636987649342, Length = 4.332393909566551, HorizontalLength = 4.3035984025485385, IsFinite = True } destination=Vec3 { X = 297.8, Y = -0.5122199296951294, Z = -120, LengthSquared = 103085.10236925639, Length = 321.06868793025643, HorizontalLength = 321.0682793425723, IsFinite = True }"
+      "detail": "worker=Vec3 { X = 4.385202108044558, Y = 0.4986760243194068, Z = 1.6447210299030763, LengthSquared = 22.183782571834882, Length = 4.709966302622013, HorizontalLength = 4.683492798607026, IsFinite = True } destination=Vec3 { X = 300, Y = -0.6863866090774536, Z = -120, LengthSquared = 104400.47112657712, Length = 323.1106174773233, HorizontalLength = 323.10988842807024, IsFinite = True }"
     },
     {
       "name": "p8-offscreen-journey-progresses",
       "pass": true,
-      "detail": "worker=Vec3 { X = 21.959088255891718, Y = 0.3, Z = 7.786711010927755, LengthSquared = 542.924425397745, Length = 23.300738730730085, HorizontalLength = 23.298807381446483, IsFinite = True }"
+      "detail": "worker=Vec3 { X = 22.31781085032441, Y = 0.3, Z = 7.91208285881825, LengthSquared = 560.7757363156635, Length = 23.68070388133899, HorizontalLength = 23.67880352373539, IsFinite = True }"
     },
     {
-      "name": "p8-summoned-helpers-arrive",
+      "name": "p8-summoned-helper-arrives",
       "pass": true,
-      "detail": "w0=Vec3 { X = 297.8, Y = -0.5122199296951294, Z = -120, LengthSquared = 103085.10236925639, Length = 321.06868793025643, HorizontalLength = 321.0682793425723, IsFinite = True } w1=Vec3 { X = 302.2, Y = -0.5122199296951294, Z = -120, LengthSquared = 105725.10236925638, Length = 325.1539671744086, HorizontalLength = 325.15356372028276, IsFinite = True }"
+      "detail": "worker=Vec3 { X = 300, Y = -0.6863866090774536, Z = -120, LengthSquared = 104400.47112657712, Length = 323.1106174773233, HorizontalLength = 323.10988842807024, IsFinite = True }"
     },
     {
-      "name": "p8-arrived-views-visible",
+      "name": "p8-arrived-view-visible",
       "pass": true,
-      "detail": "Helpers reappear near the player"
+      "detail": "The summoned helper reappears near the player"
+    },
+    {
+      "name": "p8-summoned-helper-follows",
+      "pass": true,
+      "detail": "worker=Vec3 { X = 299.99998519621613, Y = -0.8772237097627058, Z = -118.10960818855378, LengthSquared = 103950.64018562056, Length = 322.41377170589436, HorizontalLength = 322.41257832811607, IsFinite = True } arrived=Vec3 { X = 300, Y = -0.6863866090774536, Z = -120, LengthSquared = 104400.47112657712, Length = 323.1106174773233, HorizontalLength = 323.10988842807024, IsFinite = True }"
+    },
+    {
+      "name": "p8-release-button",
+      "pass": true,
+      "detail": "(370, 625), (150, 60)"
+    },
+    {
+      "name": "p8-release-returns-home",
+      "pass": true,
+      "detail": "target=garden_clearing"
+    },
+    {
+      "name": "p8-second-summon-releases-first",
+      "pass": true,
+      "detail": "pip=False bramble=True"
     },
     {
       "name": "p8-save",
       "pass": true,
-      "detail": "Save with summoned helpers in the wild"
+      "detail": "Save with a summoned helper in the wild"
     },
     {
       "name": "p8-save-loads",
@@ -2161,9 +2221,9 @@
       "detail": "Save loaded"
     },
     {
-      "name": "p8-reload-keeps-summoned-helpers",
+      "name": "p8-reload-keeps-summon-state",
       "pass": true,
-      "detail": "worker_1:Vec3 { X = 297.8, Y = -0.5122199296951294, Z = -120, LengthSquared = 103085.10236925639, Length = 321.06868793025643, HorizontalLength = 321.0682793425723, IsFinite = True } | worker_2:Vec3 { X = 302.2, Y = -0.5122199296951294, Z = -120, LengthSquared = 105725.10236925638, Length = 325.1539671744086, HorizontalLength = 325.15356372028276, IsFinite = True }"
+      "detail": "summoned=True home=garden_clearing"
     },
     {
       "name": "h0-helper",
@@ -2208,7 +2268,7 @@
     {
       "name": "h0-new-world-identity",
       "pass": true,
-      "detail": "old=ab7b7c370f7d4b8cae85c9235fd66d33 new=727dfcffd1f3482e924dc5b80befd533 seed=20260214"
+      "detail": "old=512b2bf3edbe47b99b81681f5dac4061 new=1ac0e905fcea4b9ea31d8fa3628e23de seed=20260214"
     },
     {
       "name": "h0-new-garden-starts-fresh",

@@ -46,6 +46,7 @@ public sealed class GameSimulation
     private readonly HashSet<string> _visitedRegions = new(StringComparer.Ordinal) { RegionIds.GardenClearing };
     private readonly HashSet<string> _claimedSupplyCaches = new(StringComparer.Ordinal);
     private readonly Dictionary<string, FoodSourceState> _foodStates = new(StringComparer.Ordinal);
+    private Vec3? _playerWorldPosition;
     private readonly WorkerNavigator _navigator;
 
     public Tuning Tuning { get; }
@@ -202,37 +203,20 @@ public sealed class GameSimulation
     {
         if (!LandmarkCatalog.IsKnown(regionId)) return false;
         if (regionId == ActiveRegionId) return false;
-        MoveColonyTo(regionId);
+        SetActiveLandmark(regionId);
         return true;
     }
 
-    private void MoveColonyTo(string regionId)
+    /// <summary>
+    /// Change the active story landmark without redirecting helpers. A helper
+    /// keeps its home region, physical position and assigned task until the
+    /// player explicitly summons or releases that individual spider.
+    /// </summary>
+    private void SetActiveLandmark(string regionId)
     {
         var region = RegionCatalog.GetRequired(regionId);
         ActiveRegionId = regionId;
         _visitedRegions.Add(regionId);
-
-        foreach (var worker in _workers)
-        {
-            if (worker.Travelling)
-            {
-                if (worker.JourneyTargetRegion == regionId) continue;
-                var reverse = worker.JourneyFromRegion == regionId;
-                worker.JourneyPosition = worker.WorldPosition;
-                worker.Region = regionId;
-                BeginJourney(worker, regionId, preferReverse: reverse);
-                continue;
-            }
-            if (worker.Region == regionId && !worker.Summoned) continue;
-            var fromWorld = worker.WorldPosition;
-            worker.JourneyFromRegion = worker.Region;
-            worker.JourneyPosition = fromWorld;
-            worker.Region = regionId;
-            worker.CurrentNode = region.NurseryNode;
-            worker.Position = region.NurseryPosition;
-            ReleaseWorkerTask(worker, "Travelling to " + region.DisplayName);
-            BeginJourney(worker, regionId, preferReverse: false);
-        }
 
         // The first visit to the marshy outpost uncovers a small, exactly-once
         // colony supply cache. The claim is durable gameplay state, not the
@@ -311,7 +295,8 @@ public sealed class GameSimulation
         {
             worker.PatrolCooldown -= dt;
             if (worker.PatrolCooldown <= 0)
-                BeginJourney(worker, worker.JourneyTargetRegion, preferReverse: false);
+                BeginJourney(worker, worker.JourneyTargetRegion, preferReverse: false,
+                    destinationOverride: worker.JourneyDestination, summoned: worker.Summoned);
             return;
         }
         if (worker.JourneyIndex <= 0) worker.JourneyIndex = 1;
@@ -353,7 +338,7 @@ public sealed class GameSimulation
             // teleport-style from a distant nursery; the next colony move will
             // give it a proper node again.
             worker.Position = LandmarkCatalog.ToLocal(region.Id, worker.JourneyDestination);
-            worker.CurrentNode = "";
+            worker.CurrentNode = NearestNodeWithin(region.Id, worker.JourneyDestination, 8) ?? "";
             worker.Activity = WorkerActivity.Waiting;
             worker.PatrolCooldown = 6;
             Emit(new GameplayEvent(NextKey($"worker_summoned_{worker.Id}"), "WorkerSummonedArrived",
@@ -369,52 +354,169 @@ public sealed class GameSimulation
             TickCount, worker.Id, Detail: region.Id, Region: region.Id));
     }
 
+    /// <summary>The player's current absolute world point, set by the Godot
+    /// adapter every frame. Summoned followers use it to update their goal.</summary>
+    public Vec3? PlayerWorldPosition => _playerWorldPosition;
+
+    public void SetPlayerWorldPosition(Vec3 position)
+    {
+        if (position.IsFinite) _playerWorldPosition = position;
+    }
+
     /// <summary>
-    /// Call every helper to the player's current world point. Journeys are
-    /// physical, keep-offscreen simulation ticking, and never teleport a helper
-    /// or grant anything from an unreachable destination.
+    /// Summon one named helper to the player's current world point. Journeys
+    /// are physical and never teleport. Only one helper is summoned at a time;
+    /// summoning another releases the previous one predictably to its home.
     /// </summary>
-    public bool TrySummonWorkers(Vec3 playerWorld, string targetRegionId, out string reason)
+    public bool TrySummonWorker(string workerId, Vec3 playerWorld, string targetRegionId,
+        out string reason)
     {
         reason = "";
+        var worker = GetWorker(workerId);
+        if (worker is null)
+        {
+            reason = "That helper is not in the colony";
+            return false;
+        }
         if (!RegionIds.IsKnown(targetRegionId))
         {
             reason = "That place is not part of this garden";
             return false;
         }
-        if (_workers.Count == 0)
+        if (!playerWorld.IsFinite)
         {
-            reason = "Hatch a helper first";
+            reason = "I can't tell where you are";
             return false;
         }
-        var target = RegionCatalog.GetRequired(targetRegionId);
-        var summoned = 0;
-        var index = 0;
-        foreach (var worker in _workers)
+        if (worker.Summoned && !worker.Travelling &&
+            Vec3.Distance(worker.WorldPosition, playerWorld) < 4)
         {
-            index++;
-            if (Vec3.Distance(worker.WorldPosition, playerWorld) < 6) continue;
-            var angle = index * Math.PI * 2 / Math.Max(1, _workers.Count);
-            var destination = playerWorld + new Vec3(
-                Math.Cos(angle) * 2.2, 0.35, Math.Sin(angle) * 2.2);
-            if (!worker.Travelling) worker.JourneyFromRegion = worker.Region;
-            worker.JourneyPosition = worker.WorldPosition;
-            worker.Region = targetRegionId;
-            worker.Position = target.NurseryPosition;
-            worker.CurrentNode = target.NurseryNode;
-            worker.Travelling = true;
-            BeginJourney(worker, targetRegionId, preferReverse: false,
-                destinationOverride: destination, summoned: true);
-            summoned++;
-        }
-        if (summoned == 0)
-        {
-            reason = "Your helpers are already here";
+            reason = $"{worker.Name} is already here";
             return false;
         }
-        Emit(new GameplayEvent(NextKey("workers_summoned"), "WorkersSummoned", TickCount,
-            targetRegionId, Amount: summoned, Region: targetRegionId));
+
+        ReleaseOtherSummons(worker);
+
+        var region = RegionCatalog.GetRequired(targetRegionId);
+        if (!worker.Travelling) worker.JourneyFromRegion = worker.Region;
+        worker.JourneyPosition = worker.WorldPosition;
+        worker.Region = targetRegionId;
+        worker.Position = region.NurseryPosition;
+        worker.CurrentNode = region.NurseryNode;
+        worker.Travelling = true;
+        BeginJourney(worker, targetRegionId, preferReverse: false,
+            destinationOverride: playerWorld + new Vec3(0, 0.35, 0), summoned: true);
+        worker.FollowCooldown = 1.5;
+        Emit(new GameplayEvent(NextKey($"worker_summoned_{worker.Id}"), "WorkerSummoned",
+            TickCount, worker.Id, Detail: targetRegionId, Region: targetRegionId));
         return true;
+    }
+
+    /// <summary>Release one summoned helper. It walks home physically, then
+    /// resumes normal duties. A helper already at home simply stands down.</summary>
+    public bool ReleaseWorkerSummon(string workerId, out string reason)
+    {
+        reason = "";
+        var worker = GetWorker(workerId);
+        if (worker is null)
+        {
+            reason = "That helper is not in the colony";
+            return false;
+        }
+        if (!worker.Summoned)
+        {
+            reason = $"{worker.Name} is not summoned";
+            return false;
+        }
+        ReleaseWorkerSummonInternal(worker, "Released");
+        reason = $"{worker.Name} is heading home";
+        return true;
+    }
+
+    private void ReleaseOtherSummons(WorkerState except)
+    {
+        foreach (var other in _workers.Where(worker => worker != except && worker.Summoned).ToList())
+            ReleaseWorkerSummonInternal(other, "Another helper was summoned");
+    }
+
+    private void ReleaseWorkerSummonInternal(WorkerState worker, string detail)
+    {
+        worker.Summoned = false;
+        var home = RegionCatalog.Get(worker.HomeRegion) ?? RegionCatalog.Garden;
+        var homeWorld = LandmarkCatalog.ToWorld(home.Id, home.NurseryPosition).Absolute;
+        if (!worker.Travelling && Vec3.Distance(worker.WorldPosition, homeWorld) < 8)
+        {
+            worker.Region = home.Id;
+            // Stand down where the helper actually is; never snap it to the
+            // nursery just because it is within the attachment radius.
+            worker.Position = LandmarkCatalog.ToLocal(home.Id, worker.WorldPosition);
+            worker.CurrentNode = NearestNodeWithin(home.Id,
+                LandmarkCatalog.ToWorld(home.Id, home.NurseryPosition).Absolute, 8) ??
+                home.NurseryNode;
+            worker.Activity = WorkerActivity.Resting;
+            worker.PatrolCooldown = 0.5;
+        }
+        else
+        {
+            worker.JourneyFromRegion = worker.Region;
+            worker.JourneyPosition = worker.WorldPosition;
+            worker.Region = home.Id;
+            worker.Position = home.NurseryPosition;
+            worker.CurrentNode = home.NurseryNode;
+            worker.Travelling = true;
+            BeginJourney(worker, home.Id, preferReverse: false, summoned: false);
+        }
+        Emit(new GameplayEvent(NextKey($"worker_released_{worker.Id}"), "WorkerReleased",
+            TickCount, worker.Id, Detail: detail, Region: worker.Region));
+    }
+
+    private string? NearestNodeWithin(string regionId, Vec3 world, double radius)
+    {
+        string? best = null;
+        var bestDistance = radius;
+        foreach (var nodeId in Graph.NodeIdsInRegion(regionId))
+        {
+            if (!Graph.TryGetNode(nodeId, out var node)) continue;
+            var distance = Vec3.Distance(
+                LandmarkCatalog.ToWorld(regionId, node.Position).Absolute, world);
+            if (distance > bestDistance) continue;
+            best = nodeId;
+            bestDistance = distance;
+        }
+        return best;
+    }
+
+    /// <summary>Update summoned helpers' destinations without restarting their
+    /// route every frame. Re-routing waits for a 1.5 s throttle and a 5 m move.</summary>
+    private void TickSummonedFollowers(double dt)
+    {
+        if (_playerWorldPosition is not { } player) return;
+        var region = RegionCatalog.GetRequired(ActiveRegionId);
+        foreach (var worker in _workers.Where(worker => worker.Summoned))
+        {
+            worker.FollowCooldown = Math.Max(0, worker.FollowCooldown - dt);
+            if (worker.Travelling)
+            {
+                if (worker.FollowCooldown > 0) continue;
+                if (Vec3.Distance(worker.JourneyDestination, player) <= 5.0) continue;
+                worker.FollowCooldown = 1.5;
+                worker.JourneyFromRegion = worker.Region;
+                worker.JourneyPosition = worker.WorldPosition;
+                BeginJourney(worker, ActiveRegionId, preferReverse: false,
+                    destinationOverride: player + new Vec3(0, 0.35, 0), summoned: true);
+                continue;
+            }
+            if (Vec3.Distance(worker.WorldPosition, player) <= 3.5) continue;
+            worker.FollowCooldown = 1.5;
+            worker.JourneyFromRegion = worker.Region;
+            worker.JourneyPosition = worker.WorldPosition;
+            worker.Region = region.Id;
+            worker.Position = region.NurseryPosition;
+            worker.CurrentNode = region.NurseryNode;
+            worker.Travelling = true;
+            BeginJourney(worker, region.Id, preferReverse: false,
+                destinationOverride: player + new Vec3(0, 0.35, 0), summoned: true);
+        }
     }
 
     /// <summary>
@@ -442,7 +544,7 @@ public sealed class GameSimulation
             return false;
         }
 
-        MoveColonyTo(regionId);
+        SetActiveLandmark(regionId);
         return true;
     }
 
@@ -838,6 +940,7 @@ public sealed class GameSimulation
             Name = names[Math.Clamp(index - 1, 0, names.Length - 1)],
             Colour = colours[Math.Clamp(index - 1, 0, colours.Length - 1)],
             Region = hatchRegion.Id,
+            HomeRegion = hatchRegion.Id,
             Position = hatchRegion.NurseryPosition,
             CurrentNode = hatchRegion.NurseryNode,
             Activity = WorkerActivity.Resting,
@@ -1063,11 +1166,17 @@ public sealed class GameSimulation
 
     private void TickWorkers(double dt)
     {
+        TickSummonedFollowers(dt);
         foreach (var worker in _workers)
         {
             if (worker.Travelling)
             {
                 TickWorkerJourney(worker, dt);
+                continue;
+            }
+            if (worker.Summoned)
+            {
+                worker.Activity = WorkerActivity.Waiting;
                 continue;
             }
             if (worker.IsMoving) MoveWorker(worker, dt);
@@ -1480,6 +1589,7 @@ public sealed class GameSimulation
             Workers = _workers.Select(w => new WorkerSave
             {
                 Id = w.Id, Name = w.Name, Colour = w.Colour, Region = w.Region,
+                HomeRegion = w.HomeRegion,
                 X = w.Position.X, Y = w.Position.Y, Z = w.Position.Z,
                 CurrentNode = w.CurrentNode,
                 Activity = w.Activity.ToString(),
@@ -1617,6 +1727,7 @@ public sealed class GameSimulation
             var worker = new WorkerState
             {
                 Id = saved.Id, Name = saved.Name, Colour = saved.Colour, Region = saved.Region,
+                HomeRegion = RegionIds.IsKnown(saved.HomeRegion) ? saved.HomeRegion : saved.Region,
                 Position = new Vec3(saved.X, saved.Y, saved.Z),
                 CurrentNode = saved.CurrentNode,
                 Activity = Enum.TryParse<WorkerActivity>(saved.Activity, true, out var activity) ? activity : WorkerActivity.Resting,

@@ -32,6 +32,9 @@ public sealed class WorkerSave
     public string Name { get; set; } = "";
     public string Colour { get; set; } = "orange";
     public string Region { get; set; } = RegionIds.GardenClearing;
+    /// <summary>Home landmark. Missing in v0.3.0 runner saves and filled with
+    /// <see cref="Region"/> during import; never silently moves a helper.</summary>
+    public string HomeRegion { get; set; } = "";
     public double X { get; set; }
     public double Y { get; set; }
     public double Z { get; set; }
@@ -97,6 +100,9 @@ public sealed class WeatherSave
 public sealed class RegionPlayerSave
 {
     public string Region { get; set; } = RegionIds.GardenClearing;
+    /// <summary>Home landmark. Missing in v0.3.0 runner saves and filled with
+    /// <see cref="Region"/> during import; never silently moves a helper.</summary>
+    public string HomeRegion { get; set; } = "";
     public double X { get; set; }
     public double Y { get; set; }
     public double Z { get; set; }

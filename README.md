@@ -106,10 +106,11 @@ records explored chunks and offers Return Home from anywhere.
 - **Exploration map.** A bounded first-visit record of explored chunks is saved
   once in the world manifest and drawn with biome tint, rivers, visited
   landmarks and the player. Return Home is available from anywhere.
-- **Worker navigation.** Helpers follow hierarchical dry world routes through
-  landmark gates and generated bridges, record and reverse outbound journeys,
-  wait visibly when no route exists, and are simulated off screen. Summon them
-  to your current position from the colony panel.
+- **Worker navigation.** Helpers keep their own home and task when you travel.
+  Each named spider can be summoned individually from the colony panel; it
+  walks a dry world route through landmark gates and generated bridges, then
+  follows you until released. Helpers wait visibly when no route exists and
+  keep simulating off screen.
 - **Origin rebasing.** Presentation coordinates recentre at 16 km on a 64 m grid;
   saves, simulation, streaming and probe coordinates always stay logical.
 

@@ -21,7 +21,8 @@ public partial class GameUI : CanvasLayer
     public event Action? BuildCancelled;
     public event Action? MapRequested;
     public event Action? ReturnHomeRequested;
-    public event Action? SummonRequested;
+    public event Action<string>? WorkerSummonRequested;
+    public event Action<string>? WorkerReleaseRequested;
 
     private Control _root = null!;
     private Label _foodLabel = null!;
@@ -88,6 +89,9 @@ public partial class GameUI : CanvasLayer
     private string _missionSignature = "";
     private bool _tutorialPrompts = true;
     private readonly List<Button> _workerChips = new();
+    private readonly Dictionary<string, Button> _workerSummonButtons = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Button> _workerReleaseButtons = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _workerRowTexts = new(StringComparer.Ordinal);
     private readonly List<string> _probeToastHistory = new();
 
     public bool IsModalOpen => _pauseOpen || _nurseryOpen || _victoryOpen || _colonyOpen || _helpOpen || _confirmOpen || _saveFailedOpen || _travelOpen || _regionCompleteOpen || _mapOpen;
@@ -102,6 +106,7 @@ public partial class GameUI : CanvasLayer
     public Rect2 ProbeActionColumnRect => _actionsColumn.GetGlobalRect();
     public Rect2 ProbeToolbarRect => _toolbar.GetGlobalRect();
     public Rect2 ProbeMapButtonRect => _mapButton.GetGlobalRect();
+    public Rect2 ProbeColonyButtonRect => _colonyButton.GetGlobalRect();
     public Rect2 ProbeStatusRect => _statusLabel.GetGlobalRect();
     public string ProbeStatusText => _statusLabel.Text;
     public bool BuildConfirmVisible => _buildConfirmPanel.Visible;
@@ -125,6 +130,12 @@ public partial class GameUI : CanvasLayer
     public Rect2 ProbePauseNewGameRect => _pauseNewGameButton?.GetGlobalRect() ?? new Rect2();
     public Rect2 ProbeConfirmNewGardenRect => _confirmNewGameButton?.GetGlobalRect() ?? new Rect2();
     public bool ProbeNewGardenConfirmVisible => _confirmNewGameButton?.IsVisibleInTree() ?? false;
+    public Rect2 ProbeWorkerSummonRect(string id) =>
+        _workerSummonButtons.TryGetValue(id, out var button) ? button.GetGlobalRect() : new Rect2();
+    public Rect2 ProbeWorkerReleaseRect(string id) =>
+        _workerReleaseButtons.TryGetValue(id, out var button) ? button.GetGlobalRect() : new Rect2();
+    public string ProbeWorkerRowText(string id) =>
+        _workerRowTexts.TryGetValue(id, out var text) ? text : "";
 
     public override void _Ready()
     {
@@ -423,6 +434,9 @@ public partial class GameUI : CanvasLayer
             child.QueueFree();
         }
         _workerChips.Clear();
+        _workerSummonButtons.Clear();
+        _workerReleaseButtons.Clear();
+        _workerRowTexts.Clear();
         _modalTitle.Text = title;
         _modalPanel.CustomMinimumSize = new Vector2(width, 0);
         _modalRoot.Visible = true;
@@ -449,6 +463,9 @@ public partial class GameUI : CanvasLayer
             child.QueueFree();
         }
         _workerChips.Clear();
+        _workerSummonButtons.Clear();
+        _workerReleaseButtons.Clear();
+        _workerRowTexts.Clear();
         if (_lastSim is not null && !_victoryOpen) SetStatus(_lastSim.GetActiveRegionHint());
     }
 
@@ -995,27 +1012,6 @@ public partial class GameUI : CanvasLayer
         _modalContent.AddChild(close);
     }
 
-    private void RefreshColony(GameSimulation sim)
-    {
-        if (!_colonyOpen) return;
-        foreach (var child in _modalContent.GetChildren())
-        {
-            if (child != _modalTitle) child.QueueFree();
-        }
-        _modalContent.AddChild(UiKit.Label($"Spiders: {sim.TotalSpiders} / {sim.MaxSpiders}", 22, UiKit.Pine));
-        AddColonyRow("You", "Explorer", "spider_player");
-        foreach (var worker in sim.Workers)
-            AddColonyRow(worker.Name, worker.DisplayState, worker.Colour switch
-            {
-                "violet" => "spider_worker_violet", "green" => "spider_worker_green", _ => "spider_worker_orange"
-            });
-        var summon = UiKit.Button("Summon helpers here", 360, 50, true);
-        summon.Pressed += () => SummonRequested?.Invoke();
-        _modalContent.AddChild(summon);
-        _modalContent.AddChild(UiKit.Label("Helpers walk to you and wait nearby. They keep travelling while off screen.", 17, new Color(UiKit.Ink, 0.8f), true));
-        _modalContent.AddChild(UiKit.Label("Helpers work by themselves — collecting caught insects first, then repairing damaged webs.", 17, new Color(UiKit.Ink, 0.8f), true));
-    }
-
     private void AddColonyRow(string name, string state, string iconModel)
     {
         var panel = new PanelContainer();
@@ -1036,6 +1032,107 @@ public partial class GameUI : CanvasLayer
         _modalContent.AddChild(panel);
     }
 
+    public void RefreshColonyPanel()
+    {
+        if (_lastSim is not null) RefreshColony(_lastSim);
+    }
+
+    private void RefreshColony(GameSimulation sim)
+    {
+        if (!_colonyOpen) return;
+        foreach (var child in _modalContent.GetChildren())
+        {
+            if (child != _modalTitle) child.QueueFree();
+        }
+        _workerSummonButtons.Clear();
+        _workerReleaseButtons.Clear();
+        _workerRowTexts.Clear();
+        _modalContent.AddChild(UiKit.Label(
+            $"Spiders: {sim.TotalSpiders} / {sim.MaxSpiders}  ·  You are in {sim.ActiveRegion.DisplayName}",
+            22, UiKit.Pine));
+        AddColonyRow("You", "Explorer", "spider_player");
+        foreach (var worker in sim.Workers)
+            AddWorkerRow(sim, worker);
+        _modalContent.AddChild(UiKit.Label(
+            "Helpers keep their own tasks when you travel. Summon one named spider to bring it to you; it walks, then follows until released.",
+            17, new Color(UiKit.Ink, 0.8f), true));
+        _modalContent.AddChild(UiKit.Label(
+            "Helpers otherwise work by themselves — collecting caught insects first, then repairing damaged webs.",
+            17, new Color(UiKit.Ink, 0.8f), true));
+    }
+
+    private void AddWorkerRow(GameSimulation sim, WorkerState worker)
+    {
+        var panel = new PanelContainer();
+        panel.AddThemeStyleboxOverride("panel", UiKit.Panel(UiKit.CreamDim, 14));
+        var column = new VBoxContainer();
+        column.AddThemeConstantOverride("separation", 6);
+        var header = new HBoxContainer();
+        header.AddThemeConstantOverride("separation", 12);
+        var badge = new ColorRect
+        {
+            CustomMinimumSize = new Vector2(12, 36),
+            Color = worker.Colour switch
+            {
+                "violet" => UiKit.Violet,
+                "green" => UiKit.Leaf,
+                "amber" => UiKit.Gold,
+                _ => UiKit.Gold
+            }
+        };
+        header.AddChild(badge);
+        header.AddChild(UiKit.Label(worker.Name, 22, UiKit.Pine));
+        var spacer = new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        header.AddChild(spacer);
+        var availability = worker.Summoned ? "Summoned"
+            : worker.Travelling ? "Travelling"
+            : worker.IsMoving ? "Working" : "Available";
+        header.AddChild(UiKit.Label(availability, 18,
+            worker.Summoned ? UiKit.Violet : UiKit.TealDark));
+        column.AddChild(header);
+
+        var region = RegionCatalog.Get(worker.Region)?.DisplayName ?? worker.Region;
+        var playerWorld = sim.PlayerWorldPosition;
+        var distance = playerWorld is { } player
+            ? Vec3.Distance(worker.WorldPosition, player)
+            : 0;
+        var location = worker.Travelling
+            ? worker.Summoned
+                ? $"travelling to you · {distance:0} m away"
+                : $"travelling to {RegionCatalog.Get(worker.JourneyTargetRegion)?.DisplayName ?? "home"} · {distance:0} m away"
+            : $"{region} · {distance:0} m away";
+        var blocked = worker.RouteBlocked ? " · no safe route, waiting" : "";
+        var task = worker.Summoned ? "Following you"
+            : worker.Travelling ? "Travelling"
+            : worker.DisplayState;
+        var detail = $"{task} · {location}{blocked}";
+        _workerRowTexts[worker.Id] = detail;
+        column.AddChild(UiKit.Label(detail, 17, new Color(UiKit.Ink, 0.82f), true));
+
+        var actions = new HBoxContainer();
+        actions.AddThemeConstantOverride("separation", 8);
+        if (worker.Summoned)
+        {
+            var release = UiKit.Button("Release", 150, 44);
+            release.Pressed += () => WorkerReleaseRequested?.Invoke(worker.Id);
+            _workerReleaseButtons[worker.Id] = release;
+            actions.AddChild(release);
+        }
+        else
+        {
+            var summon = UiKit.Button("Summon", 150, 44, true);
+            summon.Pressed += () => WorkerSummonRequested?.Invoke(worker.Id);
+            _workerSummonButtons[worker.Id] = summon;
+            actions.AddChild(summon);
+        }
+        actions.AddChild(UiKit.Label(
+            worker.Summoned ? "Walk back home on release" : "Walk to your side",
+            16, new Color(UiKit.Ink, 0.65f), true));
+        column.AddChild(actions);
+        panel.AddChild(column);
+        _modalContent.AddChild(panel);
+    }
+
     public void OpenTravel(string destination, string description, bool available, string reason, Action travel)
     {
         OpenModal($"Travel to {destination}?", 600);
@@ -1045,7 +1142,7 @@ public partial class GameUI : CanvasLayer
         if (!available && !string.IsNullOrWhiteSpace(reason))
             _modalContent.AddChild(UiKit.Label(reason, 17, UiKit.Coral, true));
         _modalContent.AddChild(UiKit.Label(
-            "Your food, silk and helpers travel with you. Built webs stay in their region.",
+            "Your food and silk travel with you. Helpers keep their own duties unless you summon one. Built webs stay in their region.",
             16, new Color(UiKit.Ink, 0.72f), true));
         _modalContent.AddChild(UiKit.Spacer(8));
         var go = UiKit.Button($"Travel to {destination}", 420, 58, available);

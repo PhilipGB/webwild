@@ -182,6 +182,12 @@ public static class SaveValidator
                 error = "A worker names an unknown region.";
                 return false;
             }
+            if (!string.IsNullOrWhiteSpace(worker.HomeRegion) &&
+                !RegionIds.IsKnown(worker.HomeRegion))
+            {
+                error = "A worker names an unknown home region.";
+                return false;
+            }
             var wideWorker = worker.Travelling || worker.Summoned;
             var workerBound = wideWorker ? 1_000_000 : 60;
             var workerLow = wideWorker ? -20 : -3;

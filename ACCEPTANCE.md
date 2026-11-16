@@ -12,6 +12,8 @@ documented limitation; **NOT VERIFIED** = not performed on this host.
 | Criterion | Status | Evidence |
 |---|---|---|
 | F1: every New Garden path requires confirmation, archives a verified manifest and all chunk modifications, refuses on failure, and can restore the previous garden | PASS | `NewGardenWorkflowTests`; real-input H0 probe (Esc → New game → confirm → title restore); screenshots `46-new-garden-confirm`, `47-restored-garden` |
+| F2: helpers keep their own home, physical position and task when the player enters another landmark or the wilderness; Return Home does not cancel their work | PASS | `EnteringLandmark_KeepsHelperTaskAndPhysicalPosition`, `WalkingIntoLandmark_ActivatesItWithoutMovingHelpers`; probe `p7-landmark-does-not-redirect-helper`, `p7-helper-keeps-working` |
+| F3: named individual summon, physical travel, follow, release and one-summoned-at-a-time state; other helpers unaffected | PASS | `WorkerNavigationTests` summon/follow/release/save cases; rendered probe colony panel clicks and keyboard follow; screenshots `45-summoned-helper`, `45a-colony-helpers` |
 
 ## v0.3.0 — Never-Ending World integrated acceptance
 

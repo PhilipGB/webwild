@@ -1403,11 +1403,16 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
-        // ---- P7: physical worker navigation between landmarks ----
+        // ---- H1/P7: independent helpers, individual summon and release ----
         var p7Game = _main.StartGame(null);
         await Frames(10);
+        // Build the bridge and trap before hatching so the helper starts with a
+        // real owned job rather than finishing a patrol first.
+        p7Game.ProbeBuildWeb(WorldLayout.GapWest, WorldLayout.GapEast, WebType.Bridge);
+        p7Game.ProbeBuildWeb(WorldLayout.TwigA, WorldLayout.TwigB, WebType.Capture);
+        p7Game.ProbeAdvance(12);
         Check("p7-helper-hatched", p7Game.ProbeHatch(), "Hatch a helper for the journey");
-        p7Game.ProbeAdvance(4);
+        p7Game.ProbeAdvance(5);
         await Frames(6);
         var p7Worker = p7Game.Simulation!.Workers.FirstOrDefault();
         Check("p7-worker-ready", p7Worker is not null, $"workers={p7Game.Simulation.Workers.Count}");
@@ -1418,96 +1423,114 @@ public partial class RuntimeProbe : Node
                 WorldLayout.NurseryPosition).Absolute;
             var reedwaterNurseryWorld = LandmarkCatalog.ToWorld(RegionIds.ReedwaterBank,
                 ReedwaterLayout.NurseryPosition).Absolute;
-            var gardenNursery = GardenClearing.ToVector3(gardenNurseryWorld);
-            var reedwaterNursery = GardenClearing.ToVector3(reedwaterNurseryWorld);
             Check("p7-worker-starts-at-garden",
                 p7Game.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
-                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 8 &&
-                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), reedwaterNurseryWorld) > 50,
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 8,
                 $"region={p7Game.ProbeWorkerRegion(workerId)} " +
-                $"worker={p7Game.ProbeWorkerWorldPosition(workerId)} " +
-                $"garden={gardenNurseryWorld} reedwater={reedwaterNurseryWorld}");
+                $"worker={p7Game.ProbeWorkerWorldPosition(workerId)}");
+
+            // Walking to Reedwater must not reassign the helper's own job.
+            p7Game.ProbeAdvance(2);
+            var taskBefore = p7Game.ProbeWorkerActivity(workerId);
+            var targetBefore = p7Game.ProbeWorkerTargetInsect(workerId);
+            var workerWorldBefore = p7Game.ProbeWorkerWorldPosition(workerId);
+            Check("p7-helper-has-task", !string.IsNullOrEmpty(taskBefore) &&
+                taskBefore != "Resting", $"task={taskBefore} target={targetBefore}");
 
             Check("p7-enter-reedwater", p7Game.ProbeEnterLandmark(RegionIds.ReedwaterBank),
-                "Move the colony story frame to Reedwater");
+                "Move the player/story frame to Reedwater");
             await Frames(4);
-            Check("p7-journey-starts",
-                p7Game.ProbeWorkerTravelling(workerId) &&
-                p7Game.ProbeWorkerJourneyTarget(workerId) == RegionIds.ReedwaterBank &&
-                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 5,
-                $"travelling={p7Game.ProbeWorkerTravelling(workerId)} " +
-                $"world={p7Game.ProbeWorkerWorldPosition(workerId)}");
-
-            p7Game.ProbeAdvance(5);
-            await Frames(4);
-            Check("p7-worker-moves-physically",
-                p7Game.ProbeWorkerTravelling(workerId) &&
-                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) > 5,
-                $"world={p7Game.ProbeWorkerWorldPosition(workerId)}");
-
-            // Move the worker well past the garden play rect before framing it:
-            // standing near the garden would re-enter that story frame and turn
-            // the helper around. The wild camera keeps the Reedwater frame.
-            for (var i = 0; i < 20 &&
-                 p7Game.ProbeWorkerWorldPosition(workerId).X < 32; i++)
-            {
-                p7Game.ProbeAdvance(1);
-                await Frames(1);
-            }
-            var travelPos = p7Game.ProbeWorkerWorldPosition(workerId);
-            var travelCam = new Vec3(travelPos.X - 2.2, 0, travelPos.Z + 2.2);
-            travelCam = new Vec3(travelCam.X,
-                p7Game.ProbeGroundHeightAt(travelCam) + 0.6, travelCam.Z);
-            p7Game.ProbeTeleport(travelCam);
-            p7Game.ProbeLookAt(new Vec3(travelPos.X, travelPos.Y + 0.35, travelPos.Z));
-            p7Game.ProbeSetCameraZoom(5.5f);
-            p7Game.ProbeSetCameraPitch(-14);
-            await Frames(2);
-            await Capture("43-worker-journey");
-
-            for (var i = 0; i < 80 && p7Game.ProbeWorkerTravelling(workerId); i++)
-            {
-                p7Game.ProbeAdvance(1);
-                await Frames(1);
-            }
-            Check("p7-worker-arrives-reedwater",
+            Check("p7-landmark-does-not-redirect-helper",
+                p7Game.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
                 !p7Game.ProbeWorkerTravelling(workerId) &&
-                p7Game.ProbeWorkerRegion(workerId) == RegionIds.ReedwaterBank &&
-                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), reedwaterNurseryWorld) < 12,
+                p7Game.ProbeWorkerActivity(workerId) == taskBefore &&
+                p7Game.ProbeWorkerTargetInsect(workerId) == targetBefore,
+                $"region={p7Game.ProbeWorkerRegion(workerId)} task={p7Game.ProbeWorkerActivity(workerId)} " +
+                $"travelling={p7Game.ProbeWorkerTravelling(workerId)}");
+            p7Game.ProbeAdvance(8);
+            Check("p7-helper-keeps-working",
+                p7Game.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
+                !p7Game.ProbeWorkerTravelling(workerId) &&
+                (p7Game.ProbeWorkerCollectCount(workerId) >= 1 ||
+                 p7Game.ProbeWorkerActivity(workerId) is "Collecting" or "Patrolling"),
+                $"task={p7Game.ProbeWorkerActivity(workerId)} " +
+                $"collect={p7Game.ProbeWorkerCollectCount(workerId)}");
+
+            // Individual summon: choose this one helper in the colony panel.
+            var beforeSummon = p7Game.ProbeWorkerWorldPosition(workerId);
+            Check("p7-summon-single-helper",
+                p7Game.ProbeSummonWorker(workerId),
+                "The named helper is called");
+            await Frames(4);
+            Check("p7-summon-does-not-teleport",
+                p7Game.ProbeWorkerTravelling(workerId) &&
+                p7Game.ProbeWorkerSummoned(workerId) &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), beforeSummon) < 3,
+                $"worker={p7Game.ProbeWorkerWorldPosition(workerId)}");
+            p7Game.ProbeAdvance(5);
+            Check("p7-summoned-helper-walks",
+                p7Game.ProbeWorkerTravelling(workerId) &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId), beforeSummon) > 5,
+                $"worker={p7Game.ProbeWorkerWorldPosition(workerId)}");
+
+            for (var i = 0; i < 400 && p7Game.ProbeWorkerTravelling(workerId); i++)
+            {
+                p7Game.ProbeAdvance(1);
+                await Frames(1);
+            }
+            Check("p7-summoned-arrives-at-player",
+                !p7Game.ProbeWorkerTravelling(workerId) &&
+                p7Game.ProbeWorkerSummoned(workerId) &&
+                Vec3.Distance(p7Game.ProbeWorkerWorldPosition(workerId),
+                    reedwaterNurseryWorld) < 6,
                 $"region={p7Game.ProbeWorkerRegion(workerId)} " +
                 $"world={p7Game.ProbeWorkerWorldPosition(workerId)}");
 
-            // Return trip, saved mid-journey and continued after reload.
-            Check("p7-enter-garden", p7Game.ProbeEnterLandmark(RegionIds.GardenClearing),
-                "Return the colony frame to the garden");
+            var arrivedPos = p7Game.ProbeWorkerWorldPosition(workerId);
+            p7Game.ProbeLookAt(new Vec3(arrivedPos.X, arrivedPos.Y + 0.35, arrivedPos.Z));
+            p7Game.ProbeSetCameraZoom(5.5f);
+            p7Game.ProbeSetCameraPitch(-14);
             await Frames(4);
-            p7Game.ProbeAdvance(5);
-            Check("p7-return-journey-starts",
+            await Capture("43-worker-journey");
+
+            // Release sends the helper home physically. Save the return journey
+            // from the garden frame (a pre-story Reedwater save is correctly
+            // refused by the validator) and continue it after reload.
+            Check("p7-release-helper",
+                p7Game.ProbeReleaseWorker(workerId), "Release the summoned helper");
+            await Frames(4);
+            Check("p7-release-heads-home",
+                !p7Game.ProbeWorkerSummoned(workerId) &&
                 p7Game.ProbeWorkerTravelling(workerId) &&
                 p7Game.ProbeWorkerJourneyTarget(workerId) == RegionIds.GardenClearing,
                 $"target={p7Game.ProbeWorkerJourneyTarget(workerId)}");
-            var savedJourneyPos = p7Game.ProbeWorkerWorldPosition(workerId);
-            Check("p7-save-mid-journey", p7Game.ProbeSave(), "Save while the helper is walking");
+            Check("p7-enter-garden", p7Game.ProbeEnterLandmark(RegionIds.GardenClearing),
+                "Return the player/story frame to the garden");
+            p7Game.ProbeAdvance(4);
+            Check("p7-save-mid-return", p7Game.ProbeSave(),
+                "Save the return journey: " + p7Game.LastSaveError);
             var p7Loaded = _main.Saves.Load();
-            Check("p7-mid-journey-loads",
+            Check("p7-mid-return-loads",
                 p7Loaded.Success && p7Loaded.Data is not null, p7Loaded.Message);
             if (p7Loaded.Data is not null)
             {
                 var p7Reloaded = _main.StartGame(p7Loaded.Data);
                 await Frames(20);
-                Check("p7-reload-resumes-journey",
+                Check("p7-reload-resumes-return",
                     p7Reloaded.ProbeWorkerTravelling(workerId) &&
-                    Vec3.Distance(p7Reloaded.ProbeWorkerWorldPosition(workerId), savedJourneyPos) < 8,
-                    $"world={p7Reloaded.ProbeWorkerWorldPosition(workerId)} saved={savedJourneyPos}");
-                for (var i = 0; i < 80 && p7Reloaded.ProbeWorkerTravelling(workerId); i++)
+                    p7Reloaded.ProbeWorkerJourneyTarget(workerId) == RegionIds.GardenClearing,
+                    $"travelling={p7Reloaded.ProbeWorkerTravelling(workerId)} " +
+                    $"target={p7Reloaded.ProbeWorkerJourneyTarget(workerId)}");
+                for (var i = 0; i < 400 && p7Reloaded.ProbeWorkerTravelling(workerId); i++)
                 {
                     p7Reloaded.ProbeAdvance(1);
                     await Frames(1);
                 }
-                Check("p7-reload-arrives-garden",
+                Check("p7-return-arrives-home",
                     !p7Reloaded.ProbeWorkerTravelling(workerId) &&
                     p7Reloaded.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
-                    Vec3.Distance(p7Reloaded.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 12,
+                    Vec3.Distance(p7Reloaded.ProbeWorkerWorldPosition(workerId),
+                        gardenNurseryWorld) < 12,
                     $"region={p7Reloaded.ProbeWorkerRegion(workerId)} " +
                     $"world={p7Reloaded.ProbeWorkerWorldPosition(workerId)}");
 
@@ -1548,22 +1571,21 @@ public partial class RuntimeProbe : Node
                 p7Reloaded.ProbeSetCameraPitch(-12);
                 await Frames(2);
                 await Capture("44-worker-crossing");
-                for (var i = 0; i < 80 && p7Reloaded.ProbeWorkerTravelling(workerId); i++)
+                for (var i = 0; i < 120 && p7Reloaded.ProbeWorkerTravelling(workerId); i++)
                 {
                     p7Reloaded.ProbeAdvance(1);
                     await Frames(1);
                 }
                 Check("p7-bridge-arrival",
                     !p7Reloaded.ProbeWorkerTravelling(workerId) &&
-                    p7Reloaded.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing &&
-                    Vec3.Distance(p7Reloaded.ProbeWorkerWorldPosition(workerId), gardenNurseryWorld) < 12,
+                    p7Reloaded.ProbeWorkerRegion(workerId) == RegionIds.GardenClearing,
                     $"region={p7Reloaded.ProbeWorkerRegion(workerId)}");
             }
         }
         _main.ProbeReturnToTitle();
         await Frames(6);
 
-        // ---- P8: off-screen workers and summoning ----
+        // ---- H1/P8: one named summoned helper, following and UI state ----
         var p8Game = _main.StartGame(null);
         await Frames(10);
         p8Game.Simulation!.Ledger.Restore(50, 50);
@@ -1577,83 +1599,141 @@ public partial class RuntimeProbe : Node
         Check("p8-two-helpers", p8Workers.Count == 2, $"workers={p8Game.Simulation.Workers.Count}");
         if (p8Workers.Count == 2)
         {
+            var pip = p8Workers[0];
+            var bramble = p8Workers[1];
             var farSummon = new Vec3(300, 0, -120);
             farSummon = new Vec3(farSummon.X,
                 p8Game.ProbeGroundHeightAt(farSummon) + 0.6, farSummon.Z);
             p8Game.ProbeTeleport(farSummon);
             await Frames(10);
             Check("p8-offscreen-views-culled",
-                !p8Game.ProbeWorkerViewVisible(p8Workers[0].Id) &&
-                !p8Game.ProbeWorkerViewVisible(p8Workers[1].Id),
-                $"visible={p8Game.ProbeWorkerViewVisible(p8Workers[0].Id)}/" +
-                $"{p8Game.ProbeWorkerViewVisible(p8Workers[1].Id)}");
+                !p8Game.ProbeWorkerViewVisible(pip.Id) &&
+                !p8Game.ProbeWorkerViewVisible(bramble.Id),
+                $"visible={p8Game.ProbeWorkerViewVisible(pip.Id)}/" +
+                $"{p8Game.ProbeWorkerViewVisible(bramble.Id)}");
 
-            var worldBefore = p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id);
-            Check("p8-summon", p8Game.ProbeSummonHelpers(),
-                "Call both helpers to the player");
+            var headlessInput = DisplayServer.GetName() == "headless";
+            if (headlessInput) p8Game.ProbeToggleColony();
+            else await ClickUi(p8Game.ProbeColonyButtonRect.GetCenter());
             await Frames(4);
+            Check("p8-colony-opens", p8Game.ColonyModalOpen, "The named helper list is available");
+            var row = p8Game.ProbeWorkerRowText(pip.Id);
+            Check("p8-colony-row-shows-location-task",
+                row.Contains("m away") && (row.Contains("Patrolling") ||
+                    row.Contains("Exploring") || row.Contains("Collecting") ||
+                    row.Contains("Repairing") ||
+                    row.Contains("Resting") || row.Contains("Available") ||
+                    row.Contains("Working")),
+                row);
+            var summonRect = p8Game.ProbeWorkerSummonRect(pip.Id);
+            Check("p8-summon-button", summonRect.Size.X > 0, $"{summonRect}");
+            await Capture("45a-colony-helpers");
+            var pipBefore = pip.WorldPosition;
+            if (headlessInput) p8Game.ProbeSummonWorker(pip.Id);
+            else await ClickUi(summonRect.GetCenter());
+            await Frames(5);
+            p8Game.ProbeCloseModal();
+            await Frames(3);
+            Check("p8-only-pip-responds",
+                p8Game.ProbeWorkerTravelling(pip.Id) &&
+                p8Game.ProbeWorkerSummoned(pip.Id) &&
+                !p8Game.ProbeWorkerTravelling(bramble.Id) &&
+                !p8Game.ProbeWorkerSummoned(bramble.Id),
+                $"pip={p8Game.ProbeWorkerTravelling(pip.Id)} " +
+                $"bramble={p8Game.ProbeWorkerTravelling(bramble.Id)}");
             Check("p8-summon-does-not-teleport",
-                p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
-                p8Game.ProbeWorkerTravelling(p8Workers[1].Id) &&
-                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id), worldBefore) < 3 &&
-                Vec3.Distance(p8Game.ProbeWorkerJourneyDestination(p8Workers[0].Id), farSummon) < 6,
-                $"worker={p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id)} " +
-                $"destination={p8Game.ProbeWorkerJourneyDestination(p8Workers[0].Id)}");
+                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(pip.Id), pipBefore) < 3 &&
+                Vec3.Distance(p8Game.ProbeWorkerJourneyDestination(pip.Id), farSummon) < 6,
+                $"worker={p8Game.ProbeWorkerWorldPosition(pip.Id)} " +
+                $"destination={p8Game.ProbeWorkerJourneyDestination(pip.Id)}");
 
             p8Game.ProbeAdvance(10);
             await Frames(4);
             Check("p8-offscreen-journey-progresses",
-                p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
-                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id), worldBefore) > 3 &&
-                !p8Game.ProbeWorkerViewVisible(p8Workers[0].Id),
-                $"worker={p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id)}");
+                p8Game.ProbeWorkerTravelling(pip.Id) &&
+                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(pip.Id), pipBefore) > 3 &&
+                !p8Game.ProbeWorkerViewVisible(pip.Id),
+                $"worker={p8Game.ProbeWorkerWorldPosition(pip.Id)}");
 
-            for (var i = 0; i < 400; i++)
+            for (var i = 0; i < 400 && p8Game.ProbeWorkerTravelling(pip.Id); i++)
             {
-                if (!p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
-                    !p8Game.ProbeWorkerTravelling(p8Workers[1].Id)) break;
                 p8Game.ProbeAdvance(1);
                 await Frames(1);
             }
-            Check("p8-summoned-helpers-arrive",
-                !p8Game.ProbeWorkerTravelling(p8Workers[0].Id) &&
-                !p8Game.ProbeWorkerTravelling(p8Workers[1].Id) &&
-                p8Game.ProbeWorkerSummoned(p8Workers[0].Id) &&
-                p8Game.ProbeWorkerSummoned(p8Workers[1].Id) &&
-                p8Game.ProbeWorkerCurrentNode(p8Workers[0].Id) == "" &&
-                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id), farSummon) < 6 &&
-                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(p8Workers[1].Id), farSummon) < 6,
-                $"w0={p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id)} " +
-                $"w1={p8Game.ProbeWorkerWorldPosition(p8Workers[1].Id)}");
+            Check("p8-summoned-helper-arrives",
+                !p8Game.ProbeWorkerTravelling(pip.Id) &&
+                p8Game.ProbeWorkerSummoned(pip.Id) &&
+                Vec3.Distance(p8Game.ProbeWorkerWorldPosition(pip.Id), farSummon) < 6,
+                $"worker={p8Game.ProbeWorkerWorldPosition(pip.Id)}");
             await Frames(8);
-            Check("p8-arrived-views-visible",
-                p8Game.ProbeWorkerViewVisible(p8Workers[0].Id) &&
-                p8Game.ProbeWorkerViewVisible(p8Workers[1].Id),
-                "Helpers reappear near the player");
+            Check("p8-arrived-view-visible", p8Game.ProbeWorkerViewVisible(pip.Id),
+                "The summoned helper reappears near the player");
 
-            var mid = (p8Game.ProbeWorkerWorldPosition(p8Workers[0].Id) +
-                       p8Game.ProbeWorkerWorldPosition(p8Workers[1].Id)) * 0.5;
+            var arrived = p8Game.ProbeWorkerWorldPosition(pip.Id);
+            var mid = (arrived + farSummon) * 0.5;
             p8Game.ProbeLookAt(new Vec3(mid.X, mid.Y + 0.3, mid.Z));
             p8Game.ProbeSetCameraZoom(9);
             p8Game.ProbeSetCameraPitch(-20);
             await Frames(6);
-            await Capture("45-summoned-helpers");
+            await Capture("45-summoned-helper");
 
-            Check("p8-save", p8Game.ProbeSave(), "Save with summoned helpers in the wild");
+            // Genuine keyboard movement: the helper must walk after the player,
+            // not teleport to the new position.
+            Input.ActionPress("move_forward");
+            await PhysicsFrames(70);
+            Input.ActionRelease("move_forward");
+            await PhysicsFrames(10);
+            p8Game.ProbeAdvance(0.4);
+            await Frames(4);
+            Check("p8-summoned-helper-follows",
+                p8Game.ProbeWorkerSummoned(pip.Id) &&
+                (p8Game.ProbeWorkerTravelling(pip.Id) ||
+                 Vec3.Distance(p8Game.ProbeWorkerWorldPosition(pip.Id), arrived) > 2),
+                $"worker={p8Game.ProbeWorkerWorldPosition(pip.Id)} arrived={arrived}");
+
+            if (headlessInput) p8Game.ProbeToggleColony();
+            else await ClickUi(p8Game.ProbeColonyButtonRect.GetCenter());
+            await Frames(4);
+            var releaseRect = p8Game.ProbeWorkerReleaseRect(pip.Id);
+            Check("p8-release-button", releaseRect.Size.X > 0, $"{releaseRect}");
+            if (headlessInput) p8Game.ProbeReleaseWorker(pip.Id);
+            else await ClickUi(releaseRect.GetCenter());
+            await Frames(4);
+            p8Game.ProbeCloseModal();
+            await Frames(3);
+            Check("p8-release-returns-home",
+                !p8Game.ProbeWorkerSummoned(pip.Id) &&
+                p8Game.ProbeWorkerJourneyTarget(pip.Id) == RegionIds.GardenClearing,
+                $"target={p8Game.ProbeWorkerJourneyTarget(pip.Id)}");
+
+            if (headlessInput) p8Game.ProbeToggleColony();
+            else await ClickUi(p8Game.ProbeColonyButtonRect.GetCenter());
+            await Frames(4);
+            var secondRect = p8Game.ProbeWorkerSummonRect(bramble.Id);
+            if (headlessInput) p8Game.ProbeSummonWorker(bramble.Id);
+            else await ClickUi(secondRect.GetCenter());
+            await Frames(4);
+            p8Game.ProbeCloseModal();
+            await Frames(3);
+            Check("p8-second-summon-releases-first",
+                !p8Game.ProbeWorkerSummoned(pip.Id) &&
+                p8Game.ProbeWorkerSummoned(bramble.Id) &&
+                p8Game.ProbeWorkerTravelling(bramble.Id),
+                $"pip={p8Game.ProbeWorkerSummoned(pip.Id)} " +
+                $"bramble={p8Game.ProbeWorkerSummoned(bramble.Id)}");
+
+            Check("p8-save", p8Game.ProbeSave(), "Save with a summoned helper in the wild");
             var p8Loaded = _main.Saves.Load();
             Check("p8-save-loads", p8Loaded.Success && p8Loaded.Data is not null, p8Loaded.Message);
             if (p8Loaded.Data is not null)
             {
                 var p8Reloaded = _main.StartGame(p8Loaded.Data);
                 await Frames(20);
-                var reloadedHelpers = p8Reloaded.Simulation!.Workers.Take(2).ToList();
-                Check("p8-reload-keeps-summoned-helpers",
-                    reloadedHelpers.Count == 2 &&
-                    reloadedHelpers.All(helper => helper.Summoned && helper.CurrentNode == "") &&
-                    reloadedHelpers.All(helper =>
-                        Vec3.Distance(helper.WorldPosition, farSummon) < 6),
-                    string.Join(" | ", reloadedHelpers.Select(helper =>
-                        $"{helper.Id}:{helper.WorldPosition}")));
+                var reloaded = p8Reloaded.Simulation!.Workers.FirstOrDefault(w => w.Id == bramble.Id);
+                Check("p8-reload-keeps-summon-state",
+                    reloaded is not null && reloaded.Summoned &&
+                    reloaded.HomeRegion == RegionIds.GardenClearing,
+                    $"summoned={reloaded?.Summoned} home={reloaded?.HomeRegion}");
             }
         }
         _main.ProbeReturnToTitle();
@@ -2373,6 +2453,10 @@ public partial class RuntimeProbe : Node
             Check("critical-bridge-present", critical is not null, "Middle bridge exists");
             if (critical is not null)
             {
+                // A helper may be mid-crossing; stand down before testing that
+                // removing the bridge itself invalidates the graph route.
+                foreach (var helper in reloadedRegion.Simulation.Workers)
+                    reloadedRegion.Simulation.ReleaseWorkerTask(helper, "bridge regression setup");
                 Check("critical-bridge-dismantles",
                     reloadedRegion.Simulation.TryDismantleWeb(critical.Id, out _, out _),
                     "Dismantled for navigation regression");

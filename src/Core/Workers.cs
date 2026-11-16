@@ -15,6 +15,10 @@ public sealed class WorkerState
     public required string Id { get; init; }
     public required string Name { get; init; }
     public required string Colour { get; init; }
+    /// <summary>The landmark where this helper was hatched. The colony home is
+    /// independent of where the player travels or where the helper currently
+    /// works, and only an explicit return changes the physical region.</summary>
+    public string HomeRegion { get; set; } = RegionIds.GardenClearing;
     public string Region { get; set; } = RegionIds.GardenClearing;
     public Vec3 Position { get; set; }
     public string CurrentNode { get; set; } = WorldLayout.NurseryNode;
@@ -45,6 +49,8 @@ public sealed class WorkerState
     public bool JourneyUsesBridge { get; set; }
     public Vec3 JourneyDestination { get; set; }
     public bool Summoned { get; set; }
+    /// <summary>Transient throttle for re-routing a follower; not persisted.</summary>
+    public double FollowCooldown { get; set; }
 
     /// <summary>Stable world position used for rendering and distance checks.</summary>
     public Vec3 WorldPosition => Travelling

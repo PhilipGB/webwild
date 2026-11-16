@@ -852,3 +852,60 @@ chunk record, a failure after the new manifest is published (previous archive
 manifest and chunks roll back together), and a restore move failure. In every
 case the live garden remains readable and no verified backup is claimed unless
 it exists.
+
+### H1 — worker autonomy and individual summoning
+
+Commands run on the H1 head:
+
+```text
+$ dotnet clean
+$ dotnet build -warnaserror
+0 Warning(s), 0 Error(s)
+
+$ dotnet test
+Passed! - Failed: 0, Passed: 242, Skipped: 0, Total: 242
+
+$ godot --headless --path . --editor --quit
+exit 0
+
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=462 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=463 failures=0
+```
+
+The rendered run opens the colony panel by clicking the Spiders toolbar button,
+clicks only Pip's Summon button, confirms Bramble stays at work, watches Pip
+walk off-screen to the player without teleporting, moves the player with real
+WASD input, releases Pip through the panel, summons Bramble, and saves and
+reloads the summoned state. Screenshots `45a-colony-helpers.png` and
+`45-summoned-helper.png` were inspected: the named rows, tasks, distances,
+Summon/Release actions and the follow toast are readable, and the helper stands
+on the ground beside the player.
+
+Unit coverage includes landmark changes not retasking helpers, individual
+summon, follow after player movement, release-home routing, second-summon
+release, durable home region and save/load of a summoned journey.
+
+H1 exported Linux x64 build:
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+$ cd exports/linux
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=462 failures=0
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=463 failures=0
+```
+
+H1 payload SHA-256: `Webwild.x86_64` `d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc`,
+`Webwild.pck` `60292bdb14ba601651988afbe385f2cc979b895610a9b5cfbbf124e0b389f7e2`.

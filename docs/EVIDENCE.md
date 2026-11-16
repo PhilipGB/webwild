@@ -823,6 +823,29 @@ Screenshots `46-new-garden-confirm.png` and `47-restored-garden.png` were
 inspected: the confirmation copy is readable and the restored berry source
 shows `Berries regrow in 84s`, proving chunk-owned depletion survived.
 
+Exported Linux x64 build:
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+
+$ cd exports/linux
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=450 failures=0
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=451 failures=0
+```
+
+SHA-256 of the H0 Linux payload:
+
+```text
+d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
+4e49b714ebf7db8ef0bcd9952fbabac2c42ed100fbc4e9d30c034e1eb95202c2  Webwild.pck
+```
+
 Archive failure and recovery contracts in `NewGardenWorkflowTests` cover a
 simulated write failure, copy failure, directory move failure, a corrupt live
 chunk record, a failure after the new manifest is published (previous archive

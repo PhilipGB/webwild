@@ -43,6 +43,50 @@ public sealed class WebTuning
     public int RepairSilkCost { get; set; } = 2;
 }
 
+/// <summary>
+/// Player-built silk crossings over generated rivers. The spacing policy has
+/// two independent gates: a hard shore distance below which a site always
+/// refuses because a bridge is effectively on the same bank point, and a
+/// detour ratio that compares the real navigable route via the nearest
+/// existing crossing against a reasonable direct crossing journey.
+/// </summary>
+public sealed class RiverBridgeTuning
+{
+    /// <summary>Silk charged for one river crossing.</summary>
+    public int SilkCost { get; set; } = 6;
+
+    /// <summary>Existing crossings closer than this along the river refuse a
+    /// new site outright: two decks this near would share bank ramps.</summary>
+    public double MinShoreSpacingMetres { get; set; } = 12;
+
+    /// <summary>How far along the river to search for an existing crossing
+    /// whose route makes a new bridge unnecessary.</summary>
+    public double GuidanceSearchMetres { get; set; } = 150;
+
+    /// <summary>Prefer an existing crossing when its navigable route is no
+    /// more than this many times a reasonable direct crossing journey.</summary>
+    public double MaxDetourRatio { get; set; } = 1.5;
+
+    /// <summary>Fixed approach allowance counted on each side of a direct
+    /// crossing journey (bank ramps in and out).</summary>
+    public double ApproachMetres { get; set; } = 2.0;
+
+    /// <summary>Lowest bank clearance above the water level required at each
+    /// end, so a deck can never start underwater.</summary>
+    public double MinBankClearance { get; set; } = 0.25;
+
+    /// <summary>Steepest acceptable bank-to-bank incline in degrees.</summary>
+    public double MaxInclineDegrees { get; set; } = 25;
+
+    /// <summary>How close the player must stand to the water's edge to plan a
+    /// crossing, measured past the bank taper.</summary>
+    public double BankApproachMetres { get; set; } = 8;
+
+    /// <summary>Fraction of the silk cost returned when a river bridge is
+    /// dismantled.</summary>
+    public double DismantleRefundFraction { get; set; } = 0.6;
+}
+
 public sealed class InsectTuning
 {
     public int FoodYield { get; set; } = 2;
@@ -102,6 +146,7 @@ public sealed class Tuning
     public WeatherTuning Weather { get; set; } = new();
     public RecoveryTuning Recovery { get; set; } = new();
     public FoodTuning Food { get; set; } = new();
+    public RiverBridgeTuning RiverBridges { get; set; } = new();
 
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -174,6 +219,17 @@ public sealed class Tuning
         SilkProduction ??= new SilkProductionTuning();
         SilkProduction.SilkPerFedWorkerEverySeconds = Math.Max(0, SilkProduction.SilkPerFedWorkerEverySeconds);
         SilkProduction.FoodCostPerSilkBatch = Math.Max(0, SilkProduction.FoodCostPerSilkBatch);
+        RiverBridges ??= new RiverBridgeTuning();
+        RiverBridges.SilkCost = Math.Max(0, RiverBridges.SilkCost);
+        RiverBridges.MinShoreSpacingMetres = Math.Clamp(RiverBridges.MinShoreSpacingMetres, 1, 60);
+        RiverBridges.GuidanceSearchMetres = Math.Clamp(RiverBridges.GuidanceSearchMetres,
+            RiverBridges.MinShoreSpacingMetres, RiverMap.CrossingSpacing);
+        RiverBridges.MaxDetourRatio = Math.Clamp(RiverBridges.MaxDetourRatio, 1.0, 20.0);
+        RiverBridges.ApproachMetres = Math.Clamp(RiverBridges.ApproachMetres, 0.5, 8);
+        RiverBridges.MinBankClearance = Math.Clamp(RiverBridges.MinBankClearance, 0.05, 2);
+        RiverBridges.MaxInclineDegrees = Math.Clamp(RiverBridges.MaxInclineDegrees, 5, 45);
+        RiverBridges.BankApproachMetres = Math.Clamp(RiverBridges.BankApproachMetres, 2, 30);
+        RiverBridges.DismantleRefundFraction = Math.Clamp(RiverBridges.DismantleRefundFraction, 0, 1);
         Insects ??= new Dictionary<string, InsectTuning>();
         if (!Insects.ContainsKey("fly")) Insects["fly"] = new InsectTuning();
         if (!Insects.ContainsKey("moth")) Insects["moth"] = new InsectTuning { FoodYield = 3, SpeedWorldUnitsPerSecond = 1.5, RespawnSeconds = 34 };

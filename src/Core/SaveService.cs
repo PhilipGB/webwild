@@ -164,6 +164,56 @@ public static class SaveValidator
                 return false;
             }
         }
+        if (data.RiverBridges.Count > 40)
+        {
+            error = "Too many river bridges in this save.";
+            return false;
+        }
+        var riverBridgeIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var bridge in data.RiverBridges)
+        {
+            if (bridge is null || string.IsNullOrWhiteSpace(bridge.Id) ||
+                !riverBridgeIds.Add(bridge.Id))
+            {
+                error = "A river bridge ID is missing or duplicated.";
+                return false;
+            }
+            if (bridge.Id.Length > 40)
+            {
+                error = "A river bridge ID is too long.";
+                return false;
+            }
+            if (!double.IsFinite(bridge.X) || !double.IsFinite(bridge.CenterZ) ||
+                !double.IsFinite(bridge.HalfWidth) || !double.IsFinite(bridge.WaterLevel) ||
+                !double.IsFinite(bridge.HalfSpan) || !double.IsFinite(bridge.NorthGroundY) ||
+                !double.IsFinite(bridge.SouthGroundY))
+            {
+                error = "A river bridge has invalid geometry.";
+                return false;
+            }
+            if (Math.Abs(bridge.X) > 1e9 || Math.Abs(bridge.CenterZ) > 1e9)
+            {
+                error = "A river bridge lies outside the world.";
+                return false;
+            }
+            if (bridge.HalfWidth <= 0 || bridge.HalfWidth > 50 ||
+                bridge.HalfSpan <= 0 || bridge.HalfSpan > 50)
+            {
+                error = "A river bridge span is invalid.";
+                return false;
+            }
+            if (Math.Abs(bridge.NorthGroundY) > 1e4 || Math.Abs(bridge.SouthGroundY) > 1e4 ||
+                Math.Abs(bridge.WaterLevel) > 1e4)
+            {
+                error = "A river bridge height is invalid.";
+                return false;
+            }
+            if (bridge.RiverIndex is < -1000 or > 1000 || bridge.ConstructedAtTick < 0)
+            {
+                error = "A river bridge identity is invalid.";
+                return false;
+            }
+        }
         if (data.Workers.Count > 4 || data.Workers.Count + 1 > 5)
         {
             error = "The save contains too many spiders.";

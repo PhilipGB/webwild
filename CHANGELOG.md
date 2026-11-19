@@ -1,3 +1,42 @@
+## Webwild v0.3.1 — Requirements completion and hardening (in progress)
+
+Follow-up delivery resolving the v0.3.0 review findings phase by phase.
+Released phases so far:
+
+### H0 — save integrity
+
+- Every New Garden path (title screen and in-game) saves, archives and
+  replaces through one verified, rollback-capable transaction including
+  per-chunk modifications, with confirmation and refusal on any failure.
+
+### H1 — worker autonomy and individual summoning
+
+- Helpers keep their home region, physical position and task when the
+  player travels; one named spider can be summoned, follows physically
+  and is released home without teleporting.
+
+### H2 — food markers and physical worker collection
+
+- Wild food is map-marked, assigned to a named helper, collected
+  physically, carried home across bridges and credited exactly once on
+  delivery with idempotent identities and persistent markers.
+
+### H3 — procedural bridges (this phase)
+
+- Players build silk bridges over generated rivers: key `3` plans a
+  crossing where they stand, previews it and confirms through the
+  established cost panel; grounded bank geometry, above-water decks.
+- A configurable spacing policy refuses redundant decks beside existing
+  crossings and explains them with "Use nearby bridge" guidance, a live
+  distance hint and a beacon leading to the bank end.
+- Generated wooden crossings remain permanent seed-stable landmarks; silk
+  bridges are additive and persist in the save payload with their full
+  geometry, ids and counters.
+- One worker traversal model covers generated and player crossings; deck
+  routes follow the actual walkway, and dismantling a bridge explicitly
+  re-plans or strands dependent helpers safely, never teleporting and
+  never walking a removed deck.
+
 ## Webwild v0.3.0 — Never-Ending World
 
 A ten-phase expansion that turns the two authored regions into one continuous,

@@ -57,21 +57,22 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.1 H0 | Save integrity: one safe New Garden workflow, verified transactional archive/restore including chunk modifications, mid-transaction rollback, in-game confirmation | DONE, merged (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `NewGardenWorkflowTests`; 240 unit tests; 57 scene checks; 450 headless / 451 rendered runtime checks; Linux export 450 headless / 451 rendered; screenshots 46–47 |
 | v0.3.1 H1 | Worker autonomy: players and story regions no longer redirect helpers; named individual summon, physical follow, release home, durable home region and colony panel | DONE, merged PR [#38](https://github.com/PhilipGB/webwild/pull/38) (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `WorkerNavigationTests`; 242 unit tests; 462 headless / 463 rendered runtime checks; screenshots 43–45a |
 | v0.3.1 H2 | Food markers and physical worker collection: map-marked sources, named assignment, travel/collect/carry/deliver, exactly-once credit, bridge return routes, regrowth waiting | DONE, merged PR [#39](https://github.com/PhilipGB/webwild/pull/39) (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `WorkerForagingTests`; 249 unit tests; 482 headless / 483 rendered runtime checks; screenshots 48–50 |
+| v0.3.1 H3 | Procedural bridges: player-built silk crossings over generated rivers with a configurable spacing policy, nearby-bridge guidance, shared worker traversal model, explicit route invalidation, persistent decks | IN PROGRESS on `feat/v0.3.1-h3-procedural-bridges` (Windows runtime NOT VERIFIED; screenshots captured, not visually inspected) | `docs/prs/v0.3.1.md`; `PlayerRiverBridgeTests`; 270 unit tests; 512 headless / 513 rendered runtime checks; Linux export 57/512/513; screenshots 51–54 |
 
 ## Verification summary
 
-Current v0.3.1 H0 state; the per-phase history is in `docs/prs/v0.3.1.md`.
+Current v0.3.1 H3 state; the per-phase history is in `docs/prs/v0.3.1.md`.
 
-- `dotnet test`: **249 passed, 0 failed** (231 v0.3.0 + save-integrity + worker-autonomy rewrites + 7 foraging cases).
+- `dotnet test`: **270 passed, 0 failed** (249 at H2 + 21 river-bridge cases).
 - Scene contract validation: **57 passed, 0 failed** across both regions.
-- Headless runtime probe: **482 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **483 passed, 0 failed**.
-- Exported Linux build, headless probe: **482 passed, 0 failed** (H2).
-- Exported Linux build, rendered Xvfb probe: **483 passed, 0 failed** (H2).
+- Headless runtime probe: **512 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **513 passed, 0 failed**.
+- Exported Linux build: 57 scene / 512 headless / 513 rendered, 0 failed.
 - Linux x64 export: built successfully and launched.
-- Windows x64 export: built successfully; runtime **NOT VERIFIED** (no Windows host).
+- Windows x64 export: built previously; runtime **NOT VERIFIED** (no Windows host).
 - Legacy saves v0.1.0/v0.1.1/v0.1.2 and v0.2.x/v0.3.0: migration tests pass with real fixtures.
 - Child playtest: **NOT VERIFIED** — see `docs/PLAYTEST_NOTES.md`.
+- H3 screenshots: captured (51–54); **not visually inspected on this host**.
 
 ## Known limitations
 

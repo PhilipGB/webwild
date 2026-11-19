@@ -24,6 +24,9 @@ public partial class GameUI : CanvasLayer
     public event Action<string>? WorkerSummonRequested;
     public event Action<string>? WorkerReleaseRequested;
     public event Action<string>? MapMarkerSelected;
+    public event Action? RiverBuildToolRequested;
+    public event Action? RiverGuidanceUseRequested;
+    public event Action? RiverGuidanceDismissRequested;
 
     private Control _root = null!;
     private Label _foodLabel = null!;
@@ -57,6 +60,12 @@ public partial class GameUI : CanvasLayer
     private Label _warningLabel = null!;
     private Button _captureButton = null!;
     private Button _bridgeButton = null!;
+    private Button _riverButton = null!;
+    private PanelContainer? _riverGuidancePanel;
+    private Label? _riverGuidanceLabel;
+    private Button? _riverGuidanceUseButton;
+    private Button? _riverGuidanceCloseButton;
+    private bool _activeRiverMode;
     private Button _helpButton = null!;
     private Button _mapButton = null!;
     private Button? _pauseNewGameButton;
@@ -115,6 +124,12 @@ public partial class GameUI : CanvasLayer
     public bool BuildConfirmVisible => _buildConfirmPanel.Visible;
     public string ProbeBuildConfirmText => _buildConfirmLabel.Text;
     public Rect2 ProbeBuildConfirmRect => _buildConfirmPanel.GetGlobalRect();
+    public Rect2 ProbeBuildConfirmButtonRect =>
+        _buildConfirmButton is null ? default : _buildConfirmButton.GetGlobalRect();
+    public Rect2 ProbeRiverGuidanceUseRect =>
+        _riverGuidanceUseButton is null ? default : _riverGuidanceUseButton.GetGlobalRect();
+    public Rect2 ProbeRiverGuidanceDismissRect =>
+        _riverGuidanceCloseButton is null ? default : _riverGuidanceCloseButton.GetGlobalRect();
     public bool ProbeNurseryProgressVisible => _nurseryBar?.Visible ?? false;
     public double ProbeNurseryProgressValue => _nurseryBar?.Value ?? -1;
     public string ProbeNurseryStatusText => _nurseryHatchStatus?.Text ?? "";
@@ -175,11 +190,15 @@ public partial class GameUI : CanvasLayer
         actions.AddThemeConstantOverride("separation", 6);
         _interactButton = ActionButton("E · Interact", "food", () => InteractRequested?.Invoke());
         _dismantleButton = ActionButton("X · Remove web", "web", () => DismantleRequested?.Invoke());
+        _riverButton = ActionButton("3 · River bridge", "bridge", () => RiverBuildToolRequested?.Invoke());
+        _riverButton.TooltipText = "Plan a silk crossing over wild water [3]";
+        _riverButton.ToggleMode = true;
         _cancelButton = ActionButton("Cancel build", "cancel", () => CancelRequested?.Invoke());
         _cancelButton.Visible = false;
         _pauseButton = ActionButton("Esc · Pause", "settings", () => PauseRequested?.Invoke());
         actions.AddChild(_interactButton);
         actions.AddChild(_dismantleButton);
+        actions.AddChild(_riverButton);
         actions.AddChild(_cancelButton);
         actions.AddChild(_pauseButton);
         _root.AddChild(actions);
@@ -315,6 +334,33 @@ public partial class GameUI : CanvasLayer
         confirmRow.AddChild(_buildCancelButton);
         _buildConfirmPanel.AddChild(confirmRow);
         bottom.AddChild(_buildConfirmPanel);
+
+        // Nearby-bridge guidance: shown when the spacing policy refuses a new
+        // crossing because an existing one already serves the same water.
+        _riverGuidancePanel = new PanelContainer
+        {
+            Visible = false,
+            MouseFilter = Control.MouseFilterEnum.Stop
+        };
+        _riverGuidancePanel.AddThemeStyleboxOverride("panel",
+            UiKit.Panel(new Color(UiKit.Cream, 0.98f), 16, UiKit.Teal, 3));
+        var guidanceRow = new HBoxContainer();
+        guidanceRow.AddThemeConstantOverride("separation", 10);
+        guidanceRow.Alignment = BoxContainer.AlignmentMode.Center;
+        _riverGuidanceLabel = UiKit.Label("", 19, UiKit.Pine);
+        guidanceRow.AddChild(_riverGuidanceLabel);
+        _riverGuidanceUseButton = UiKit.Button("Use nearby bridge", 190, 52, true);
+        _riverGuidanceUseButton.Pressed += () => RiverGuidanceUseRequested?.Invoke();
+        guidanceRow.AddChild(_riverGuidanceUseButton);
+        _riverGuidanceCloseButton = UiKit.Button("Keep exploring", 150, 52);
+        _riverGuidanceCloseButton.Pressed += () =>
+        {
+            RiverGuidanceDismissRequested?.Invoke();
+            HideRiverGuidance();
+        };
+        guidanceRow.AddChild(_riverGuidanceCloseButton);
+        _riverGuidancePanel.AddChild(guidanceRow);
+        bottom.AddChild(_riverGuidancePanel);
 
         _contextLabel = UiKit.Label("", 18, UiKit.Cream);
         _contextLabel.AddThemeColorOverride("font_outline_color", UiKit.Pine);
@@ -505,6 +551,7 @@ public partial class GameUI : CanvasLayer
         _colonyButton.Text = $"Spiders {sim.TotalSpiders}/{sim.MaxSpiders}  [Tab]";
         _captureButton.Text = $"Capture web  [1]  {sim.Tuning.Webs.Capture.SilkCost} silk";
         _bridgeButton.Text = $"Silk bridge  [2]  {sim.Tuning.Webs.Bridge.SilkCost} silk";
+        _riverButton.Text = $"3 · River bridge  {sim.Tuning.RiverBridges.SilkCost} silk";
         UpdateMission(sim);
         var warning = sim.WeatherPhase == WeatherPhase.Warning;
         _warningPanel.Visible = warning;
@@ -659,19 +706,61 @@ public partial class GameUI : CanvasLayer
         _anchorA = anchorA;
         _captureButton.ButtonPressed = type == WebType.Capture;
         _bridgeButton.ButtonPressed = type == WebType.Bridge;
-        _cancelButton.Visible = type is not null;
-        if (type is null)
+        _cancelButton.Visible = type is not null || _activeRiverMode;
+        if (type is null && !_activeRiverMode)
         {
             HideBuildConfirmation();
             SetStatus(sim.GetActiveRegionHint());
         }
-        else
+        else if (type is not null)
         {
             var name = type == WebType.Capture ? "capture web" : "silk bridge";
             if (anchorA is null) SetStatus($"Building {name}: click the first glowing anchor.  Right-click cancels.");
             else SetStatus($"Now click the second anchor.  Right-click cancels.");
         }
     }
+
+    /// <summary>River-crossing planning mode. Independent of the anchor-pair
+    /// tools: the site comes from where the player stands, not from sockets.</summary>
+    public void SetRiverBuildMode(bool active, GameSimulation sim)
+    {
+        _activeRiverMode = active;
+        _riverButton.ButtonPressed = active;
+        if (active)
+        {
+            _captureButton.ButtonPressed = false;
+            _bridgeButton.ButtonPressed = false;
+            _cancelButton.Visible = true;
+            SetStatus("Review the silk crossing.  Right-click cancels.");
+        }
+        else
+        {
+            _cancelButton.Visible = _activeTool is not null;
+            SetStatus(sim.GetActiveRegionHint());
+        }
+    }
+
+    public void ShowRiverGuidance(string message)
+    {
+        if (_riverGuidanceLabel is null) return;
+        _riverGuidanceLabel.Text = message;
+        _riverGuidancePanel!.Visible = true;
+    }
+
+    public void SetRiverGuidanceDistance(double metres, string direction)
+    {
+        if (_riverGuidanceLabel is null || !_riverGuidancePanel!.Visible) return;
+        _riverGuidanceLabel.Text = $"A bridge already crosses the water · {metres:0} m {direction}";
+    }
+
+    public void HideRiverGuidance()
+    {
+        if (_riverGuidancePanel is null || !_riverGuidancePanel.Visible) return;
+        _riverGuidancePanel.Visible = false;
+    }
+
+    public bool RiverGuidanceVisible => _riverGuidancePanel?.Visible ?? false;
+    public bool RiverBuildModeActive => _activeRiverMode;
 
     public void ShowBuildConfirmation(string fromLabel, string toLabel, int silkCost)
     {

@@ -83,6 +83,12 @@ public partial class GardenClearing : Node3D
     private string? _anchorA;
     private string? _pendingAnchorB;
     private AnchorNode? _hoverAnchor;
+    private RiverBuildPlan? _riverPlan;
+    private bool _riverBuildMode;
+    private NearbyCrossing? _riverGuidance;
+    private bool _riverPromptShown;
+    private MeshInstance3D? _riverGuidanceBeacon;
+    private readonly Dictionary<string, RiverBridgeVisual> _riverBridgeViews = new(StringComparer.Ordinal);
     private string _previewSignature = "";
     private double _accumulator;
     private double _autosaveTimer;
@@ -296,13 +302,20 @@ public partial class GardenClearing : Node3D
         _ui.HatchRequested += TryHatch;
         _ui.RecoveryRequested += TryRecovery;
         _ui.ContinuePlayingRequested += () => _ui.SetStatus(_sim.GetActiveRegionHint());
-        _ui.BuildConfirmed += ConfirmBuild;
+        _ui.BuildConfirmed += () =>
+        {
+            if (_riverBuildMode) ConfirmRiverBuild();
+            else ConfirmBuild();
+        };
         _ui.BuildCancelled += ClearBuild;
         _ui.MapRequested += OpenMap;
         _ui.ReturnHomeRequested += ReturnHome;
         _ui.WorkerSummonRequested += SummonWorker;
         _ui.WorkerReleaseRequested += ReleaseWorker;
         _ui.MapMarkerSelected += OnMapMarkerSelected;
+        _ui.RiverBuildToolRequested += ToggleRiverBuild;
+        _ui.RiverGuidanceUseRequested += UseNearbyBridge;
+        _ui.RiverGuidanceDismissRequested += DismissRiverGuidance;
 
         _audio = new AudioDirector { Name = "AudioDirector" };
         AddChild(_audio);
@@ -553,6 +566,7 @@ public partial class GardenClearing : Node3D
         SyncWebViews();
         SyncInsectViews();
         SyncWorkerViews();
+        SyncRiverBridgeViews();
         _ui.UpdateHud(_sim, Settings);
     }
 
@@ -583,6 +597,8 @@ public partial class GardenClearing : Node3D
         UpdateOriginRebase();
         _chunks?.Update(ToVector3(PlayerWorld), true);
         SyncFoodViews();
+        SyncRiverBridgeViews();
+        UpdateRiverGuidance();
         UpdateLandmarkZone();
         TrackExploration();
         UpdatePlayerContext();
@@ -625,11 +641,12 @@ public partial class GardenClearing : Node3D
         {
             _hudTimer = 0;
             _ui.UpdateHud(_sim, Settings);
+            UpdateRiverPrompt();
         }
 
         if (!paused && !_ui.BlocksWorldInput && _player is not null)
         {
-            _player.InputEnabled = _tool is null;
+            _player.InputEnabled = _tool is null && !_riverBuildMode;
             _autosaveTimer += delta;
             if (_autosaveTimer >= 30)
             {
@@ -1238,6 +1255,11 @@ public partial class GardenClearing : Node3D
             RemovePreview();
             return;
         }
+        if (_riverBuildMode)
+        {
+            // The river crossing preview is managed by the river flow itself.
+            return;
+        }
         if (_tool is null)
         {
             RemovePreview();
@@ -1526,6 +1548,13 @@ public partial class GardenClearing : Node3D
         if (!_started || _sim is null) return;
         if (_settingsDialog.Visible) return;
 
+        if (_riverBuildMode && @event.IsActionPressed("ui_accept"))
+        {
+            ConfirmRiverBuild();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (_pendingAnchorB is not null && @event.IsActionPressed("ui_accept"))
         {
             ConfirmBuild();
@@ -1541,7 +1570,7 @@ public partial class GardenClearing : Node3D
                 GetViewport().SetInputAsHandled();
                 return;
             }
-            if (_tool is not null)
+            if (_tool is not null || _riverBuildMode)
             {
                 ClearBuild();
                 GetViewport().SetInputAsHandled();
@@ -1574,6 +1603,11 @@ public partial class GardenClearing : Node3D
             SetTool(WebType.Bridge);
             GetViewport().SetInputAsHandled();
         }
+        else if (@event.IsActionPressed("build_river_bridge"))
+        {
+            ToggleRiverBuild();
+            GetViewport().SetInputAsHandled();
+        }
         else if (@event.IsActionPressed("mark_food"))
         {
             MarkNearestFood();
@@ -1603,7 +1637,7 @@ public partial class GardenClearing : Node3D
             }
             else if (mouse.ButtonIndex == MouseButton.Right && mouse.Pressed)
             {
-                if (_tool is not null)
+                if (_tool is not null || _riverBuildMode)
                 {
                     ClearBuild();
                     GetViewport().SetInputAsHandled();
@@ -1802,9 +1836,255 @@ public partial class GardenClearing : Node3D
         SaveGame(false, true);
     }
 
+    // ---- Player-built river crossings (H3) ----
+    // Planning and construction live in Webwild.Core; this block only
+    // translates the keybind, renders the preview/deck and routes the
+    // confirmation through the same UI decision panel as authored bridges.
+
+    private void ToggleRiverBuild()
+    {
+        if (_sim is null || _ui.IsModalOpen) return;
+        if (_riverBuildMode)
+        {
+            ClearRiverBuild();
+            return;
+        }
+        ClearBuild();
+        _audio.Play("click");
+        var plan = _sim.PlanRiverBridge(PlayerWorld);
+        if (plan.Acceptable && plan.Site is not null)
+        {
+            _riverBuildMode = true;
+            _riverPlan = plan;
+            _ui.HideRiverGuidance();
+            _ui.SetRiverBuildMode(true, _sim);
+            RemovePreview();
+            _preview = WebVisual.CreatePreview(
+                WebType.Bridge,
+                ToEngine(plan.Site.NorthAnchor),
+                ToEngine(plan.Site.SouthAnchor),
+                true,
+                ToEngine(plan.Site.NorthGround),
+                ToEngine(plan.Site.SouthGround));
+            _previewRoot.AddChild(_preview);
+            _player.InputEnabled = false;
+            _ui.ShowBuildConfirmation("North bank", "South bank", plan.SilkCost);
+            _ui.SetStatus($"Review the silk crossing · {plan.SilkCost} silk · Build to spin it");
+        }
+        else
+        {
+            _ui.SetRiverBuildMode(false, _sim);
+            _ui.ShowToast(plan.Reason, UiKit.Coral, 4f);
+            _ui.SetStatus(plan.Reason);
+            if (plan.Nearby is not null) BeginRiverGuidance(plan.Nearby);
+        }
+    }
+
+    private void ConfirmRiverBuild()
+    {
+        if (_sim is null || !_riverBuildMode) return;
+        if (_riverPlan is not { } plan || plan.Site is null)
+        {
+            ClearRiverBuild();
+            return;
+        }
+        if (!_sim.TryBuildRiverBridge(plan, out _, out var reason))
+        {
+            _audio.Play("cancel");
+            _ui.ShowToast(reason, UiKit.Coral, 4f);
+            ClearRiverBuild();
+            return;
+        }
+        _audio.Play("click");
+        ProcessEvents();
+        ClearRiverBuild();
+        SyncRiverBridgeViews();
+        _ui.ShowToast("Silk bridge built! Walk across when you are ready.", UiKit.TealDark, 4f);
+        _autosaveTimer = 0;
+        SaveGame(false, true);
+    }
+
+    private void ClearRiverBuild()
+    {
+        if (!_riverBuildMode && _riverPlan is null) return;
+        _riverBuildMode = false;
+        _riverPlan = null;
+        RemovePreview();
+        if (_ui is not null)
+        {
+            _ui.HideBuildConfirmation();
+            if (_sim is not null) _ui.SetRiverBuildMode(false, _sim);
+        }
+        if (_player is not null) _player.InputEnabled = _tool is null;
+    }
+
+    /// <summary>The spacing policy refused a crossing because an existing one
+    /// already serves the same water. Show it, explain it, and offer to guide
+    /// the player there; walking away or dismissing clears it.</summary>
+    private void BeginRiverGuidance(NearbyCrossing nearby)
+    {
+        _riverGuidance = nearby;
+        _ui.ShowRiverGuidance(nearby.IsPlayerBuilt
+            ? "Your silk bridge already crosses the water nearby."
+            : "An old bridge already crosses the water nearby.");
+    }
+
+    private void UseNearbyBridge()
+    {
+        if (_riverGuidance is null)
+        {
+            _ui.HideRiverGuidance();
+            return;
+        }
+        _audio.Play("click");
+        // The live distance/direction and the beacon appear in
+        // UpdateRiverGuidance every frame; manual movement still works, and
+        // walking far away dismisses the guidance.
+    }
+
+    private void DismissRiverGuidance()
+    {
+        _riverGuidance = null;
+        _ui.HideRiverGuidance();
+    }
+
+    private void UpdateRiverGuidance()
+    {
+        if (_sim is null) return;
+        if (_riverGuidance is not { } nearby)
+        {
+            if (_riverGuidanceBeacon is not null)
+            {
+                _riverGuidanceBeacon.QueueFree();
+                _riverGuidanceBeacon = null;
+            }
+            foreach (var view in _riverBridgeViews.Values) view.SetBeaconVisible(false);
+            return;
+        }
+        var player = PlayerWorld;
+        // Lead onto the deck: the target is the crossing's bank end on the
+        // player's side, never the middle of the water.
+        var northSide = player.Z < nearby.CenterZ;
+        var targetZ = nearby.ApproachZ(northSide);
+        var dx = nearby.X - player.X;
+        var dz = targetZ - player.Z;
+        var distance = Math.Sqrt(dx * dx + dz * dz);
+        if (distance < 6.0 || distance > 400.0)
+        {
+            if (distance < 6.0)
+            {
+                _ui.ShowToast("Here is the bridge — cross when you are ready.", UiKit.TealDark, 3f);
+                _audio.Play("click");
+            }
+            DismissRiverGuidance();
+            return;
+        }
+        var direction = CompassOf(dx, dz);
+        _ui.SetRiverGuidanceDistance(distance, direction);
+        _ui.SetStatus($"Nearby bridge · {distance:0} m {direction} — walk along the bank");
+        if (_riverGuidanceBeacon is null)
+        {
+            _riverGuidanceBeacon = new MeshInstance3D
+            {
+                Name = "RiverGuidanceBeacon",
+                Mesh = new SphereMesh { Radius = 0.32f, Height = 0.64f, RadialSegments = 10, Rings = 6 }
+            };
+            _riverGuidanceBeacon.MaterialOverride = new StandardMaterial3D
+            {
+                AlbedoColor = UiKit.White,
+                EmissionEnabled = true,
+                Emission = UiKit.Gold,
+                EmissionEnergyMultiplier = 1.6f,
+                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+                Transparency = BaseMaterial3D.TransparencyEnum.Alpha
+            };
+            AddChild(_riverGuidanceBeacon);
+        }
+        // Rebased every frame, so the marker follows the presentation origin.
+        var groundY = _chunks?.Generator.HeightAt(nearby.X, targetZ) ?? 0;
+        _riverGuidanceBeacon.Position = ToEngine(new Vec3(nearby.X, groundY + 2.8, targetZ));
+        if (_riverBridgeViews.TryGetValue(nearby.Id, out var own))
+            own.SetBeaconVisible(true);
+    }
+
+    private static string CompassOf(double dx, double dz)
+    {
+        // Screen Z grows south, so a positive dz means south of the player.
+        var angle = Math.Atan2(dz, dx) * 180.0 / Math.PI;
+        return angle switch
+        {
+            >= -22.5 and < 22.5 => "east",
+            >= 22.5 and < 67.5 => "south-east",
+            >= 67.5 and < 112.5 => "south",
+            >= 112.5 or < -112.5 => "west",
+            >= -112.5 and < -67.5 => "north",
+            >= -67.5 and < -22.5 => "north-east",
+            _ => ""
+        };
+    }
+
+    /// <summary>One toast per river approach: discover the crossing tool
+    /// without spamming the hint lane every bank visit.</summary>
+    private void UpdateRiverPrompt()
+    {
+        if (_sim is null || _chunks is null) return;
+        if (_tool is not null || _riverBuildMode || _ui.IsModalOpen) return;
+        var world = PlayerWorld;
+        var river = _chunks.Generator.RiverAt(world.X, world.Z);
+        var nearBank = river.HasRiver &&
+                       river.Distance > river.HalfWidth - 0.5 &&
+                       river.Distance <= river.HalfWidth + RiverMap.BankTaper +
+                       _sim.Tuning.RiverBridges.BankApproachMetres;
+        if (!nearBank)
+        {
+            if (!river.HasRiver || river.Distance > river.HalfWidth + RiverMap.BankTaper + 20)
+                _riverPromptShown = false;
+            return;
+        }
+        if (!_riverPromptShown && _player.IsOnFloor())
+        {
+            _riverPromptShown = true;
+            _ui.ShowToast("Wild water ahead — press 3 to plan a silk bridge.", UiKit.Gold, 4f);
+        }
+    }
+
+    /// <summary>World-space views for built crossings, instantiated only while
+    /// the owning chunk is loaded so distant decks never linger at float
+    /// precision, exactly like chunk terrain.</summary>
+    private void SyncRiverBridgeViews()
+    {
+        if (_sim is null || _chunks is null) return;
+        var live = _sim.RiverBridges.ToDictionary(bridge => bridge.Id, StringComparer.Ordinal);
+        foreach (var id in _riverBridgeViews.Keys.ToList())
+        {
+            if (live.ContainsKey(id)) continue;
+            _riverBridgeViews[id].QueueFree();
+            _riverBridgeViews.Remove(id);
+        }
+        foreach (var bridge in live.Values)
+        {
+            var loaded = _chunks.IsChunkLoaded(
+                ChunkCoordinate.OfWorldPoint(bridge.X, bridge.CenterZ));
+            var exists = _riverBridgeViews.ContainsKey(bridge.Id);
+            if (loaded && !exists)
+            {
+                var view = new RiverBridgeVisual();
+                _chunkHost.AddChild(view);
+                view.Configure(bridge, Settings.ReducedMotion);
+                _riverBridgeViews[bridge.Id] = view;
+            }
+            else if (!loaded && exists)
+            {
+                _riverBridgeViews[bridge.Id].QueueFree();
+                _riverBridgeViews.Remove(bridge.Id);
+            }
+        }
+    }
+
     private void SetTool(WebType? type, bool silent = false)
     {
         if (_sim is null) return;
+        ClearRiverBuild();
         if (type is not null && _tool == type)
         {
             ClearBuild();
@@ -1839,6 +2119,7 @@ public partial class GardenClearing : Node3D
 
     private void ClearBuild()
     {
+        ClearRiverBuild();
         if (_tool is null && _anchorA is null && _pendingAnchorB is null) return;
         _tool = null;
         _anchorA = null;
@@ -1908,6 +2189,34 @@ public partial class GardenClearing : Node3D
     private void TryDismantleNearest()
     {
         if (_sim is null || _ui.BlocksWorldInput) return;
+        // A player-built river deck competes with authored webs for the same
+        // key; the closer construction wins so standing on a bank never
+        // tears down a web behind you.
+        var riverBridge = _sim.NearestRiverBridge(PlayerWorld, 3.2);
+        if (riverBridge is not null)
+        {
+            var riverDistance = GameSimulation.StripDistance(riverBridge, PlayerWorld);
+            var webDistance = _sim.Webs
+                .Where(web => web.Region == _sim.ActiveRegionId)
+                .Select(web => _sim.WebCenterDistance(web, PlayerLocal))
+                .DefaultIfEmpty(double.PositiveInfinity)
+                .Min();
+            if (riverDistance <= webDistance - 0.4 || webDistance > 3.2)
+            {
+                if (_sim.TryDismantleRiverBridge(riverBridge.Id, out var riverSilk, out var riverReason))
+                {
+                    _audio.Play("cancel");
+                    _ui.ShowToast($"River bridge removed · +{riverSilk} silk", UiKit.TealDark, 3f);
+                    SyncRiverBridgeViews();
+                    ProcessEvents();
+                }
+                else
+                {
+                    _ui.ShowToast(riverReason, UiKit.Coral, 3.2f);
+                }
+                return;
+            }
+        }
         if (_sim.TryDismantleNearest(PlayerLocal, 3.2, out var silk, out var reason))
         {
             _audio.Play("cancel");
@@ -2634,6 +2943,57 @@ public partial class GardenClearing : Node3D
     public int ProbeLoadedBridgeCount => _chunks is null ? 0 : _chunks.Nodes.Values
         .SelectMany(node => node.GetChildren())
         .Count(child => child.Name.ToString().StartsWith("RiverBridge_", StringComparison.Ordinal));
+
+    // ---- H3 probe instrumentation: real-input fallbacks and view facts ----
+
+    /// <summary>Fresh crossing plan for where the player stands.</summary>
+    public RiverBuildPlan? ProbeRiverPlan => _sim?.PlanRiverBridge(PlayerWorld);
+
+    public bool ProbeRiverBuildMode => _riverBuildMode;
+    public bool ProbeRiverPreviewVisible => _preview is not null;
+    public bool ProbeRiverGuidanceVisible => _ui is not null && _ui.RiverGuidanceVisible;
+    public bool ProbeRiverBeaconVisible =>
+        _riverGuidanceBeacon is { Visible: true } ||
+        _riverBridgeViews.Values.Any(view => view.ProbeBeaconVisible);
+
+    public void ProbeToggleRiverBuild() => ToggleRiverBuild();
+    public void ProbeConfirmRiverBuild() => ConfirmRiverBuild();
+    public void ProbeCancelRiverBuild() => ClearRiverBuild();
+    public void ProbeUseNearbyBridge() => UseNearbyBridge();
+    public void ProbeDismissRiverGuidance() => DismissRiverGuidance();
+    public Rect2 ProbeRiverGuidanceUseRect => _ui.ProbeRiverGuidanceUseRect;
+    public Rect2 ProbeRiverGuidanceDismissRect => _ui.ProbeRiverGuidanceDismissRect;
+    public Rect2 ProbeBuildConfirmButtonRect => _ui.ProbeBuildConfirmButtonRect;
+
+    /// <summary>True while a travelling worker's current journey route passes
+    /// over the river near the given X (a player bridge or a generated one).
+    /// The route's own start point is excluded: a worker starting beside a
+    /// bridge is not crossing it.</summary>
+    public bool ProbeWorkerJourneyCrossesRiverAt(string workerId, double x)
+    {
+        var worker = _sim?.GetWorker(workerId);
+        if (worker is null || !worker.Travelling) return false;
+        // Index 0 is the route's start point; the crossing decision shows up
+        // in the waypoints the worker actually walks.
+        for (var i = 1; i < worker.JourneyRoute.Count; i++)
+            if (Math.Abs(worker.JourneyRoute[i].X - x) <= 2.0) return true;
+        return false;
+    }
+
+    public int ProbeRiverBridgeViewCount => _riverBridgeViews.Count;
+
+    public int ProbeRiverBridgeWalkwayShapes(string bridgeId) =>
+        _riverBridgeViews.TryGetValue(bridgeId, out var view) ? view.ProbeWalkwayShapeCount : 0;
+
+    public int ProbeRiverBridgeDetailCount(string bridgeId) =>
+        _riverBridgeViews.TryGetValue(bridgeId, out var view) ? view.ProbeDetailCount : 0;
+
+    /// <summary>True when the player physically stands on one of their bridges.</summary>
+    public bool ProbePlayerOnRiverBridge(string bridgeId) =>
+        _sim?.RiverBridges.Any(bridge =>
+            bridge.Id == bridgeId &&
+            bridge.Covers(PlayerWorld.X, PlayerWorld.Z)) ?? false;
+
 
     /// <summary>River centre, surface and level at an arbitrary X on one band.</summary>
     public Vec3 ProbeRiverPoint(int riverIndex, double x)

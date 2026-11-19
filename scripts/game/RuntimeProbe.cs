@@ -2040,6 +2040,328 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
+        // ---- H3: player-built silk crossings over generated rivers ----
+        var h3Game = _main.StartGame(null);
+        await Frames(10);
+        h3Game.Simulation!.Ledger.Restore(50, 50);
+        h3Game.Simulation.Tuning.SilkProduction.SilkPerFedWorkerEverySeconds = 0;
+        var h3Headless = DisplayServer.GetName() == "headless";
+
+        // 1) Beside an existing generated crossing the planner refuses and
+        // offers guidance instead of a second deck.
+        var h3NearX = 4.0;
+        var h3NearBankZ = RiverMap.CenterAt(0, h3NearX) -
+                          RiverMap.HalfWidthAt(0, h3NearX) - 1.0;
+        var h3NearBank = new Vec3(h3NearX,
+            h3Game.ProbeGroundHeightAt(new Vec3(h3NearX, 0, h3NearBankZ)) + 0.6, h3NearBankZ);
+        h3Game.ProbeTeleport(h3NearBank);
+        await Frames(10);
+        if (h3Headless) h3Game.ProbeToggleRiverBuild();
+        else await TapKey(Key.Key3);
+        await Frames(8);
+        var h3NearPlan = h3Game.ProbeRiverPlan!;
+        Check("h3-plan-refused-near-existing-crossing",
+            !h3NearPlan.Acceptable && h3NearPlan.Nearby is not null &&
+            !h3NearPlan.Nearby.IsPlayerBuilt,
+            $"{h3NearPlan.Reason} nearby={h3NearPlan.Nearby?.Describe()}");
+        Check("h3-guidance-panel", h3Game.ProbeRiverGuidanceVisible,
+            "A nearby bridge already crosses the water");
+        if (h3Headless) h3Game.ProbeUseNearbyBridge();
+        else await ClickUi(h3Game.ProbeRiverGuidanceUseRect.GetCenter());
+        await Frames(8);
+        Check("h3-guidance-beacon", h3Game.ProbeRiverBeaconVisible,
+            "Beacon over the existing crossing");
+        if (!h3Headless) await Capture("51-river-bridge-guidance");
+
+        // Follow the guidance with real walking; it leads to the bank end,
+        // never into the water, and clears on arrival.
+        var h3EndZ = RiverMap.CenterAt(0, 0) -
+                     (RiverMap.HalfWidthAt(0, 0) + RiverMap.BankTaper + 0.8 + 1.5);
+        h3Game.ProbeLookAt(new Vec3(2.2,
+            h3Game.ProbeGroundHeightAt(new Vec3(2.2, 0, h3EndZ)) + 0.6, h3EndZ));
+        Input.ActionPress("move_forward");
+        await PhysicsFrames(140);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(10);
+        Check("h3-guidance-followed-to-bridge",
+            !h3Game.ProbeRiverGuidanceVisible && !h3Game.ProbeRiverBeaconVisible,
+            $"pos={h3Game.PlayerPosition} guidance={h3Game.ProbeRiverGuidanceVisible}");
+
+        // 2) A genuine build midway between the generated crossings.
+        var h3BuildX = 75.0;
+        var h3BuildBankZ = RiverMap.CenterAt(0, h3BuildX) -
+                           RiverMap.HalfWidthAt(0, h3BuildX) - 1.0;
+        var h3BuildBank = new Vec3(h3BuildX,
+            h3Game.ProbeGroundHeightAt(new Vec3(h3BuildX, 0, h3BuildBankZ)) + 0.6,
+            h3BuildBankZ);
+        h3Game.ProbeTeleport(h3BuildBank);
+        await Frames(10);
+        var h3SilkBefore = h3Game.Simulation.Ledger.Silk;
+        if (h3Headless) h3Game.ProbeToggleRiverBuild();
+        else await TapKey(Key.Key3);
+        await Frames(8);
+        var h3Plan = h3Game.ProbeRiverPlan!;
+        Check("h3-plan-accepted-mid-river",
+            h3Plan.Acceptable && h3Plan.Site is not null &&
+            h3Plan.SilkCost == h3Game.Simulation.Tuning.RiverBridges.SilkCost,
+            $"{h3Plan.Reason} site x={h3Plan.Site?.X:0.0}");
+        Check("h3-preview-visible", h3Game.ProbeRiverPreviewVisible,
+            "Ghost silk bridge spans the water before spending");
+        Check("h3-confirm-panel",
+            h3Game.ProbeBuildConfirmVisible &&
+            h3Game.ProbeBuildConfirmText.Contains("North bank") &&
+            h3Game.ProbeBuildConfirmText.Contains("silk"),
+            h3Game.ProbeBuildConfirmText);
+        if (!h3Headless) await Capture("52-river-bridge-preview");
+        if (h3Headless) h3Game.ProbeConfirmRiverBuild();
+        else await ClickUi(h3Game.ProbeBuildConfirmButtonRect.GetCenter());
+        await Frames(12);
+        Check("h3-built-charged-once",
+            h3Game.Simulation.RiverBridges.Count == 1 &&
+            h3Game.Simulation.Ledger.Silk ==
+                h3SilkBefore - h3Game.Simulation.Tuning.RiverBridges.SilkCost,
+            $"bridges={h3Game.Simulation.RiverBridges.Count} " +
+            $"silk={h3Game.Simulation.Ledger.Silk} before={h3SilkBefore}");
+        var h3Bridge = h3Game.Simulation.RiverBridges.First();
+        Check("h3-built-view-and-collision",
+            h3Game.ProbeRiverBridgeViewCount == 1 &&
+            h3Game.ProbeRiverBridgeWalkwayShapes(h3Bridge.Id) > 0 &&
+            h3Game.ProbeRiverBridgeDetailCount(h3Bridge.Id) >= 6,
+            $"views={h3Game.ProbeRiverBridgeViewCount} " +
+            $"shapes={h3Game.ProbeRiverBridgeWalkwayShapes(h3Bridge.Id)} " +
+            $"details={h3Game.ProbeRiverBridgeDetailCount(h3Bridge.Id)}");
+
+        // Admire the built deck before crossing it.
+        var h3Cam = new Vec3(h3Bridge.X - 10, 0, h3Bridge.CenterZ - 3);
+        h3Cam = new Vec3(h3Cam.X, h3Game.ProbeGroundHeightAt(h3Cam) + 0.8, h3Cam.Z);
+        h3Game.ProbeTeleport(h3Cam);
+        h3Game.ProbeLookAt(new Vec3(h3Bridge.X,
+            (h3Bridge.NorthGroundY + h3Bridge.SouthGroundY) * 0.5 + 0.5, h3Bridge.CenterZ));
+        h3Game.ProbeSetCameraZoom(9);
+        h3Game.ProbeSetCameraPitch(-12);
+        await Frames(8);
+        if (!h3Headless) await Capture("53-river-bridge-built");
+
+        // 3) Cross the deck with real walking, both directions.
+        var h3NorthStand = new Vec3(h3Bridge.X,
+            h3Game.ProbeGroundHeightAt(
+                new Vec3(h3Bridge.X, 0, h3Bridge.NorthZ - 2.5)) + 0.6, h3Bridge.NorthZ - 2.5);
+        h3Game.ProbeTeleport(h3NorthStand);
+        await Frames(8);
+        h3Game.ProbeLookAt(new Vec3(h3Bridge.X, h3Bridge.SouthGroundY + 0.8, h3Bridge.SouthZ + 2));
+        var h3OnDeck = false;
+        Input.ActionPress("move_forward");
+        for (var i = 0; i < 900; i++)
+        {
+            await PhysicsFrames(1);
+            if (h3Game.ProbePlayerOnRiverBridge(h3Bridge.Id)) h3OnDeck = true;
+            if (h3Game.PlayerPosition.Z > h3Bridge.SouthZ + 1.2) break;
+        }
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(10);
+        Check("h3-cross-south",
+            h3Game.PlayerPosition.Z > h3Bridge.SouthZ + 0.8 && h3OnDeck,
+            $"z={h3Game.PlayerPosition.Z:0.0} south={h3Bridge.SouthZ:0.0} onDeck={h3OnDeck}");
+        if (!h3Headless) await Capture("54-river-bridge-crossing");
+        h3Game.ProbeLookAt(new Vec3(h3Bridge.X, h3Bridge.NorthGroundY + 0.8, h3Bridge.NorthZ - 2));
+        Input.ActionPress("move_forward");
+        for (var i = 0; i < 900 && h3Game.PlayerPosition.Z > h3Bridge.NorthZ - 1.2; i++)
+            await PhysicsFrames(1);
+        Input.ActionRelease("move_forward");
+        await PhysicsFrames(10);
+        Check("h3-cross-north-again",
+            h3Game.PlayerPosition.Z < h3Bridge.NorthZ - 0.8,
+            $"z={h3Game.PlayerPosition.Z:0.0} north={h3Bridge.NorthZ:0.0}");
+
+        // 4) The same water cannot be bridged twice side by side. Stand a few
+        // metres along the bank — on the deck itself the guidance would be
+        // already satisfied, which is correct but not the case under test.
+        var h3RedundantStand = new Vec3(h3Bridge.X + 10, 0, h3Bridge.NorthZ - 1.0);
+        h3Game.ProbeTeleport(new Vec3(h3RedundantStand.X,
+            h3Game.ProbeGroundHeightAt(h3RedundantStand) + 0.6, h3RedundantStand.Z));
+        await Frames(8);
+        if (h3Headless) h3Game.ProbeToggleRiverBuild();
+        else await TapKey(Key.Key3);
+        await Frames(8);
+        var h3Redundant = h3Game.ProbeRiverPlan!;
+        Check("h3-redundant-refused",
+            !h3Redundant.Acceptable && h3Redundant.Nearby is not null &&
+            h3Redundant.Nearby.IsPlayerBuilt,
+            h3Redundant.Reason);
+        Check("h3-redundant-guidance", h3Game.ProbeRiverGuidanceVisible,
+            "Guidance points at your own bridge");
+        if (h3Headless) h3Game.ProbeDismissRiverGuidance();
+        else await ClickUi(h3Game.ProbeRiverGuidanceDismissRect.GetCenter());
+        await Frames(4);
+        Check("h3-redundant-guidance-dismisses", !h3Game.ProbeRiverGuidanceVisible,
+            "Keep exploring clears the refusal");
+
+        // 5) A second bridge where the existing crossing needs an unreasonable
+        // detour (the mission acceptance's distant site).
+        var h3SecondX = 125.0;
+        var h3SecondBankZ = RiverMap.CenterAt(0, h3SecondX) -
+                             RiverMap.HalfWidthAt(0, h3SecondX) - 1.0;
+        var h3SecondBank = new Vec3(h3SecondX,
+            h3Game.ProbeGroundHeightAt(new Vec3(h3SecondX, 0, h3SecondBankZ)) + 0.6,
+            h3SecondBankZ);
+        h3Game.ProbeTeleport(h3SecondBank);
+        await Frames(10);
+        var h3SecondSilk = h3Game.Simulation.Ledger.Silk;
+        if (h3Headless) h3Game.ProbeToggleRiverBuild();
+        else await TapKey(Key.Key3);
+        await Frames(8);
+        var h3SecondPlan = h3Game.ProbeRiverPlan!;
+        Check("h3-second-plan-accepted",
+            h3SecondPlan.Acceptable && h3SecondPlan.Site is not null,
+            $"{h3SecondPlan.Reason} x={h3SecondPlan.Site?.X:0.0}");
+        if (h3SecondPlan.Acceptable)
+        {
+            if (h3Headless) h3Game.ProbeConfirmRiverBuild();
+            else await ClickUi(h3Game.ProbeBuildConfirmButtonRect.GetCenter());
+            await Frames(12);
+            Check("h3-second-built",
+                h3Game.Simulation.RiverBridges.Count == 2 &&
+                h3Game.Simulation.Ledger.Silk ==
+                    h3SecondSilk - h3Game.Simulation.Tuning.RiverBridges.SilkCost,
+                $"bridges={h3Game.Simulation.RiverBridges.Count} " +
+                $"silk={h3Game.Simulation.Ledger.Silk}");
+        }
+
+        // 6) A helper summoned from the far side crosses the new bridge.
+        Check("h3-helper", h3Game.ProbeHatch(), "Hatch a helper for the crossing");
+        h3Game.ProbeAdvance(4);
+        await Frames(6);
+        var h3Worker = h3Game.Simulation.Workers.FirstOrDefault();
+        Check("h3-worker-ready", h3Worker is not null,
+            $"workers={h3Game.Simulation.Workers.Count}");
+        if (h3Worker is not null)
+        {
+            var h3SummonSpot = new Vec3(h3Bridge.X + 3, 0, h3Bridge.CenterZ + 22);
+            h3SummonSpot = new Vec3(h3SummonSpot.X,
+                h3Game.ProbeGroundHeightAt(h3SummonSpot) + 0.6, h3SummonSpot.Z);
+            h3Game.ProbeTeleport(h3SummonSpot);
+            await Frames(10);
+            if (h3Headless) h3Game.ProbeToggleColony();
+            else await ClickUi(h3Game.ProbeColonyButtonRect.GetCenter());
+            await Frames(4);
+            var h3SummonRect = h3Game.ProbeWorkerSummonRect(h3Worker.Id);
+            Check("h3-summon-button", h3SummonRect.Size.X > 0, $"{h3SummonRect}");
+            if (h3SummonRect.Size.X > 0)
+            {
+                if (h3Headless) h3Game.ProbeSummonWorker(h3Worker.Id);
+                else await ClickUi(h3SummonRect.GetCenter());
+                await Frames(5);
+                h3Game.ProbeCloseModal();
+                await Frames(4);
+                Check("h3-summon-route-uses-player-bridge",
+                    h3Game.ProbeWorkerJourneyCrossesRiverAt(h3Worker.Id, h3Bridge.X),
+                    $"route={string.Join("→", h3Worker.JourneyRoute.Select(p => $"{p.X:0.0}/{p.Z:0.0}"))}");
+                for (var i = 0; i < 700 && h3Game.ProbeWorkerTravelling(h3Worker.Id); i++)
+                {
+                    h3Game.ProbeAdvance(0.5);
+                    await Frames(1);
+                }
+                Check("h3-summoned-helper-arrives",
+                    !h3Game.ProbeWorkerTravelling(h3Worker.Id) &&
+                    Vec3.Distance(h3Game.ProbeWorkerWorldPosition(h3Worker.Id), h3SummonSpot) < 8,
+                    $"worker={h3Game.ProbeWorkerWorldPosition(h3Worker.Id)} spot={h3SummonSpot}");
+            }
+        }
+
+        // 7) Persistence: save, relaunch, revisit the crossing.
+        var h3BridgeId = h3Bridge.Id;
+        Check("h3-save", h3Game.ProbeSave(), h3Game.LastSaveError);
+        var h3Loaded = _main.Saves.Load();
+        Check("h3-save-loads", h3Loaded.Success && h3Loaded.Data is not null, h3Loaded.Message);
+        GardenClearing? h3Reloaded = null;
+        if (h3Loaded.Data is not null)
+        {
+            h3Reloaded = _main.StartGame(h3Loaded.Data);
+            // The reloaded simulation keeps default silk production, which
+            // would make economy checks nondeterministic over real render
+            // time; the live tuning is zeroed exactly like the H2 pattern.
+            h3Reloaded.Simulation!.Tuning.SilkProduction.SilkPerFedWorkerEverySeconds = 0;
+            await Frames(20);
+            var h3Restored = h3Reloaded.Simulation!.RiverBridges
+                .FirstOrDefault(bridge => bridge.Id == h3BridgeId);
+            Check("h3-reload-keeps-bridge",
+                h3Restored is not null &&
+                Math.Abs(h3Restored.X - h3Bridge.X) < 0.01 &&
+                Math.Abs(h3Restored.CenterZ - h3Bridge.CenterZ) < 0.01,
+                $"bridge={h3Restored?.Id} bridges={h3Reloaded.Simulation.RiverBridges.Count}");
+            Check("h3-reload-view-rebuilt",
+                h3Reloaded.ProbeRiverBridgeViewCount == 2 &&
+                h3Reloaded.ProbeRiverBridgeWalkwayShapes(h3BridgeId) > 0,
+                $"views={h3Reloaded.ProbeRiverBridgeViewCount}");
+
+            // Walk onto the restored deck with real input.
+            h3Reloaded.ProbeTeleport(new Vec3(h3Bridge.X,
+                h3Reloaded.ProbeGroundHeightAt(
+                    new Vec3(h3Bridge.X, 0, h3Bridge.NorthZ - 2.5)) + 0.6, h3Bridge.NorthZ - 2.5));
+            await Frames(10);
+            h3Reloaded.ProbeLookAt(new Vec3(h3Bridge.X, h3Bridge.SouthGroundY + 0.8, h3Bridge.SouthZ));
+            Input.ActionPress("move_forward");
+            for (var i = 0; i < 300; i++)
+            {
+                await PhysicsFrames(1);
+                if (h3Reloaded.ProbePlayerOnRiverBridge(h3BridgeId)) break;
+            }
+            Input.ActionRelease("move_forward");
+            await PhysicsFrames(6);
+            Check("h3-reload-deck-walkable", h3Reloaded.ProbePlayerOnRiverBridge(h3BridgeId),
+                $"pos={h3Reloaded.PlayerPosition}");
+        }
+
+        // 8) Dismantle from the bank: refund, view removal and safe rerouting.
+        if (h3Reloaded is not null)
+        {
+            // The deck refuses removal while the player stands on it.
+            var h3DismantleSilk = h3Reloaded.Simulation!.Ledger.Silk;
+            if (h3Headless) h3Reloaded.ProbeDismantleNearest();
+            else await TapKey(Key.X);
+            await Frames(8);
+            Check("h3-dismantle-refuses-underfoot",
+                h3Reloaded.ProbePlayerOnRiverBridge(h3BridgeId) &&
+                h3Reloaded.Simulation.RiverBridges.Count == 2,
+                "Standing on the deck blocks removal");
+
+            // From the bank the same action removes it with a refund.
+            var h3BankOff = new Vec3(h3Bridge.X + 2.4, 0, h3Bridge.NorthZ - 1.0);
+            h3Reloaded.ProbeTeleport(new Vec3(h3BankOff.X,
+                h3Reloaded.ProbeGroundHeightAt(h3BankOff) + 0.6, h3BankOff.Z));
+            await Frames(8);
+            if (h3Headless) h3Reloaded.ProbeDismantleNearest();
+            else await TapKey(Key.X);
+            await Frames(8);
+            var h3Refund = (int)Math.Floor(
+                h3Reloaded.Simulation.Tuning.RiverBridges.SilkCost *
+                h3Reloaded.Simulation.Tuning.RiverBridges.DismantleRefundFraction);
+            Check("h3-dismantle-refund",
+                h3Reloaded.Simulation.RiverBridges.Count == 1 &&
+                h3Reloaded.Simulation.Ledger.Silk == h3DismantleSilk + h3Refund,
+                $"bridges={h3Reloaded.Simulation.RiverBridges.Count} " +
+                $"silk={h3Reloaded.Simulation.Ledger.Silk} refund={h3Refund}");
+            Check("h3-dismantle-view-removed",
+                h3Reloaded.ProbeRiverBridgeViewCount == 1 &&
+                h3Reloaded.ProbeRiverBridgeWalkwayShapes(h3BridgeId) == 0,
+                $"views={h3Reloaded.ProbeRiverBridgeViewCount}");
+
+            // A journey that would have used the removed deck now routes
+            // around the river instead of walking a ghost bridge.
+            var h3RerouteWorker = h3Reloaded.Simulation.Workers.FirstOrDefault();
+            if (h3RerouteWorker is not null)
+            {
+                Check("h3-dismantle-reroutes-journeys",
+                    h3Reloaded.ProbeStartWorkerJourney(h3RerouteWorker.Id,
+                        RegionIds.GardenClearing,
+                        new Vec3(h3Bridge.X, 0, h3Bridge.CenterZ + 20)) &&
+                    !h3Reloaded.ProbeWorkerJourneyCrossesRiverAt(h3RerouteWorker.Id, h3Bridge.X),
+                    $"route={string.Join("→", h3RerouteWorker.JourneyRoute.Select(p => $"{p.X:0.0}"))}");
+            }
+        }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
         // Leave the machine in a clean, default-comfort state for the next launch.
         settings.ReducedMotion = false;
         settings.UiScalePercent = 100;

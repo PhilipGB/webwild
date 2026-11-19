@@ -26,6 +26,24 @@ public sealed class WebSave
     public long ConstructedAtTick { get; set; }
 }
 
+/// <summary>One player-built silk crossing over a generated river. The full
+/// deck geometry is stored so views, collision and worker navigation rebuild
+/// identically after any reload; river state itself regenerates from the
+/// seed and is never persisted.</summary>
+public sealed class RiverBridgeSave
+{
+    public string Id { get; set; } = "";
+    public int RiverIndex { get; set; }
+    public double X { get; set; }
+    public double CenterZ { get; set; }
+    public double HalfWidth { get; set; }
+    public double WaterLevel { get; set; }
+    public double HalfSpan { get; set; }
+    public double NorthGroundY { get; set; }
+    public double SouthGroundY { get; set; }
+    public long ConstructedAtTick { get; set; }
+}
+
 public sealed class WorkerSave
 {
     public string Id { get; set; } = "";
@@ -134,10 +152,12 @@ public sealed class RegionalObjectiveSave
 public sealed class SimCountersSave
 {
     public int WebSequence { get; set; }
+    public int RiverBridgeSequence { get; set; }
     public int WorkerSequence { get; set; }
     public int TransactionSequence { get; set; }
     public int CaptureWebsBuilt { get; set; }
     public int BridgeWebsBuilt { get; set; }
+    public int RiverBridgesBuilt { get; set; }
     public int ReedwaterCaptureWebsBuilt { get; set; }
     public int ReedwaterBridgeWebsBuilt { get; set; }
     public int InsectsCollected { get; set; }
@@ -202,6 +222,7 @@ public sealed class SaveGameData
     public int Food { get; set; }
     public int Silk { get; set; }
     public List<WebSave> Webs { get; set; } = new();
+    public List<RiverBridgeSave> RiverBridges { get; set; } = new();
     public List<WorkerSave> Workers { get; set; } = new();
     public List<InsectSave> Insects { get; set; } = new();
     public List<MapMarkerSave> MapMarkers { get; set; } = new();

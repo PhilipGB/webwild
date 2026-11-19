@@ -19,13 +19,32 @@ public sealed class WorkerNavigator
     private const double PointSpacing = 6.0;
 
     private readonly WorldGenerator _generator;
+    private IReadOnlyList<PlayerRiverBridge> _playerBridges = Array.Empty<PlayerRiverBridge>();
 
     public WorkerNavigator(int seed) => _generator = new WorldGenerator(seed);
 
     public WorldGenerator Generator => _generator;
 
+    /// <summary>The player's built crossings, shared with
+    /// <see cref="GameSimulation"/>. One traversal model serves generated
+    /// bridges and silk bridges alike, so a worker crosses exactly what the
+    /// player sees.</summary>
+    public void SetPlayerBridges(IReadOnlyList<PlayerRiverBridge> bridges) =>
+        _playerBridges = bridges ?? Array.Empty<PlayerRiverBridge>();
+
+    /// <summary>One usable river crossing in the corridor graph: either a
+    /// generated landmark bridge or a player-built silk crossing.</summary>
+    private readonly record struct Crossing(
+        RiverBridge? Generated, PlayerRiverBridge? Player)
+    {
+        public double X => Generated?.X ?? Player!.X;
+        public double CenterZ => Generated?.CenterZ ?? Player!.CenterZ;
+    }
+
     /// <summary>Check that an existing route is still walkable. Bridge-deck
-    /// points are allowed above water; ground points inside a river are not.</summary>
+    /// points are allowed above water; ground points inside a river are not.
+    /// Every segment is sampled internally — even short ones — so a densely
+    /// pointed deck path cannot hide a removed crossing between its points.</summary>
     public bool IsRouteDry(IReadOnlyList<Vec3> points)
     {
         if (points.Count < 2) return false;
@@ -35,7 +54,7 @@ public sealed class WorkerNavigator
             var b = points[i + 1];
             if (!a.IsFinite || !b.IsFinite) return false;
             var distance = Vec3.Distance(a, b);
-            var steps = Math.Max(1, (int)Math.Ceiling(distance / 3.0));
+            var steps = Math.Max(2, (int)Math.Ceiling(distance / 3.0));
             for (var step = 1; step < steps; step++)
             {
                 var t = step / (double)steps;
@@ -60,6 +79,16 @@ public sealed class WorkerNavigator
             if (bridge is null) continue;
             if (Math.Abs(x - bridge.X) > 1.9) continue;
             if (Math.Abs(z - bridge.CenterZ) > bridge.HalfSpan + 1.5) continue;
+            if (y < bridge.WaterLevel + 0.2) continue;
+            return true;
+        }
+        // Player-built silk crossings use the same waterline rule at the
+        // narrower walkway width, so a deck is only traversable where the
+        // player could physically stand on it.
+        foreach (var bridge in _playerBridges)
+        {
+            if (bridge.RiverIndex != river.Index) continue;
+            if (!bridge.Covers(x, z)) continue;
             if (y < bridge.WaterLevel + 0.2) continue;
             return true;
         }
@@ -120,47 +149,60 @@ public sealed class WorkerNavigator
         void AddEdge(int a, int b, Vec3[] via, bool bridge)
         {
             if (via.Length == 0) return;
-            var cost = 0.0;
-            var cursor = positions[a];
-            foreach (var point in via)
-            {
-                cost += Vec3.Distance(cursor, point);
-                cursor = point;
-            }
             nodes.Add((a, b, via, bridge));
         }
 
-        var bridgePairs = new List<(int North, int South, RiverBridge Bridge)>();
-        foreach (var bridge in bridges)
+        var bridgePairs = new List<(int North, int South, Vec3[] Via)>();
+        foreach (var crossing in bridges)
         {
-            var north = new Vec3(bridge.X, BankY(bridge.X, bridge.CenterZ - bridge.HalfSpan - 1.5),
-                bridge.CenterZ - bridge.HalfSpan - 1.5);
-            var south = new Vec3(bridge.X, BankY(bridge.X, bridge.CenterZ + bridge.HalfSpan + 1.5),
-                bridge.CenterZ + bridge.HalfSpan + 1.5);
+            Vec3 north;
+            Vec3 south;
+            Vec3[] via;
+            if (crossing.Generated is { } generated)
+            {
+                north = new Vec3(generated.X,
+                    BankY(generated.X, generated.CenterZ - generated.HalfSpan - 1.5),
+                    generated.CenterZ - generated.HalfSpan - 1.5);
+                south = new Vec3(generated.X,
+                    BankY(generated.X, generated.CenterZ + generated.HalfSpan + 1.5),
+                    generated.CenterZ + generated.HalfSpan + 1.5);
+                var deckTop = RiverMap.DeckTop(generated) + 0.06;
+                var deckPoints = new List<Vec3>();
+                var deckSteps = Math.Max(1, (int)Math.Ceiling(generated.HalfSpan * 2 / 3.0));
+                for (var step = 0; step <= deckSteps; step++)
+                {
+                    var z = generated.CenterZ - generated.HalfSpan +
+                            step * (generated.HalfSpan * 2 / deckSteps);
+                    deckPoints.Add(new Vec3(generated.X, deckTop, z));
+                }
+                deckPoints.Add(south);
+                via = deckPoints.ToArray();
+            }
+            else
+            {
+                var player = crossing.Player!;
+                // The silk crossing's own geometry: bank ramps and the
+                // sagging deck, exactly where the walkway collision lives.
+                north = player.NorthGround;
+                south = player.SouthGround;
+                var deck = player.DeckPoints();
+                deck.Add(south);
+                via = deck.ToArray();
+            }
             var northNode = positions.Count;
             positions.Add(north);
             var southNode = positions.Count;
             positions.Add(south);
-            bridgePairs.Add((northNode, southNode, bridge));
+            bridgePairs.Add((northNode, southNode, via));
         }
 
         var northCount = bridgePairs.Count;
         for (var i = 0; i < northCount; i++)
         {
-            var (northNode, southNode, bridge) = bridgePairs[i];
+            var (northNode, southNode, via) = bridgePairs[i];
             var north = positions[northNode];
             var south = positions[southNode];
-            var deckTop = RiverMap.DeckTop(bridge) + 0.06;
-            var deckPoints = new List<Vec3>();
-            var deckSteps = Math.Max(1, (int)Math.Ceiling(bridge.HalfSpan * 2 / 3.0));
-            for (var step = 0; step <= deckSteps; step++)
-            {
-                var z = bridge.CenterZ - bridge.HalfSpan +
-                        step * (bridge.HalfSpan * 2 / deckSteps);
-                deckPoints.Add(new Vec3(bridge.X, deckTop, z));
-            }
-            deckPoints.Add(south);
-            AddEdge(northNode, southNode, deckPoints.ToArray(), bridge: true);
+            AddEdge(northNode, southNode, via, bridge: true);
             if (DryPath(start, north) is { } startToNorth)
                 AddEdge(0, northNode, startToNorth, false);
             if (DryPath(north, target) is { } northToTarget)
@@ -293,7 +335,7 @@ public sealed class WorkerNavigator
     private Vec3 WithGroundY(Vec3 point) =>
         new(point.X, BankY(point.X, point.Z), point.Z);
 
-    private List<RiverBridge> CandidateBridges(Vec3 start, Vec3 target)
+    private List<Crossing> CandidateBridges(Vec3 start, Vec3 target)
     {
         var minX = Math.Min(start.X, target.X) - CrossingCorridorMetres;
         var maxX = Math.Max(start.X, target.X) + CrossingCorridorMetres;
@@ -303,7 +345,7 @@ public sealed class WorkerNavigator
         var lastRiver = (int)Math.Ceiling((maxZ - RiverMap.Offset) / RiverMap.Spacing) + 1;
         var firstCrossing = (long)Math.Floor(minX / RiverMap.CrossingSpacing);
         var lastCrossing = (long)Math.Ceiling(maxX / RiverMap.CrossingSpacing);
-        var candidates = new List<(RiverBridge Bridge, double Distance)>();
+        var candidates = new List<(Crossing Crossing, double Distance)>();
         for (var river = firstRiver; river <= lastRiver; river++)
         for (var crossing = firstCrossing; crossing <= lastCrossing; crossing++)
         {
@@ -312,12 +354,24 @@ public sealed class WorkerNavigator
             var distance = HorizontalDistanceToSegment(
                 new Vec3(bridge.X, 0, bridge.CenterZ), start, target);
             if (distance > CrossingCorridorMetres) continue;
-            candidates.Add((bridge, distance));
+            candidates.Add((new Crossing(bridge, null), distance));
+        }
+        // Player-built silk crossings join the same corridor graph with the
+        // same distance rule; the Dijkstra below decides which crossing the
+        // journey actually uses.
+        foreach (var bridge in _playerBridges)
+        {
+            if (bridge.RiverIndex < firstRiver || bridge.RiverIndex > lastRiver) continue;
+            if (bridge.X < minX || bridge.X > maxX) continue;
+            var distance = HorizontalDistanceToSegment(
+                new Vec3(bridge.X, 0, bridge.CenterZ), start, target);
+            if (distance > CrossingCorridorMetres) continue;
+            candidates.Add((new Crossing(null, bridge), distance));
         }
         return candidates
             .OrderBy(candidate => candidate.Distance)
             .Take(MaxCrossingCandidates)
-            .Select(candidate => candidate.Bridge)
+            .Select(candidate => candidate.Crossing)
             .ToList();
     }
 

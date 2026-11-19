@@ -24,12 +24,14 @@ public sealed partial class GameSimulation
 
     private readonly Dictionary<string, AnchorDefinition> _anchors;
     private readonly Dictionary<string, WebState> _webs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PlayerRiverBridge> _riverBridges = new(StringComparer.Ordinal);
     private readonly List<InsectState> _insects = new();
     private readonly List<WorkerState> _workers = new();
     private readonly List<GameplayEvent> _events = new();
     private readonly HashSet<string> _issuedEventKeys = new(StringComparer.Ordinal);
     private readonly Queue<string> _issuedEventOrder = new();
     private int _webSequence;
+    private int _riverBridgeSequence;
     private int _workerSequence;
     private int _transactionSequence;
     private double _silkAccumulator;
@@ -1645,6 +1647,21 @@ public sealed partial class GameSimulation
                 X = marker.Position.X, Y = marker.Position.Y, Z = marker.Position.Z,
                 Label = marker.Label, FoodId = marker.FoodId
             }).ToList(),
+            RiverBridges = _riverBridges.Values
+                .OrderBy(bridge => bridge.Id, StringComparer.Ordinal)
+                .Select(bridge => new RiverBridgeSave
+                {
+                    Id = bridge.Id,
+                    RiverIndex = bridge.RiverIndex,
+                    X = bridge.X,
+                    CenterZ = bridge.CenterZ,
+                    HalfWidth = bridge.HalfWidth,
+                    WaterLevel = bridge.WaterLevel,
+                    HalfSpan = bridge.HalfSpan,
+                    NorthGroundY = bridge.NorthGroundY,
+                    SouthGroundY = bridge.SouthGroundY,
+                    ConstructedAtTick = bridge.ConstructedAtTick
+                }).ToList(),
             Insects = _insects.Select(i => new InsectSave
             {
                 Id = i.Id, Region = i.Definition.Region,
@@ -1684,10 +1701,12 @@ public sealed partial class GameSimulation
             Counters = new SimCountersSave
             {
                 WebSequence = _webSequence,
+                RiverBridgeSequence = _riverBridgeSequence,
                 WorkerSequence = _workerSequence,
                 TransactionSequence = _transactionSequence,
                 CaptureWebsBuilt = CaptureWebsBuilt,
                 BridgeWebsBuilt = BridgeWebsBuilt,
+                RiverBridgesBuilt = RiverBridgesBuilt,
                 ReedwaterCaptureWebsBuilt = ReedwaterCaptureWebsBuilt,
                 ReedwaterBridgeWebsBuilt = ReedwaterBridgeWebsBuilt,
                 InsectsCollected = InsectsCollected,
@@ -1833,6 +1852,20 @@ public sealed partial class GameSimulation
                 marker.FoodId, marker.Label ?? ""));
         }
 
+        // Player-built river crossings restore with their full geometry so
+        // decks, collision and worker navigation rebuild without replanning.
+        sim._riverBridges.Clear();
+        foreach (var bridge in data.RiverBridges ?? new List<RiverBridgeSave>())
+        {
+            if (bridge is null || string.IsNullOrWhiteSpace(bridge.Id)) continue;
+            var state = new PlayerRiverBridge(
+                bridge.Id, bridge.RiverIndex, bridge.X, bridge.CenterZ,
+                bridge.HalfWidth, bridge.WaterLevel, bridge.HalfSpan,
+                bridge.NorthGroundY, bridge.SouthGroundY, bridge.ConstructedAtTick);
+            sim._riverBridges[state.Id] = state;
+        }
+        sim.SyncRiverBridgesToNavigator();
+
         sim._insects.Clear();
         foreach (var route in RegionCatalog.All.SelectMany(region => region.InsectRoutes))
         {
@@ -1874,10 +1907,12 @@ public sealed partial class GameSimulation
         sim._windCompleted = data.Weather.WindCompleted;
         sim._aftermathRemaining = data.Weather.AftermathRemaining;
         sim._webSequence = data.Counters.WebSequence;
+        sim._riverBridgeSequence = data.Counters.RiverBridgeSequence;
         sim._workerSequence = data.Counters.WorkerSequence;
         sim._transactionSequence = data.Counters.TransactionSequence;
         sim.CaptureWebsBuilt = data.Counters.CaptureWebsBuilt;
         sim.BridgeWebsBuilt = data.Counters.BridgeWebsBuilt;
+        sim.RiverBridgesBuilt = data.Counters.RiverBridgesBuilt;
         sim.ReedwaterCaptureWebsBuilt = data.Counters.ReedwaterCaptureWebsBuilt;
         sim.ReedwaterBridgeWebsBuilt = data.Counters.ReedwaterBridgeWebsBuilt;
         sim.InsectsCollected = data.Counters.InsectsCollected;

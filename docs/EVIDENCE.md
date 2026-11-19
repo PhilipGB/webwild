@@ -955,3 +955,94 @@ $ xvfb-run -a -s "-screen 0 1280x720x24" \
 
 H2 payload SHA-256: `Webwild.x86_64` `d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc`,
 `Webwild.pck` `77619457b4b7a136952771237aa1de4adadf7641086261090ee81137f2465283`.
+
+### H3 — player-built silk bridges over procedural rivers
+
+Commands run from the repository root on the H3 branch head:
+
+```text
+$ dotnet clean
+$ dotnet build -warnaserror
+0 Warning(s), 0 Error(s)
+
+$ dotnet test
+Passed! - Failed: 0, Passed: 270, Skipped: 0, Total: 270
+
+$ godot --headless --path . --editor --quit
+exit 0
+
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=512 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=513 failures=0
+```
+
+The rendered probe ran with `WAYLAND_DISPLAY` unset so it used the X11/Xvfb
+display. The new `h3-*` checks drive the whole crossing flow with real
+input: key `3` beside the generated crossing at x=0 refuses the site and
+offers the "Use nearby bridge" panel with a beacon; real walking follows
+the guidance to the bank end and clears it; key `3` midway between
+crossings plans a real site, the ghost silk bridge is previewed and the
+Build button spends exactly 6 silk once; WASD crossings verify the deck
+in both directions; a redundant plan beside the new bridge is refused
+with guidance to the player's own deck; a second bridge is built at the
+distant x=125 site where the existing crossing needs an unreasonable
+detour; a helper summoned through the colony UI crosses the player
+bridge to reach the far bank; save → quit → Continue rebuilds both decks
+with the same ids and the walked-on deck is walkable again; the X action
+refuses to remove the deck underfoot, then from the bank it refunds
+3 silk, removes the view, and a fresh journey routes around the removed
+deck instead of across it.
+
+Exported Linux x64 build:
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+$ cd exports/linux
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=512 failures=0
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=513 failures=0
+```
+
+SHA-256 of the H3 Linux payload:
+
+```text
+d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
+58d9320cd67752ecb7e11ff44ed98af75401066c0eb40d8b864d322620c10a9c  Webwild.pck
+```
+
+The export templates for Godot 4.7.2 mono were re-provisioned on this
+host from the official `godot-builds` release before the export run.
+
+New deterministic unit contracts in `PlayerRiverBridgeTests` (21 cases):
+planning accepts only grounded, water-spanning sites on both the default
+and the fixed probe seed; sites refuse beside generated and player
+crossings within the 12 m shore rule; the detour ratio is configurable
+and its boundary is exercised; building charges exactly once and refuses
+replays; the navigator prefers the registered silk bridge and its deck is
+the only dry route over that water; dismantling refuses under a crossing
+player or helper, refunds once, and explicitly invalidates dependent
+routes; save round trips restore geometry, counters and the id sequence;
+legacy payloads without the river-bridge field load empty; the validator
+rejects oversized, duplicated, degenerate and non-finite records; and a
+long lifecycle stress runs two crossings, three helpers, thousands of
+ticks, repeated save/load, a broken and rebuilt deck, and re-verifies
+navigation end to end.
+
+Screenshots `51-river-bridge-guidance.png`, `52-river-bridge-preview.png`,
+`53-river-bridge-built.png` and `54-river-bridge-crossing.png` were
+captured by the rendered probe. **They were not visually inspected on
+this host**: this agent environment cannot render images. Programmatic
+pixel checks confirm full 1280×720 frames with scene-matched colour
+distributions; human visual inspection is outstanding and recorded as a
+limitation.

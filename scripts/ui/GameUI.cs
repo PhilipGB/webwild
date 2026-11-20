@@ -24,6 +24,7 @@ public partial class GameUI : CanvasLayer
     public event Action<string>? WorkerSummonRequested;
     public event Action<string>? WorkerReleaseRequested;
     public event Action<string>? MapMarkerSelected;
+    public event Action<Vec3>? MapNotePlaced;
     public event Action? RiverBuildToolRequested;
     public event Action? RiverGuidanceUseRequested;
     public event Action? RiverGuidanceDismissRequested;
@@ -91,6 +92,7 @@ public partial class GameUI : CanvasLayer
     private bool _mapOpen;
     private bool _foodTaskOpen;
     private MapView? _mapView;
+    private Label? _mapSummaryLabel;
     private Button? _mapHomeButton;
     private float _toastTimer;
     private float _toastDuration;
@@ -118,6 +120,7 @@ public partial class GameUI : CanvasLayer
     public Rect2 ProbeActionColumnRect => _actionsColumn.GetGlobalRect();
     public Rect2 ProbeToolbarRect => _toolbar.GetGlobalRect();
     public Rect2 ProbeMapButtonRect => _mapButton.GetGlobalRect();
+    public Rect2 ProbeMapViewRect => _mapView?.GetGlobalRect() ?? new Rect2();
     public Rect2 ProbeColonyButtonRect => _colonyButton.GetGlobalRect();
     public Rect2 ProbeStatusRect => _statusLabel.GetGlobalRect();
     public string ProbeStatusText => _statusLabel.Text;
@@ -157,6 +160,12 @@ public partial class GameUI : CanvasLayer
     public bool ProbeFoodTaskOpen => _foodTaskOpen;
     public Rect2 ProbeMapMarkerRect(string id) => _mapView?.MarkerGlobalRect(id) ?? new Rect2();
     public int ProbeMapMarkerCount => _mapView?.LastDrawnMarkers ?? 0;
+    public void ProbeMapPan(Vector2 delta) => _mapView?.ProbePan(delta);
+    public void ProbeMapZoom(float factor) => _mapView?.ProbeZoom(factor);
+    public void ProbeMapRecentre() => _mapView?.RecentreOnPlayer();
+    public bool ProbeMapHomeArrow => _mapView?.HomeArrowVisible ?? false;
+    public double ProbeMapHomeArrowDistance => _mapView?.HomeArrowDistance ?? 0;
+    public int ProbeMapWorkerCount => _mapView?.LastDrawnWorkers ?? 0;
     public Rect2 ProbeFoodSendRect(string id) =>
         _foodSendButtons.TryGetValue(id, out var button) ? button.GetGlobalRect() : new Rect2();
 
@@ -907,26 +916,29 @@ public partial class GameUI : CanvasLayer
     /// adapter's Core exploration record; the UI never mutates the world.
     /// </summary>
     public void OpenMap(
-        IReadOnlyCollection<ChunkCoordinate> explored,
+        ExplorationRecord explored,
         Vec3 player,
         WorldGenerator generator,
         IReadOnlyCollection<string> visitedLandmarks,
-        IReadOnlyCollection<WorldMarker> markers)
+        IReadOnlyCollection<WorldMarker> markers,
+        IReadOnlyList<MapWorker>? workers = null)
     {
         OpenModal("Wilderness Map", 620);
         ConfigureModalState(map: true);
         _mapView = new MapView { Name = "MapView" };
         _modalContent.AddChild(_mapView);
-        _mapView.Configure(explored, player, generator, visitedLandmarks, markers);
+        _mapView.Configure(explored, player, generator, visitedLandmarks, markers, workers);
         _mapView.MarkerSelected += id =>
         {
             CloseModal();
             MapMarkerSelected?.Invoke(id);
         };
+        _mapView.NotePlacedRequested += position => MapNotePlaced?.Invoke(position);
         var summary = explored.Count == 0
             ? "No ground explored yet. Walk out and the map will grow."
-            : $"{explored.Count} chunks explored. The pale dot is you; gold circles are landmarks; orange berries are marked food. Click a food marker to send a helper.";
-        _modalContent.AddChild(UiKit.Label(summary, 16, new Color(UiKit.Ink, 0.86f), true));
+            : $"{explored.Count} chunks explored. The pale dot is you; gold circles are landmarks; orange berries are marked food, pale diamonds are notes; orange helpers show where each spider is going. Click a food marker to send a helper, click ground to drop a note, click a note to remove it.";
+        _mapSummaryLabel = UiKit.Label(summary, 16, new Color(UiKit.Ink, 0.86f), true);
+        _modalContent.AddChild(_mapSummaryLabel);
         var home = UiKit.Button("Return to Garden Clearing", 420, 52, true);
         home.Pressed += () => ReturnHomeRequested?.Invoke();
         _mapHomeButton = home;
@@ -934,6 +946,20 @@ public partial class GameUI : CanvasLayer
         var close = UiKit.Button("Keep exploring", 300, 46);
         close.Pressed += CloseModal;
         _modalContent.AddChild(close);
+    }
+
+    /// <summary>Refresh the live map's data (markers, workers) while it stays
+    /// open, keeping the player's pan and zoom exactly where they left it.</summary>
+    public void RefreshMap(
+        ExplorationRecord explored,
+        Vec3 player,
+        WorldGenerator generator,
+        IReadOnlyCollection<string> visitedLandmarks,
+        IReadOnlyCollection<WorldMarker> markers,
+        IReadOnlyList<MapWorker>? workers = null)
+    {
+        if (_mapView is null) return;
+        _mapView.Configure(explored, player, generator, visitedLandmarks, markers, workers);
     }
 
     public void ShowFoodAssignment(FoodSourceDefinition source,

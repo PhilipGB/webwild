@@ -221,6 +221,11 @@ public sealed class SaveGameData
     /// </summary>
     [JsonIgnore]
     public List<string> ExploredChunks { get; set; } = new();
+
+    /// <summary>Runtime view of the manifest's compact exploration regions;
+    /// not serialized in the payload (same reason as above).</summary>
+    [JsonIgnore]
+    public List<ExplorationRegionSave> ExplorationRegions { get; set; } = new();
     public List<string> VisitedRegions { get; set; } = new() { RegionIds.GardenClearing };
     public int Food { get; set; }
     public int Silk { get; set; }

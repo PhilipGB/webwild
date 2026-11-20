@@ -3,152 +3,269 @@ using Webwild.Core;
 
 namespace Webwild.Game;
 
+/// <summary>One helper shown on the map: where it is, and where it is going
+/// when it is travelling or hauling.</summary>
+public sealed record MapWorker(
+    string Id, string Name, Vec3 Position, Vec3? Destination,
+    bool Travelling, bool Summoned);
+
 /// <summary>
-/// Child-friendly wilderness map: explored chunk cells tinted by biome, river
-/// ribbons, visited landmarks and the spider's current position. It is a pure
-/// presentation of Core data; the exploration record and save payload stay in
-/// <see cref="ExplorationRecord"/> and the world manifest.
+/// Child-friendly wilderness map: explored chunk cells tinted by environment,
+/// river ribbons, visited landmarks, the spider's position, durable markers
+/// and helper destinations. The view pans by dragging and zooms with the
+/// wheel; when the home landmark is off-screen an edge arrow points home.
+/// It is a pure presentation of Core data; the exploration record and save
+/// payload stay in <see cref="ExplorationRecord"/> and the world manifest.
 /// </summary>
 public partial class MapView : Control
 {
     private const float Padding = 12;
-    private const long MaxColumns = 84;
-    private List<ChunkCoordinate> _explored = new();
-    private HashSet<ChunkCoordinate> _exploredSet = new();
+    private const long DefaultColumns = 84;
+    private const float MinCellPixels = 2f;
+    private const float MaxCellPixels = 46f;
+    private const float DragThresholdPixels = 6f;
+
+    private ExplorationRecord? _explored;
     private Vec3 _player;
     private IReadOnlyCollection<string> _visited = Array.Empty<string>();
     private WorldGenerator? _generator;
     private BiomeMap? _biomes;
     private IReadOnlyList<WorldMarker> _markers = Array.Empty<WorldMarker>();
+    private IReadOnlyList<MapWorker> _workers = Array.Empty<MapWorker>();
     private readonly Dictionary<string, Vector2> _markerPixels = new(StringComparer.Ordinal);
 
+    // View state survives refreshes; it starts centred on the player.
+    private Vec3? _viewCentre;
+    private float? _cellPixels;
+    private bool _dragging;
+    private Vector2 _pressPosition;
+    private bool _pannedSincePress;
+    private Vector3 _homeArrowDirection;
+    private bool _homeArrowVisible;
+    private double _homeArrowDistance;
+
     public event Action<string>? MarkerSelected;
+    /// <summary>Raised when the player clicks empty map ground: the world
+    /// adapter decides what a note marker at that point means.</summary>
+    public event Action<Vec3>? NotePlacedRequested;
 
     /// <summary>Cells actually painted in the last draw (probe/diagnostic).</summary>
     public int LastDrawnCells { get; private set; }
     public int LastDrawnMarkers { get; private set; }
+    public int LastDrawnWorkers { get; private set; }
+    public bool HomeArrowVisible => _homeArrowVisible;
+    public double HomeArrowDistance => _homeArrowDistance;
+    public Vec3 ViewCentre => _viewCentre ?? _player;
 
     public void Configure(
-        IReadOnlyCollection<ChunkCoordinate> explored,
+        ExplorationRecord explored,
         Vec3 player,
         WorldGenerator generator,
         IReadOnlyCollection<string> visitedLandmarks,
-        IReadOnlyCollection<WorldMarker>? markers = null)
+        IReadOnlyCollection<WorldMarker>? markers = null,
+        IReadOnlyList<MapWorker>? workers = null)
     {
-        _explored = explored.ToList();
-        _exploredSet = _explored.ToHashSet();
+        _explored = explored;
         _player = player;
         _generator = generator;
         _biomes = new BiomeMap(generator.Seed);
         _visited = visitedLandmarks;
         _markers = markers?.ToList() ?? new List<WorldMarker>();
+        _workers = workers?.ToList() ?? new List<MapWorker>();
         _markerPixels.Clear();
         CustomMinimumSize = new Vector2(560, 280);
         MouseFilter = MouseFilterEnum.Stop;
+        // Keep the player on the map: a fresh view centres on the spider, a
+        // panned view stays where the player dragged it.
+        if (_viewCentre is null) _viewCentre = player;
+        if (_cellPixels is null)
+        {
+            var columns = Mathf.Min(DefaultColumns, Mathf.Max(12f, Size.X / 8f));
+            _cellPixels = Mathf.Clamp(
+                Mathf.Min((Size.X - 2 * Padding) / columns,
+                    (Size.Y - 2 * Padding) / columns), MinCellPixels, MaxCellPixels);
+        }
         QueueRedraw();
     }
+
+    /// <summary>Recentre the view on the player without touching zoom
+    /// (probe instrumentation and the "find me" behaviour).</summary>
+    public void RecentreOnPlayer()
+    {
+        _viewCentre = _player;
+        QueueRedraw();
+    }
+
+    private void Pan(Vector2 deltaPixels)
+    {
+        if (_cellPixels is not { } cellPixels || cellPixels <= 0) return;
+        var worldPerPx = (float)WorldChunk.Size / cellPixels;
+        var centre = _viewCentre ?? _player;
+        _viewCentre = new Vec3(
+            centre.X - deltaPixels.X * worldPerPx,
+            centre.Y,
+            centre.Z - deltaPixels.Y * worldPerPx);
+        QueueRedraw();
+    }
+
+    private void Zoom(float factor)
+    {
+        var cellPixels = _cellPixels ?? 12f;
+        _cellPixels = Mathf.Clamp(cellPixels * factor, MinCellPixels, MaxCellPixels);
+        QueueRedraw();
+    }
+
+    /// <summary>Probe instrumentation: the same pan the drag gesture performs.</summary>
+    public void ProbePan(Vector2 deltaPixels)
+    {
+        _viewCentre ??= _player;
+        _cellPixels ??= 12f;
+        Pan(deltaPixels);
+    }
+
+    /// <summary>Probe instrumentation: the same zoom the wheel performs.</summary>
+    public void ProbeZoom(float factor) => Zoom(factor);
 
     public override void _Draw()
     {
         var size = Size;
         DrawRect(new Rect2(Vector2.Zero, size), new Color(0.063f, 0.118f, 0.086f));
         var font = ThemeDB.FallbackFont;
-        if (_generator is null || _biomes is null)
+        if (_generator is null || _biomes is null || _explored is null)
         {
             DrawString(font, new Vector2(16, 26), "The map is not ready yet.",
                 HorizontalAlignment.Left, -1, 14, new Color(0.94f, 0.95f, 0.86f));
             return;
         }
 
-        var playerChunk = ChunkCoordinate.OfWorldPoint(_player.X, _player.Z);
-        long minX = playerChunk.X, maxX = playerChunk.X;
-        long minZ = playerChunk.Z, maxZ = playerChunk.Z;
-        foreach (var coordinate in _explored)
-        {
-            minX = Math.Min(minX, coordinate.X);
-            maxX = Math.Max(maxX, coordinate.X);
-            minZ = Math.Min(minZ, coordinate.Z);
-            maxZ = Math.Max(maxZ, coordinate.Z);
-        }
+        var centre = _viewCentre ?? _player;
+        var cellPixels = _cellPixels ?? 12f;
+        var columns = Mathf.FloorToInt((size.X - 2 * Padding) / cellPixels);
+        var rows = Mathf.FloorToInt((size.Y - 2 * Padding) / cellPixels);
+        var worldMinX = centre.X - columns * WorldChunk.Size * 0.5;
+        var worldMinZ = centre.Z - rows * WorldChunk.Size * 0.5;
+        var spanX = columns * WorldChunk.Size;
+        var spanZ = rows * WorldChunk.Size;
 
-        // A long trail should stay readable: show a window around the player
-        // rather than shrinking thousands of chunks into invisible pixels.
-        var cropped = false;
-        if (maxX - minX + 1 > MaxColumns)
-        {
-            cropped = true;
-            minX = playerChunk.X - MaxColumns / 2;
-            maxX = minX + MaxColumns - 1;
-        }
-        if (maxZ - minZ + 1 > MaxColumns)
-        {
-            cropped = true;
-            minZ = playerChunk.Z - MaxColumns / 2;
-            maxZ = minZ + MaxColumns - 1;
-        }
+        Vector2 ToPx(double worldX, double worldZ) => new(
+            Padding + (float)((worldX - worldMinX) / WorldChunk.Size * cellPixels),
+            Padding + (float)((worldZ - worldMinZ) / WorldChunk.Size * cellPixels));
 
-        var worldMinX = minX * WorldChunk.Size;
-        var worldMinZ = minZ * WorldChunk.Size;
-        var spanX = (maxX - minX + 1) * WorldChunk.Size;
-        var spanZ = (maxZ - minZ + 1) * WorldChunk.Size;
-        var scale = Mathf.Min(
-            (size.X - 2 * Padding) / (float)spanX,
-            (size.Y - 2 * Padding) / (float)spanZ);
-        var cell = Mathf.Max(1f, (float)(WorldChunk.Size * scale));
-        var mapWidth = (float)spanX * scale;
-        var mapHeight = (float)spanZ * scale;
-        var origin = new Vector2(
-            Padding + (size.X - 2 * Padding - mapWidth) * 0.5f,
-            Padding + (size.Y - 2 * Padding - mapHeight) * 0.5f);
-
-        Vector2 ToPx(double worldX, double worldZ) => origin + new Vector2(
-            (float)((worldX - worldMinX) * scale),
-            (float)((worldZ - worldMinZ) * scale));
-
-        DrawRect(new Rect2(origin, new Vector2(mapWidth, mapHeight)),
+        DrawRect(new Rect2(Padding, Padding,
+                (float)(spanX / WorldChunk.Size * cellPixels),
+                (float)(spanZ / WorldChunk.Size * cellPixels)),
             new Color(0.082f, 0.153f, 0.106f));
 
+        // Window the record directly: asking per cell in view keeps the
+        // draw cheap no matter how much of the world has been explored.
+        var minChunkX = (long)Math.Floor(worldMinX / WorldChunk.Size);
+        var minChunkZ = (long)Math.Floor(worldMinZ / WorldChunk.Size);
+        var maxChunkX = minChunkX + columns;
+        var maxChunkZ = minChunkZ + rows;
         LastDrawnCells = 0;
-        foreach (var coordinate in _explored)
+        for (var chunkX = minChunkX; chunkX <= maxChunkX; chunkX++)
+        for (var chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++)
         {
-            if (coordinate.X < minX || coordinate.X > maxX ||
-                coordinate.Z < minZ || coordinate.Z > maxZ) continue;
-            var centreX = coordinate.X * WorldChunk.Size + WorldChunk.Size * 0.5;
-            var centreZ = coordinate.Z * WorldChunk.Size + WorldChunk.Size * 0.5;
-            // Version-2 worlds tint the map with the environment palette;
-            // version-1 keeps the meadow/moss/bloom blend.
-            var rgb = _generator!.Environments is not null
-                ? EnvironmentPalette.ColorOf(_generator.EnvironmentAt(centreX, centreZ))
-                : TerrainPalette.ColorOf(_biomes!.WeightsAt(centreX, centreZ));
+            var coordinate = new ChunkCoordinate(chunkX, chunkZ);
+            if (!_explored.Contains(coordinate)) continue;
+            var cellCentreX = chunkX * WorldChunk.Size + WorldChunk.Size * 0.5;
+            var cellCentreZ = chunkZ * WorldChunk.Size + WorldChunk.Size * 0.5;
+            var rgb = _generator.Environments is not null
+                ? EnvironmentPalette.ColorOf(_generator.EnvironmentAt(cellCentreX, cellCentreZ))
+                : TerrainPalette.ColorOf(_biomes.WeightsAt(cellCentreX, cellCentreZ));
             var color = new Color((float)rgb.X, (float)rgb.Y, (float)rgb.Z);
             var luminance = 0.2126f * color.R + 0.7152f * color.G + 0.0722f * color.B;
             if (luminance > 0.55f) color = color.Darkened(0.12f);
-            var cellSize = Mathf.Max(1f, cell - 0.35f);
-            DrawRect(new Rect2(ToPx(coordinate.X * WorldChunk.Size,
-                coordinate.Z * WorldChunk.Size), new Vector2(cellSize, cellSize)), color);
+            var cellSize = Mathf.Max(1f, cellPixels - 0.35f);
+            DrawRect(new Rect2(ToPx(chunkX * WorldChunk.Size,
+                chunkZ * WorldChunk.Size), new Vector2(cellSize, cellSize)), color);
             LastDrawnCells++;
         }
 
-        // Rivers are an overlay so they stay visible where ground is explored.
-        DrawRivers(ToPx, worldMinX, worldMinZ, spanX, spanZ, minZ, maxZ);
-
-        DrawLandmark("Garden", new Vec3(0, 0, 0), ToPx, minX, maxX, minZ, maxZ, font);
+        DrawRivers(ToPx, worldMinX, worldMinZ, spanX, spanZ, minChunkX, minChunkZ,
+            maxChunkX, maxChunkZ);
+        DrawLandmark("Garden", new Vec3(0, 0, 0), ToPx, minChunkX, maxChunkX, minChunkZ,
+            maxChunkZ, font);
         if (_visited.Contains(LandmarkCatalog.Reedwater))
             DrawLandmark("Reedwater", LandmarkCatalog.OriginOf(LandmarkCatalog.Reedwater),
-                ToPx, minX, maxX, minZ, maxZ, font);
-
-        DrawMarkers(ToPx, minX, maxX, minZ, maxZ, font);
+                ToPx, minChunkX, maxChunkX, minChunkZ, maxChunkZ, font);
+        DrawWorkers(ToPx, minChunkX, maxChunkX, minChunkZ, maxChunkZ);
+        DrawMarkers(ToPx, minChunkX, maxChunkX, minChunkZ, maxChunkZ, font);
 
         var player = ToPx(_player.X, _player.Z);
         DrawCircle(player, 7.5f, new Color(0.06f, 0.1f, 0.08f, 0.95f));
         DrawCircle(player, 5.5f, new Color(0.35f, 0.86f, 0.78f));
         DrawCircle(player, 2.2f, new Color(0.95f, 0.98f, 0.9f));
 
+        DrawHomeArrow(ToPx, font);
+
         DrawString(font, new Vector2(10, 18), "N ↑",
             HorizontalAlignment.Left, -1, 13, new Color(0.9f, 0.94f, 0.82f, 0.9f));
-        var note = cropped ? "Most recent explored area" : "All explored ground";
-        DrawString(font, new Vector2(10, size.Y - 8), note,
+        DrawString(font, new Vector2(10, size.Y - 8),
+            "Drag to pan · wheel to zoom · click ground to drop a note",
             HorizontalAlignment.Left, -1, 12, new Color(0.82f, 0.88f, 0.76f, 0.8f));
+    }
+
+    private void DrawHomeArrow(Func<double, double, Vector2> toPx, Font font)
+    {
+        _homeArrowVisible = false;
+        if (_generator is null) return;
+        var home = toPx(0, 0);
+        var mapRect = new Rect2(Padding, Padding,
+            Size.X - 2 * Padding, Size.Y - 2 * Padding);
+        if (mapRect.HasPoint(home)) return;
+        // The landmark itself is on the map; the arrow only points to it
+        // from off-screen, so a wandering spider can always find home.
+        var centre = mapRect.GetCenter();
+        var direction = (home - centre).Normalized();
+        var edge = centre + direction *
+            (Math.Abs(direction.X) > Math.Abs(direction.Y)
+                ? mapRect.Size.X * 0.5f / Math.Max(0.2f, Math.Abs(direction.X))
+                : mapRect.Size.Y * 0.5f / Math.Max(0.2f, Math.Abs(direction.Y)));
+        edge = new Vector2(
+            Mathf.Clamp(edge.X, Padding + 14, Size.X - Padding - 14),
+            Mathf.Clamp(edge.Y, Padding + 14, Size.Y - Padding - 14));
+        var colour = new Color(0.96f, 0.78f, 0.31f, 0.95f);
+        var angle = Mathf.Atan2(direction.Y, direction.X);
+        var tip = edge;
+        var left = edge - new Vector2(Mathf.Cos(angle - 0.5f), Mathf.Sin(angle - 0.5f)) * 14f;
+        var right = edge - new Vector2(Mathf.Cos(angle + 0.5f), Mathf.Sin(angle + 0.5f)) * 14f;
+        DrawColoredPolygon(new[] { tip, left, right }, colour);
+        _homeArrowDirection = new Vector3(direction.X, 0, direction.Y);
+        var viewCentre = _viewCentre ?? _player;
+        _homeArrowDistance = Math.Sqrt(
+            viewCentre.X * viewCentre.X + viewCentre.Z * viewCentre.Z);
+        DrawString(font, edge + new Vector2(14, 4),
+            $"Home · {_homeArrowDistance:0.0} km",
+            HorizontalAlignment.Left, -1, 12, colour);
+        _homeArrowVisible = true;
+    }
+
+    private void DrawWorkers(Func<double, double, Vector2> toPx,
+        long minChunkX, long maxChunkX, long minChunkZ, long maxChunkZ)
+    {
+        LastDrawnWorkers = 0;
+        foreach (var worker in _workers)
+        {
+            var chunk = ChunkCoordinate.OfWorldPoint(worker.Position.X, worker.Position.Z);
+            if (chunk.X < minChunkX || chunk.X > maxChunkX ||
+                chunk.Z < minChunkZ || chunk.Z > maxChunkZ) continue;
+            var point = toPx(worker.Position.X, worker.Position.Z);
+            var bodyColour = worker.Summoned
+                ? new Color(0.72f, 0.87f, 0.98f)
+                : new Color(0.96f, 0.65f, 0.24f);
+            DrawCircle(point, 6.4f, new Color(0.09f, 0.12f, 0.08f, 0.9f));
+            DrawCircle(point, 4.2f, bodyColour);
+            LastDrawnWorkers++;
+            if (worker.Destination is { } destination)
+            {
+                var target = toPx(destination.X, destination.Z);
+                DrawLine(point, target,
+                    new Color(0.96f, 0.65f, 0.24f, 0.55f), 1.6f);
+                DrawCircle(target, 3.4f, new Color(0.09f, 0.12f, 0.08f, 0.8f));
+                DrawCircle(target, 2.2f, bodyColour);
+            }
+        }
     }
 
     private void DrawMarkers(Func<double, double, Vector2> toPx,
@@ -197,27 +314,74 @@ public partial class MapView : Control
 
     public override void _GuiInput(InputEvent @event)
     {
-        if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } click)
-            return;
+        switch (@event)
+        {
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } press:
+                _dragging = true;
+                _pannedSincePress = false;
+                _pressPosition = press.Position;
+                AcceptEvent();
+                return;
+            case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }:
+                _dragging = false;
+                if (_pannedSincePress) { AcceptEvent(); return; }
+                HandleClick(_pressPosition);
+                AcceptEvent();
+                return;
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelUp, Pressed: true }:
+                Zoom(1.3f);
+                AcceptEvent();
+                return;
+            case InputEventMouseButton { ButtonIndex: MouseButton.WheelDown, Pressed: true }:
+                Zoom(1f / 1.3f);
+                AcceptEvent();
+                return;
+            case InputEventMouseMotion motion:
+                if (!_dragging) return;
+                var delta = motion.Relative;
+                if (!_pannedSincePress &&
+                    _pressPosition.DistanceTo(_pressPosition + delta) >= DragThresholdPixels)
+                    _pannedSincePress = true;
+                if (_pannedSincePress) Pan(delta);
+                AcceptEvent();
+                return;
+        }
+    }
+
+    /// <summary>Press-release without a drag: select a marker when one is
+    /// close, otherwise drop a note marker on the clicked ground.</summary>
+    private void HandleClick(Vector2 position)
+    {
+        if (_cellPixels is not { } cellPixels || cellPixels <= 0) return;
         string? best = null;
         var bestDistance = 16.0f;
         foreach (var (id, point) in _markerPixels)
         {
-            var distance = point.DistanceTo(click.Position);
+            var distance = point.DistanceTo(position);
             if (distance > bestDistance) continue;
             best = id;
             bestDistance = distance;
         }
-        if (best is null) return;
-        MarkerSelected?.Invoke(best);
-        AcceptEvent();
+        if (best is not null)
+        {
+            MarkerSelected?.Invoke(best);
+            return;
+        }
+        var centre = _viewCentre ?? _player;
+        var columns = Mathf.FloorToInt((Size.X - 2 * Padding) / cellPixels);
+        var rows = Mathf.FloorToInt((Size.Y - 2 * Padding) / cellPixels);
+        var worldMinX = centre.X - columns * WorldChunk.Size * 0.5;
+        var worldMinZ = centre.Z - rows * WorldChunk.Size * 0.5;
+        var worldX = worldMinX + (position.X - Padding) / cellPixels * WorldChunk.Size;
+        var worldZ = worldMinZ + (position.Y - Padding) / cellPixels * WorldChunk.Size;
+        NotePlacedRequested?.Invoke(new Vec3(worldX, 0, worldZ));
     }
 
     private void DrawRivers(Func<double, double, Vector2> toPx,
         double worldMinX, double worldMinZ, double spanX, double spanZ,
-        long minZ, long maxZ)
+        long minChunkX, long minChunkZ, long maxChunkX, long maxChunkZ)
     {
-        if (_generator is null) return;
+        if (_generator is null || _explored is null) return;
         var rivers = _generator.Rivers;
         var mapMinZ = worldMinZ;
         var mapMaxZ = worldMinZ + spanZ;
@@ -254,8 +418,10 @@ public partial class MapView : Control
                 var southZ = centre + half;
                 // Only rivers through explored ground, fully inside the map;
                 // a fragment at the edge must never paint over the modal.
+                var riverChunk = ChunkCoordinate.OfWorldPoint(x, centre);
                 if (northZ < mapMinZ || southZ > mapMaxZ - 1.5 ||
-                    !_exploredSet.Contains(ChunkCoordinate.OfWorldPoint(x, centre)))
+                    riverChunk.X < minChunkX || riverChunk.X > maxChunkX ||
+                    !_explored.Contains(riverChunk))
                 {
                     Flush();
                     continue;

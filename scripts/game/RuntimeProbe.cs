@@ -162,18 +162,23 @@ public partial class RuntimeProbe : Node
             Math.Abs(game.PlayerPosition.Y - pausedEnd.Y) > 0.05f,
             $"resumed={game.PlayerPosition.Y:0.00} paused={pausedEnd.Y:0.00}");
 
-        game.ProbeTeleport(new Vec3(-5.0, 0.5, 9.0));
+        // The authored climb stem: real collision now, so walk into it with
+        // genuine forward input and climb the marked surface.
+        game.ProbeTeleport(new Vec3(-5.0, 0.5, 6.8));
+        game.ProbeLookAt(new Vec3(WorldLayout.ClimbBase.X, 0.6, WorldLayout.ClimbBase.Z));
         await Frames(3);
         Input.ActionPress("move_forward");
         var climbStart = game.PlayerPosition.Y;
         var climbMax = climbStart;
-        for (var i = 0; i < 90; i++)
+        for (var i = 0; i < 120; i++)
         {
             await PhysicsFrames(1);
             climbMax = Math.Max(climbMax, game.PlayerPosition.Y);
         }
         Input.ActionRelease("move_forward");
-        Check("climb-stem", climbMax > climbStart + 1.5f, $"height={climbMax:0.00}");
+        Check("climb-stem", climbMax > climbStart + 1.5f,
+            $"height={climbMax:0.00} climbableNodes={game.ProbeClimbableNodeCount} " +
+            $"climbing={game.ProbePlayerClimbing} pos={game.PlayerPosition}");
         game.ProbeTeleport(WorldLayout.PlayerSpawn);
         await Frames(3);
 
@@ -903,8 +908,10 @@ public partial class RuntimeProbe : Node
             // Instrumentation: one teleport crosses more chunks than any walk
             // can; the unload and ring rebuild it triggers are the generator's
             // own work and are verified by content hash below.
-            p1Game.ProbeSetSafePosition(new Vec3(120f, 2f, -96f));
-            p1Game.ProbeTeleport(new Vec3(120f, 2f, -96f));
+            var p1FarGround = p1Game.ProbeGroundHeightAt(new Vec3(120f, 0f, -96f));
+            var p1Far = new Vec3(120f, p1FarGround + 0.8f, -96f);
+            p1Game.ProbeSetSafePosition(p1Far);
+            p1Game.ProbeTeleport(p1Far);
             await Frames(45);
             Check("p1-far-chunk-unloaded", !chunks.Nodes.ContainsKey(watched),
                 $"loaded={chunks.LoadedCount} centre={chunks.Centre.Id}");
@@ -978,41 +985,43 @@ public partial class RuntimeProbe : Node
         _main.ProbeReturnToTitle();
         await Frames(6);
 
-        // ---- P3: biomes, terrain movement and origin rebasing ----
+        // ---- P3: environments, terrain movement and origin rebasing ----
+        // Generator version 2 worlds carry the eight environments; the probe
+        // finds two distinct ones and walks through them with real input.
         var p3Game = _main.StartGame(null);
         await Frames(10);
-        var moss = p3Game.ProbeFindBiome("moss", new Vec3(0, 0, 0), 420);
-        var bloom = p3Game.ProbeFindBiome("bloom", new Vec3(0, 0, 0), 420);
-        Check("p3-moss-biome-found", p3Game.ProbeBiomeAt(moss) == "moss",
-            $"point={moss} biome={p3Game.ProbeBiomeAt(moss)} props={p3Game.ProbeLoadedPropCount}");
-        Check("p3-bloom-biome-found", p3Game.ProbeBiomeAt(bloom) == "bloom",
-            $"point={bloom} biome={p3Game.ProbeBiomeAt(bloom)}");
+        var forest = p3Game.ProbeFindBiome("forest", new Vec3(0, 0, 0), 900);
+        var hills = p3Game.ProbeFindBiome("hills", new Vec3(0, 0, 0), 900);
+        Check("p3-forest-biome-found", p3Game.ProbeBiomeAt(forest) == "forest",
+            $"point={forest} biome={p3Game.ProbeBiomeAt(forest)} props={p3Game.ProbeLoadedPropCount}");
+        Check("p3-hills-biome-found", p3Game.ProbeBiomeAt(hills) == "hills",
+            $"point={hills} biome={p3Game.ProbeBiomeAt(hills)}");
         Check("p3-procedural-props", p3Game.ProbeLoadedPropCount > 50,
             $"props={p3Game.ProbeLoadedPropCount}");
 
-        var mossTarget = new Vec3(moss.X + 8, moss.Y, moss.Z);
-        var mossWalk = await WalkRoute(p3Game, moss,
-            new[] { mossTarget }, 0.9f, 35f);
-        Check("p3-walks-moss-terrain",
-            mossWalk.Reached && mossWalk.End.Y > -6f,
-            $"reached={mossWalk.Reached} end={mossWalk.End}");
+        var forestTarget = new Vec3(forest.X + 8, forest.Y, forest.Z);
+        var forestWalk = await WalkRoute(p3Game, forest,
+            new[] { forestTarget }, 0.9f, 35f);
+        Check("p3-walks-forest-terrain",
+            forestWalk.Reached && forestWalk.End.Y > -8f,
+            $"reached={forestWalk.Reached} end={forestWalk.End}");
         p3Game.ProbeSetCameraZoom(15);
         p3Game.ProbeSetCameraPitch(-12);
-        p3Game.ProbeLookAt(new Vec3(moss.X + 30, moss.Y + 2, moss.Z + 6));
+        p3Game.ProbeLookAt(new Vec3(forest.X + 30, forest.Y + 2, forest.Z + 6));
         await Frames(5);
-        await Capture("33-moss-biome");
+        await Capture("33-forest-biome");
 
-        var bloomTarget = new Vec3(bloom.X + 8, bloom.Y, bloom.Z);
-        var bloomWalk = await WalkRoute(p3Game, bloom,
-            new[] { bloomTarget }, 0.9f, 35f);
-        Check("p3-walks-bloom-terrain",
-            bloomWalk.Reached && bloomWalk.End.Y > -6f,
-            $"reached={bloomWalk.Reached} end={bloomWalk.End}");
+        var hillsTarget = new Vec3(hills.X + 8, hills.Y, hills.Z);
+        var hillsWalk = await WalkRoute(p3Game, hills,
+            new[] { hillsTarget }, 0.9f, 35f);
+        Check("p3-walks-hills-terrain",
+            hillsWalk.Reached && hillsWalk.End.Y > -8f,
+            $"reached={hillsWalk.Reached} end={hillsWalk.End}");
         p3Game.ProbeSetCameraZoom(15);
         p3Game.ProbeSetCameraPitch(-12);
-        p3Game.ProbeLookAt(new Vec3(bloom.X + 30, bloom.Y + 2, bloom.Z + 6));
+        p3Game.ProbeLookAt(new Vec3(hills.X + 30, hills.Y + 2, hills.Z + 6));
         await Frames(5);
-        await Capture("34-bloom-biome");
+        await Capture("34-hills-biome");
 
         // Long-range movement: the presentation origin rebases near the player
         // while every logical coordinate, save value and chunk remains stable.
@@ -2359,6 +2368,195 @@ public partial class RuntimeProbe : Node
                     $"route={string.Join("→", h3RerouteWorker.JourneyRoute.Select(p => $"{p.X:0.0}"))}");
             }
         }
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
+        // ---- H4: cliffs, surface climbing, the leap and generator versioning ----
+        var h4Game = _main.StartGame(null);
+        await Frames(10);
+        var h4Headless = DisplayServer.GetName() == "headless";
+
+        // A fresh garden uses the current world generator.
+        Check("h4-new-world-uses-current-generator",
+            h4Game.ProbeGeneratorVersion == WorldGenerator.CurrentGeneratorVersion,
+            $"version={h4Game.ProbeGeneratorVersion}");
+
+        // 1) The tap keeps the small hop; holding the key leaps high enough
+        // to clear a gap. Both through the real jump action.
+        var h4Ground = new Vec3(40, h4Game.ProbeGroundHeightAt(new Vec3(40, 0, 40)) + 0.6, 40);
+        h4Game.ProbeTeleport(h4Ground);
+        await Frames(6);
+        // Settle onto the ground first so the first jump is never wasted on
+        // the landing, whatever the frame pacing of the host.
+        for (var i = 0; i < 90 && !h4Game.ProbePlayerGrounded; i++)
+            await PhysicsFrames(1);
+        var tapStart = h4Game.PlayerPosition.Y;
+        var tapMax = tapStart;
+        Input.ActionPress("jump");
+        await PhysicsFrames(2);
+        Input.ActionRelease("jump");
+        for (var i = 0; i < 34; i++)
+        {
+            await PhysicsFrames(1);
+            tapMax = Math.Max(tapMax, h4Game.PlayerPosition.Y);
+        }
+        var holdStart = h4Game.PlayerPosition.Y;
+        var holdMax = holdStart;
+        // Land from the tap before leaping, so the hold also starts grounded.
+        for (var i = 0; i < 90 && !h4Game.ProbePlayerGrounded; i++)
+            await PhysicsFrames(1);
+        holdStart = h4Game.PlayerPosition.Y;
+        holdMax = holdStart;
+        Input.ActionPress("jump");
+        for (var i = 0; i < 40; i++)
+        {
+            await PhysicsFrames(1);
+            holdMax = Math.Max(holdMax, h4Game.PlayerPosition.Y);
+        }
+        Input.ActionRelease("jump");
+        await PhysicsFrames(20);
+        Check("h4-tap-jump-stays-small",
+            tapMax > tapStart + 0.25f && tapMax < tapStart + 1.6f,
+            $"tap rise={tapMax - tapStart:0.00}");
+        Check("h4-held-leap-rises-high",
+            holdMax > holdStart + 1.6f,
+            $"leap rise={holdMax - holdStart:0.00}");
+        Check("h4-leap-beats-tap",
+            holdMax - holdStart > (tapMax - tapStart) + 0.4f,
+            $"tap={tapMax - tapStart:0.00} hold={holdMax - holdStart:0.00}");
+
+        // 2) Cliff country exists in the version-2 world.
+        var cliffArea = h4Game.ProbeFindBiome("cliff", h4Ground, 900);
+        Check("h4-cliff-country-found", h4Game.ProbeBiomeAt(cliffArea) == "cliff",
+            $"point={cliffArea} biome={h4Game.ProbeBiomeAt(cliffArea)}");
+        var face = h4Game.ProbeFindClimbableFace(cliffArea, 120);
+        Check("h4-climbable-face-found", face is not null,
+            $"face approach={face?.Approach} top={face?.TopY:0.0}");
+        if (face is not null)
+        {
+            // Walk into the face with genuine forward input and climb it.
+            h4Game.ProbeTeleport(face.Approach);
+            h4Game.ProbeLookAt(face.LookTarget);
+            await Frames(6);
+            Input.ActionPress("move_forward");
+            var attached = false;
+            for (var i = 0; i < 300; i++)
+            {
+                await PhysicsFrames(1);
+                if (h4Game.ProbePlayerClimbing) { attached = true; break; }
+            }
+            Check("h4-climb-attaches-to-face", attached,
+                $"climbing={h4Game.ProbePlayerClimbing} pos={h4Game.PlayerPosition}");
+            if (!h4Headless) await Capture("55-cliff-climb");
+            // Keep holding forward: the climb mounts the shelf over the lip.
+            var mounted = false;
+            var climbStartY = h4Game.PlayerPosition.Y;
+            for (var i = 0; i < 700; i++)
+            {
+                await PhysicsFrames(1);
+                if (!h4Game.ProbePlayerClimbing && h4Game.PlayerPosition.Y > climbStartY + 1.2)
+                {
+                    mounted = true;
+                    break;
+                }
+                if (!h4Game.ProbePlayerClimbing && h4Game.PlayerPosition.Y < climbStartY - 1.5)
+                    break; // fell off: the face was not what we thought
+            }
+            Input.ActionRelease("move_forward");
+            await PhysicsFrames(10);
+            Check("h4-climb-mounts-the-top",
+                mounted && h4Game.PlayerPosition.Y > climbStartY + 1.0,
+                $"pos={h4Game.PlayerPosition} from={climbStartY:0.00}");
+
+            // Walk across the shelf, then descend safely with a leap from
+            // the wall or the ground below.
+            if (mounted)
+            {
+                Input.ActionPress("move_forward");
+                await PhysicsFrames(40);
+                Input.ActionRelease("move_forward");
+                await PhysicsFrames(6);
+                var beforeFall = h4Game.PlayerPosition.Y;
+                Input.ActionPress("move_back");
+                await PhysicsFrames(50);
+                Input.ActionRelease("move_back");
+                for (var i = 0; i < 120; i++) await PhysicsFrames(1);
+                Check("h4-descends-safely",
+                    h4Game.PlayerPosition.Y < beforeFall + 0.2 &&
+                    h4Game.PlayerPosition.Y > -25,
+                    $"before={beforeFall:0.00} after={h4Game.PlayerPosition.Y:0.00}");
+            }
+        }
+
+        // 3) Climbing also works right at a chunk seam.
+        var seamFace = h4Game.ProbeFindClimbableFace(cliffArea, 500, nearChunkBoundary: true);
+        if (seamFace is not null)
+        {
+            h4Game.ProbeTeleport(seamFace.Approach);
+            h4Game.ProbeLookAt(seamFace.LookTarget);
+            await Frames(6);
+            Input.ActionPress("move_forward");
+            var seamAttached = false;
+            for (var i = 0; i < 300; i++)
+            {
+                await PhysicsFrames(1);
+                if (h4Game.ProbePlayerClimbing) { seamAttached = true; break; }
+            }
+            Input.ActionRelease("move_forward");
+            await PhysicsFrames(6);
+            Check("h4-climb-works-at-chunk-seams", seamAttached,
+                $"pos={h4Game.PlayerPosition} climbing={h4Game.ProbePlayerClimbing}");
+        }
+
+        // 4) Persistence: the generator version rides the save and the
+        // terrain regenerates identically after a relaunch.
+        Check("h4-save", h4Game.ProbeSave(), h4Game.LastSaveError);
+        var h4Loaded = _main.Saves.Load();
+        Check("h4-save-loads", h4Loaded.Success && h4Loaded.Data is not null, h4Loaded.Message);
+        if (h4Loaded.Data is not null)
+        {
+            var h4Reloaded = _main.StartGame(h4Loaded.Data);
+            await Frames(12);
+            Check("h4-reload-keeps-generator-version",
+                h4Reloaded.ProbeGeneratorVersion == WorldGenerator.CurrentGeneratorVersion,
+                $"version={h4Reloaded.ProbeGeneratorVersion}");
+            // Same world: sample heights agree everywhere around the cliff.
+            var agreed = 0;
+            for (var i = 0; i < 24; i++)
+            {
+                var sx = cliffArea.X + (i % 6) * 4 - 10;
+                var sz = cliffArea.Z + (i / 6) * 4 - 10;
+                if (Math.Abs(h4Game.ProbeGroundHeightAt(new Vec3(sx, 0, sz)) -
+                             h4Reloaded.ProbeGroundHeightAt(new Vec3(sx, 0, sz))) < 0.01)
+                    agreed++;
+            }
+            Check("h4-reload-terrain-identical", agreed >= 22, $"agreed={agreed}/24");
+            // Climbing survives the reload on the same face.
+            var reloadFace = h4Reloaded.ProbeFindClimbableFace(cliffArea, 120);
+            Check("h4-reload-face-persists", reloadFace is not null,
+                $"face={reloadFace?.Approach}");
+        }
+
+        // 5) A version-1 payload still loads as a version-1 world, with its
+        // own terrain, proving old gardens never silently change shape.
+        var legacyData = h4Game.Simulation!.ExportSave(new Vec3(0, 0, 0), 0, new SettingsData());
+        legacyData.GeneratorVersion = 1;
+        var h4Legacy = _main.StartGame(legacyData);
+        await Frames(12);
+        Check("h4-legacy-save-loads-as-version-1",
+            h4Legacy.ProbeGeneratorVersion == 1,
+            $"version={h4Legacy.ProbeGeneratorVersion}");
+        var legacyDiffers = 0;
+        for (var i = 0; i < 24; i++)
+        {
+            var sx = cliffArea.X + (i % 6) * 4 - 10;
+            var sz = cliffArea.Z + (i / 6) * 4 - 10;
+            if (Math.Abs(h4Game.ProbeGroundHeightAt(new Vec3(sx, 0, sz)) -
+                         h4Legacy.ProbeGroundHeightAt(new Vec3(sx, 0, sz))) > 0.05)
+                legacyDiffers++;
+        }
+        Check("h4-legacy-terrain-is-the-old-world", legacyDiffers > 8,
+            $"differing samples={legacyDiffers}/24");
         _main.ProbeReturnToTitle();
         await Frames(6);
 

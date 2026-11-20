@@ -1046,3 +1046,89 @@ this host**: this agent environment cannot render images. Programmatic
 pixel checks confirm full 1280×720 frames with scene-matched colour
 distributions; human visual inspection is outstanding and recorded as a
 limitation.
+
+### H4 — climbing, the leap and the eight environments
+
+Commands run from the repository root on the H4 branch head:
+
+```text
+$ dotnet clean
+$ dotnet build -warnaserror
+0 Warning(s), 0 Error(s)
+
+$ dotnet test
+Passed! - Failed: 0, Passed: 287, Skipped: 0, Total: 287
+
+$ godot --headless --path . --editor --quit
+exit 0
+
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=529 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=530 failures=0
+```
+
+The rendered probe ran with `WAYLAND_DISPLAY` unset so it used the X11/Xvfb
+display. The new `h4-*` checks exercise the traversal with real input: a
+tapped jump rises 1.03 m while a held jump leaps 2.53 m; walking into a
+found cliff face attaches the climb, mounting the shelf over the lip ends
+the climb on top, the descent lands safely, and a second face right at a
+24 m chunk seam climbs as well. The authored stem — now a real
+`climbable` collision body with a standable overlook — is climbed with
+plain forward input (`climb-stem` height 3.38 and still rising at the
+check). Save → relaunch keeps `GeneratorVersion` and regenerates identical
+terrain around the cliff; a payload rewritten to version 1 loads as a
+version-1 world whose terrain differs from the version-2 world at the
+same sample points.
+
+The old moss/bloom p3 checks became forest/hills checks, matching the
+eight-environment field of generator version 2.
+
+Exported Linux x64 build (fresh export directory):
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+$ cd exports/linux
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=529 failures=0
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=530 failures=0
+```
+
+SHA-256 of the H4 Linux payload:
+
+```text
+d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  Webwild.x86_64
+6b3894540bcf0e2793e7e08c45b731a28603ab3517ca5b90f9c88ec4b3197a4d  Webwild.pck
+60f495e2a64d4dd65b53a8c61b5170f58070ea0f6c8cbb9b582cc2b63d105cc7  data_Webwild_linuxbsd_x86_64/Webwild.dll
+```
+
+New deterministic unit contracts in `EnvironmentTests` (17 cases): version-1
+terrain regenerates the exact pre-H4 height function; version-2 changes the
+world while all eight environments occur within ±900 m of the probe seed;
+weights are deterministic, continuous and sum to one; cliff regions contain
+genuinely steep faces with flat shelves; meadow, wetland and shore ground
+stays gentle outside mixed boundary strips; authored landmark edges keep a
+meadow margin; version-2 rivers keep dry walkable banks; chunks regenerate
+identically with the environment grid folded into the content hash; props
+come from the new vocabulary, stay grounded and never stand on faces or in
+water; food still grows everywhere; the worker navigator never routes
+through a cliff face; and generator versions round-trip through payload,
+manifest and validator, with absent fields reading as version 1 and future
+versions rejected loudly.
+
+Screenshots `33-forest-biome.png`, `34-hills-biome.png` and
+`55-cliff-climb.png` were captured by the rendered probe. **They were not
+visually inspected on this host** (this environment cannot render images).
+Programmatic pixel checks confirm full 1280×720 frames with scene-matched
+colour distributions; human visual inspection is outstanding and recorded
+as a limitation.

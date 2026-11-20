@@ -60,6 +60,9 @@ public partial class GardenClearing : Node3D
     /// <summary>Seed of the live world; restored from the save manifest and
     /// regenerated per new garden. Probe runs force the historical fixed seed.</summary>
     private int _worldSeed = WorldSaveService.NewGameSeed(deterministic: false);
+    /// <summary>Generation algorithm this garden's terrain uses; new games
+    /// get the current version, loaded games keep their saved one.</summary>
+    private int _generatorVersion = WorldGenerator.CurrentGeneratorVersion;
     /// <summary>Presentation-only offset: logical world = engine position + this.
     /// Rebased near the player so float32 physics never leaves comfortable
     /// precision, while saves and simulation keep stable logical coordinates.</summary>
@@ -343,6 +346,10 @@ public partial class GardenClearing : Node3D
         // procedural terrain, and the manifest persists it for every reload.
         _worldSeed = WorldSaveService.NewGameSeed(_probeMode);
         tuning.Seed = _worldSeed;
+        // New gardens always use the current world generator; loaded gardens
+        // keep the version their terrain was made with.
+        _generatorVersion = WorldGenerator.CurrentGeneratorVersion;
+        tuning.GeneratorVersion = _generatorVersion;
         _sim = new GameSimulation(tuning, GameData.LoadMissions());
         _originOffset = Vec3.Zero;
         UpdateWorldTransforms();
@@ -383,9 +390,14 @@ public partial class GardenClearing : Node3D
         var tuning = GameData.LoadTuning();
         _baselineTuning = tuning.Clone();
         // The saved seed is the world seed contract: terrain must regenerate
-        // byte-identically from it, in every session.
+        // byte-identically from it, in every session. The saved generator
+        // version is part of that contract.
         _worldSeed = data.Seed > 0 ? data.Seed : WorldSaveService.NewGameSeed(deterministic: true);
         tuning.Seed = _worldSeed;
+        _generatorVersion = Math.Clamp(
+            data.GeneratorVersion < 1 ? 1 : data.GeneratorVersion,
+            1, WorldGenerator.CurrentGeneratorVersion);
+        tuning.GeneratorVersion = _generatorVersion;
         GameData.ApplyDifficulty(tuning, _baselineTuning, Settings.LowThreat);
         _sim = GameSimulation.FromSave(data, tuning, GameData.LoadMissions());
         var region = _sim.ActiveRegion;
@@ -443,7 +455,7 @@ public partial class GardenClearing : Node3D
             foreach (var node in _chunks.Nodes.Values) node.QueueFree();
             _chunks = null;
         }
-        _chunks = new ChunkStreamer(new WorldGenerator(_worldSeed), _chunkHost);
+        _chunks = new ChunkStreamer(new WorldGenerator(_worldSeed, _generatorVersion), _chunkHost);
         AddLandmarkAprons();
     }
 
@@ -479,7 +491,8 @@ public partial class GardenClearing : Node3D
         };
         for (var i = 0; i < rects.Length; i++)
             _chunkHost.AddChild(ChunkTerrainBuilder.BuildApron(
-                _worldSeed, rects[i], $"ReedwaterApron{i}"));
+                _chunks?.Generator ?? new WorldGenerator(_worldSeed, _generatorVersion),
+                rects[i], $"ReedwaterApron{i}"));
     }
 
     /// <summary>
@@ -2945,6 +2958,97 @@ public partial class GardenClearing : Node3D
         .Count(child => child.Name.ToString().StartsWith("RiverBridge_", StringComparison.Ordinal));
 
     // ---- H3 probe instrumentation: real-input fallbacks and view facts ----
+
+    /// <summary>Generator version of the live world (H4).</summary>
+    public int ProbeGeneratorVersion => _generatorVersion;
+
+    /// <summary>The player's live climbing state (H4).</summary>
+    public bool ProbePlayerClimbing => _player is { IsClimbing: true };
+
+    /// <summary>Is the player body resting on ground right now (H4).</summary>
+    public bool ProbePlayerGrounded => _player?.IsOnFloor() ?? false;
+
+    /// <summary>How many authored surfaces are marked climbable (H4).</summary>
+    public int ProbeClimbableNodeCount => GetTree().GetNodesInGroup("climbable").Count;
+
+    public Vector3 ProbePlayerClimbNormal => _player?.ClimbNormal ?? Vector3.Back;
+
+    /// <summary>A steep, climbable face found near a point: where to stand,
+    /// where to look and how high the climb starts.</summary>
+    public sealed record ProbeClimbFace(Vec3 Approach, Vec3 LookTarget, double BaseY, double TopY);
+
+    /// <summary>Search near a point for a steep face on version-2 terrain:
+    /// the approach stands on the downhill side; the target is the face top.
+    /// When <paramref name="nearChunkBoundary"/> is set, only faces close to
+    /// a 24 m chunk edge qualify, proving climbs work across seams.</summary>
+    public ProbeClimbFace? ProbeFindClimbableFace(Vec3 near, double radius, bool nearChunkBoundary = false)
+    {
+        var generator = _chunks?.Generator;
+        if (generator is null || generator.GeneratorVersion < 2) return null;
+        ProbeClimbFace? best = null;
+        var bestSlope = 0.0;
+        for (var ring = 4; ring <= radius; ring += 4)
+        {
+            var steps = Math.Max(8, (int)(ring * 1.2));
+            for (var step = 0; step < steps; step++)
+            {
+                var angle = step * Math.PI * 2 / steps;
+                var x = near.X + Math.Cos(angle) * ring;
+                var z = near.Z + Math.Sin(angle) * ring;
+                if (WorldGenerator.AuthoredRects.Any(rect =>
+                        rect.DistanceOutside(x, z) < 12)) continue;
+                if (nearChunkBoundary &&
+                    Math.Abs(((x % 24) + 24) % 24) > 2 &&
+                    Math.Abs(((z % 24) + 24) % 24) > 2) continue;
+                // The collision mesh is built from 2 m lattice samples, so
+                // judge steepness over the same span the quads will show:
+                // an analytically sharp rise between lattice points would
+                // otherwise be flattened away by the mesh.
+                const double stepM = 1.0;
+                var hx = generator.HeightAt(x + stepM, z) - generator.HeightAt(x - stepM, z);
+                var hz = generator.HeightAt(x, z + stepM) - generator.HeightAt(x, z - stepM);
+                var length = Math.Sqrt(hx * hx + hz * hz);
+                var slope = length / (2 * stepM);
+                if (slope < 1.5) continue;
+                var uphillX = hx / length;
+                var uphillZ = hz / length;
+                // Walk downhill until the ground is genuinely walkable, so the
+                // player starts on solid footing below the face; a face with
+                // no walkable approach within reach is not a usable climb.
+                var ax = x;
+                var az = z;
+                var approachFound = false;
+                for (var back = 0; back < 10; back++)
+                {
+                    ax -= uphillX * 0.9;
+                    az -= uphillZ * 0.9;
+                    var bhx = generator.HeightAt(ax + stepM, az) - generator.HeightAt(ax - stepM, az);
+                    var bhz = generator.HeightAt(ax, az + stepM) - generator.HeightAt(ax, az - stepM);
+                    if (Math.Sqrt(bhx * bhx + bhz * bhz) / (2 * stepM) < 0.5)
+                    {
+                        approachFound = true;
+                        break;
+                    }
+                }
+                if (!approachFound) continue;
+                var approachY = generator.HeightAt(ax, az);
+                if (generator.RiverAt(ax, az).IsHazard) continue;
+                var tx = x + uphillX * 3.0;
+                var tz = z + uphillZ * 3.0;
+                var face = new ProbeClimbFace(
+                    new Vec3(ax, approachY + 0.6, az),
+                    new Vec3(x, generator.HeightAt(x, z) + 1.5, z),
+                    approachY,
+                    generator.HeightAt(tx, tz));
+                if (slope > bestSlope)
+                {
+                    bestSlope = slope;
+                    best = face;
+                }
+            }
+        }
+        return best;
+    }
 
     /// <summary>Fresh crossing plan for where the player stands.</summary>
     public RiverBuildPlan? ProbeRiverPlan => _sim?.PlanRiverBridge(PlayerWorld);

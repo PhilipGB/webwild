@@ -27,6 +27,9 @@ public static class WorldSaveMigrator
             CreatedUtc = legacy.CreatedUtc,
             UpdatedUtc = legacy.UpdatedUtc,
             Seed = legacy.Seed,
+            GeneratorVersion = Math.Clamp(
+                legacy.GeneratorVersion < 1 ? 1 : legacy.GeneratorVersion,
+                1, WorldGenerator.CurrentGeneratorVersion),
             Tick = legacy.Tick,
             ElapsedSeconds = legacy.ElapsedSeconds,
             ActiveLandmarkId = legacy.ActiveRegionId,
@@ -87,6 +90,9 @@ public static class WorldSaveMigrator
         game.CreatedUtc = manifest.CreatedUtc;
         game.UpdatedUtc = manifest.UpdatedUtc;
         game.Seed = manifest.Seed;
+        game.GeneratorVersion = Math.Clamp(
+            manifest.GeneratorVersion < 1 ? 1 : manifest.GeneratorVersion,
+            1, WorldGenerator.CurrentGeneratorVersion);
         game.Tick = manifest.Tick;
         game.ElapsedSeconds = manifest.ElapsedSeconds;
         game.ActiveRegionId = LandmarkCatalog.IsKnown(manifest.ActiveLandmarkId)
@@ -207,6 +213,13 @@ public static class WorldSaveMigrator
             manifest.ElapsedSeconds > 100_000_000)
         {
             error = "Simulation timing is invalid.";
+            return false;
+        }
+        if (manifest.GeneratorVersion < 1 ||
+            manifest.GeneratorVersion > WorldGenerator.CurrentGeneratorVersion)
+        {
+            error = $"This save was made with world generator version " +
+                    $"{manifest.GeneratorVersion}, which this build cannot load.";
             return false;
         }
         if (!LandmarkCatalog.IsKnown(manifest.ActiveLandmarkId))

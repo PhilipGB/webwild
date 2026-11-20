@@ -56,21 +56,36 @@ public static class ChunkTerrainBuilder
     {
         "grass" => "res://art/models/flora/grass_tuft.glb",
         "clover" => "res://art/models/flora/clover_patch.glb",
+        "clover_tall" => "res://art/models/flora/clover_tall.glb",
         "tallgrass" => "res://art/models/flora/tall_grass.glb",
         "flower_yellow" => "res://art/models/flora/flower_yellow.glb",
         "flower_pink" => "res://art/models/flora/flower_pink.glb",
         "flower_purple" => "res://art/models/flora/flower_purple.glb",
+        "daisy" => "res://art/models/flora/daisy.glb",
         "fern" => "res://art/models/flora/fern.glb",
         "mushroom" => "res://art/models/flora/mushroom.glb",
+        "mushroom_blue" => "res://art/models/flora/mushroom_blue.glb",
         "moss_patch" => "res://art/models/flora/moss_patch.glb",
+        "bush" => "res://art/models/flora/bush.glb",
+        "broad_leaf" => "res://art/models/flora/broad_leaf.glb",
+        "leaf_pile" => "res://art/models/flora/leaf_pile.glb",
+        "fallen_leaf" => "res://art/models/flora/fallen_leaf.glb",
+        "reed" => "res://art/models/flora/reed.glb",
+        "sapling" => "res://art/models/flora/sapling.glb",
         "pebble" => "res://art/models/terrain/pebble.glb",
+        "pebble_cluster" => "res://art/models/terrain/pebble_cluster.glb",
         "flat_stone" => "res://art/models/terrain/flat_stone.glb",
         "small_log" => "res://art/models/terrain/small_log.glb",
+        "boulder" => "res://art/models/terrain/boulder.glb",
+        "moss_rock" => "res://art/models/terrain/moss_rock.glb",
+        "soil_mound" => "res://art/models/terrain/soil_mound.glb",
+        "marsh_grass" => "res://art/models/reedwater/marsh_grass_tuft.glb",
+        "cattail" => "res://art/models/reedwater/cattail_cluster.glb",
         _ => null
     };
 
     /// <summary>Build the full chunk node: terrain body plus prop dressing.</summary>
-    public static StaticBody3D Build(ChunkData data, int seed)
+    public static StaticBody3D Build(ChunkData data, int seed, int generatorVersion = 1)
     {
         var body = new StaticBody3D
         {
@@ -81,6 +96,7 @@ public static class ChunkTerrainBuilder
         };
         body.SetMeta("chunk_id", data.Coordinate.Id);
         body.SetMeta("content_hash", data.ContentHash().ToString("x16"));
+        body.SetMeta("generator_version", generatorVersion);
 
         var mesh = BuildMesh(data, seed);
         var meshInstance = new MeshInstance3D
@@ -318,7 +334,11 @@ public static class ChunkTerrainBuilder
             var quadX = originX + (ix + 0.5) * spacing;
             var quadZ = originZ + (iz + 0.5) * spacing;
             var tint = (float)TerrainPalette.QuadTint(seed, quadX, quadZ);
-            var rgb = TerrainPalette.ColorOf(weights);
+            // Version-2 chunks paint their quads from the eight-environment
+            // palette; version-1 keeps the meadow/moss/bloom blend unchanged.
+            var rgb = data.Environments is { } environments
+                ? EnvironmentPalette.ColorOf(EnvironmentWeightsBetween(environments, ix, iz))
+                : TerrainPalette.ColorOf(weights);
             // Wet mud under and beside the water makes the channel read as a
             // carved streambed through the translucent surface.
             var river = rivers.Sample(quadX, quadZ);
@@ -372,13 +392,25 @@ public static class ChunkTerrainBuilder
             (a.Bloom + b.Bloom + c.Bloom + d.Bloom) * 0.25);
     }
 
+    private static EnvironmentWeights EnvironmentWeightsBetween(
+        EnvironmentWeights[,] environments, int ix, int iz)
+    {
+        if (environments.GetLength(0) <= ix + 1 || environments.GetLength(1) <= iz + 1)
+            return EnvironmentWeights.PureMeadow;
+        return EnvironmentWeights.Between(
+            environments[ix, iz], environments[ix + 1, iz],
+            environments[ix, iz + 1], environments[ix + 1, iz + 1]);
+    }
+
     /// <summary>Flat, per-quad-tinted patch matching generated terrain colours.
     /// Used for the landmark skirts so authored ground meets procedural ground
     /// without a tint break. Purely visual; collision stays with the scene.</summary>
-    public static MeshInstance3D BuildApron(int seed, WorldRect rect, string name)
+    public static MeshInstance3D BuildApron(WorldGenerator generator, WorldRect rect, string name)
     {
+        var seed = generator.Seed;
+        var environments = generator.Environments;
         var cell = WorldChunk.TerrainSpacing;
-        var biomeMap = new BiomeMap(seed);
+        var biomeMap = environments is null ? new BiomeMap(seed) : null;
         var positions = new List<Vector3>();
         var normals = new List<Vector3>();
         var colors = new List<Color>();
@@ -391,9 +423,13 @@ public static class ChunkTerrainBuilder
             while (z < rect.MaxZ - 0.001)
             {
                 var z1 = Math.Min(z + cell, rect.MaxZ);
-                var weights = biomeMap.WeightsAt((x + x1) * 0.5, (z + z1) * 0.5);
+                // The skirt paints with whatever the neighbouring generated
+                // ground uses: environment palette on version-2 worlds, the
+                // meadow/moss/bloom blend on version-1.
+                var rgb = environments is not null
+                    ? EnvironmentPalette.ColorOf(generator.EnvironmentAt((x + x1) * 0.5, (z + z1) * 0.5))
+                    : TerrainPalette.ColorOf(biomeMap!.WeightsAt((x + x1) * 0.5, (z + z1) * 0.5));
                 var tint = (float)TerrainPalette.QuadTint(seed, (x + x1) * 0.5, (z + z1) * 0.5);
-                var rgb = TerrainPalette.ColorOf(weights);
                 var color = new Color((float)rgb.X * tint, (float)rgb.Y * tint, (float)rgb.Z * tint);
                 var baseIndex = positions.Count;
                 positions.Add(new Vector3((float)x, 0.015f, (float)z));
@@ -547,7 +583,7 @@ public sealed class ChunkStreamer
     {
         var data = _generator.GenerateChunk(coordinate);
         if (data is null) return; // Authored chunks are never generated.
-        var node = ChunkTerrainBuilder.Build(data, _generator.Seed);
+        var node = ChunkTerrainBuilder.Build(data, _generator.Seed, _generator.GeneratorVersion);
         _nodes[coordinate] = node;
         _data[coordinate] = data;
         _host.AddChild(node);

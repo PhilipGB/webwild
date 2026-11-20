@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" path="res://art/models/flora/sapling.glb" id="1_climbsapling"]
 [ext_resource type="Material" path="res://art/materials/vertex_color_material.tres" id="2_vcol"]
@@ -16,8 +16,31 @@ bottom_radius = 0.18
 height = 4.6
 radial_segments = 10
 
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_3_stem"]
+radius = 0.17
+height = 4.6
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4_overlook"]
+size = Vector3(1.5, 0.16, 1.5)
+
 [node name="ClimbableStem" type="Node3D"]
 position = Vector3(-5, 0, 9)
+
+[node name="StemBody" type="StaticBody3D" parent="." groups=["climbable"]]
+collision_layer = 1
+collision_mask = 0
+
+[node name="StemShape" type="CollisionShape3D" parent="StemBody"]
+position = Vector3(0, 2.3, 0)
+shape = SubResource("CylinderShape3D_3_stem")
+
+[node name="OverlookBody" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="OverlookShape" type="CollisionShape3D" parent="OverlookBody"]
+position = Vector3(0, 4.32, 0)
+shape = SubResource("BoxShape3D_4_overlook")
 
 [node name="ClimbSapling" parent="." instance=ExtResource("1_climbsapling")]
 position = Vector3(0, 0, 0)

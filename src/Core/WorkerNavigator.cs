@@ -21,7 +21,8 @@ public sealed class WorkerNavigator
     private readonly WorldGenerator _generator;
     private IReadOnlyList<PlayerRiverBridge> _playerBridges = Array.Empty<PlayerRiverBridge>();
 
-    public WorkerNavigator(int seed) => _generator = new WorldGenerator(seed);
+    public WorkerNavigator(int seed, int generatorVersion = 1) =>
+        _generator = new WorldGenerator(seed, generatorVersion);
 
     public WorldGenerator Generator => _generator;
 
@@ -284,7 +285,9 @@ public sealed class WorkerNavigator
         return points.Count < 2 ? null : new WorkerRoute(points, false, RouteDistance(points));
     }
 
-    /// <summary>Sampled terrain-followed points, or null if any point is wet.</summary>
+    /// <summary>Sampled terrain-followed points, or null if any point is wet
+    /// or blocked. Version-2 worlds also refuse steep cliff faces: a face the
+    /// player must climb is not ground a helper can walk.</summary>
     private Vec3[]? DryPath(Vec3 from, Vec3 to)
     {
         var distance = Vec3.Distance(from, to);
@@ -295,11 +298,23 @@ public sealed class WorkerNavigator
             var t = i / (double)steps;
             var x = from.X + (to.X - from.X) * t;
             var z = from.Z + (to.Z - from.Z) * t;
-            if (IsWet(x, z)) return null;
+            if (IsBlockedForWalking(x, z)) return null;
             var y = i == steps ? to.Y : i == 1 && from.Y > 0 ? from.Y : BankY(x, z);
             points[i - 1] = new Vec3(x, y, z);
         }
         return points;
+    }
+
+    /// <summary>True where a helper cannot walk: deep water anywhere, and on
+    /// version-2 cliff faces too steep to stand on.</summary>
+    private bool IsBlockedForWalking(double x, double z)
+    {
+        if (IsWet(x, z)) return true;
+        if (_generator.GeneratorVersion < 2) return false;
+        const double step = 1.0;
+        var hx = _generator.HeightAt(x + step, z) - _generator.HeightAt(x - step, z);
+        var hz = _generator.HeightAt(x, z + step) - _generator.HeightAt(x, z - step);
+        return Math.Sqrt(hx * hx + hz * hz) / (2 * step) > 0.9;
     }
 
     private bool IsWet(double x, double z)

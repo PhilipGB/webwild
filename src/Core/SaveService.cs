@@ -100,6 +100,11 @@ public static class SaveValidator
             error = "Simulation timing is invalid.";
             return false;
         }
+        if (data.GeneratorVersion < 0 || data.GeneratorVersion > WorldGenerator.CurrentGeneratorVersion)
+        {
+            error = "The save uses an unsupported world generator.";
+            return false;
+        }
         if (!IsFinite(data.Player.X, data.Player.Y, data.Player.Z) ||
             !PositionInBounds(data.ActiveRegionId, data.Player.X, data.Player.Y, data.Player.Z))
         {

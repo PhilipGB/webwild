@@ -115,8 +115,11 @@ public partial class MapView : Control
                 coordinate.Z < minZ || coordinate.Z > maxZ) continue;
             var centreX = coordinate.X * WorldChunk.Size + WorldChunk.Size * 0.5;
             var centreZ = coordinate.Z * WorldChunk.Size + WorldChunk.Size * 0.5;
-            var weights = _biomes.WeightsAt(centreX, centreZ);
-            var rgb = TerrainPalette.ColorOf(weights);
+            // Version-2 worlds tint the map with the environment palette;
+            // version-1 keeps the meadow/moss/bloom blend.
+            var rgb = _generator!.Environments is not null
+                ? EnvironmentPalette.ColorOf(_generator.EnvironmentAt(centreX, centreZ))
+                : TerrainPalette.ColorOf(_biomes!.WeightsAt(centreX, centreZ));
             var color = new Color((float)rgb.X, (float)rgb.Y, (float)rgb.Z);
             var luminance = 0.2126f * color.R + 0.7152f * color.G + 0.0722f * color.B;
             if (luminance > 0.55f) color = color.Darkened(0.12f);

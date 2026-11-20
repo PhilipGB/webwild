@@ -21,7 +21,7 @@ Released phases so far:
   physically, carried home across bridges and credited exactly once on
   delivery with idempotent identities and persistent markers.
 
-### H3 — procedural bridges (this phase)
+### H3 — procedural bridges (this phase merged as PR #40)
 
 - Players build silk bridges over generated rivers: key `3` plans a
   crossing where they stand, previews it and confirms through the
@@ -36,6 +36,22 @@ Released phases so far:
   routes follow the actual walkway, and dismantling a bridge explicitly
   re-plans or strands dependent helpers safely, never teleporting and
   never walking a removed deck.
+
+### H4 — world traversal (this phase)
+
+- Surface-aware climbing: pushing into any steep generated cliff face or
+  authored `climbable` surface attaches the spider; up, down and sideways
+  along the face, generous top mounting, jump-away leaps and safe
+  descents. The authored climb stem is now real, standable physics.
+- The accessible larger jump: hold the jump key while rising to leap
+  ≈2.5 m instead of the ≈1 m hop; taps keep the small jump, buffering and
+  coyote time unchanged.
+- Eight distinct environments in new worlds — meadow, forest, woodland,
+  wetland, shore, hills, cliff, valley — with their own heights,
+  palettes, dressing and food, and climbable cliff faces between
+  plateaus.
+- An explicit `GeneratorVersion` keeps every existing save regenerating
+  its original terrain byte-identically; new gardens get the new world.
 
 ## Webwild v0.3.0 — Never-Ending World
 

@@ -120,6 +120,10 @@ public sealed class WorldManifestSave
     /// <summary>Landmark id the player currently occupies.</summary>
     public string ActiveLandmarkId { get; set; } = LandmarkCatalog.Garden;
 
+    /// <summary>World-generation algorithm this garden's terrain uses;
+    /// absent in pre-H4 manifests and read as version 1.</summary>
+    public int GeneratorVersion { get; set; } = 1;
+
     /// <summary>Player position in stable world coordinates.</summary>
     public WorldPosSave Player { get; set; } = new();
 

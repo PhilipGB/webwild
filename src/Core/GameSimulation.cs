@@ -132,7 +132,7 @@ public sealed partial class GameSimulation
             : WorldLayout.CreateGroundEdges();
         Graph = new WorldGraph(graphNodes, graphEdges);
         _rng = new Random(Tuning.Seed);
-        _navigator = new WorkerNavigator(Tuning.Seed);
+        _navigator = new WorkerNavigator(Tuning.Seed, Tuning.GeneratorVersion);
 
         var routes = anchors is null
             ? RegionCatalog.All.SelectMany(region => region.InsectRoutes).ToList()
@@ -1567,6 +1567,7 @@ public sealed partial class GameSimulation
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow,
             Seed = Tuning.Seed,
+            GeneratorVersion = Tuning.GeneratorVersion,
             Tick = TickCount,
             ElapsedSeconds = ElapsedSeconds,
             ActiveRegionId = ActiveRegionId,

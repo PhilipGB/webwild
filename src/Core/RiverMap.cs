@@ -97,13 +97,17 @@ public sealed class RiverMap
 
     private readonly TerrainSampler _sampler;
     private readonly BiomeMap _biomes;
+    private readonly EnvironmentMap? _environments;
     private readonly int _seed;
+    private readonly int _version;
 
-    public RiverMap(int seed)
+    public RiverMap(int seed, int generatorVersion = 1)
     {
         _seed = seed;
+        _version = Math.Clamp(generatorVersion, 1, WorldGenerator.CurrentGeneratorVersion);
         _sampler = new TerrainSampler(seed);
         _biomes = new BiomeMap(seed);
+        _environments = _version >= 2 ? new EnvironmentMap(seed, this) : null;
     }
 
     public int Seed => _seed;
@@ -117,11 +121,46 @@ public sealed class RiverMap
     public static double HalfWidthAt(int index, double x) =>
         BaseHalfWidth + 0.5 * Math.Sin(x / 47.0 + index * 2.3);
 
-    public double BaseHeightAt(double x, double z) =>
-        _sampler.HeightAt(x, z) + BiomeMap.HeightOffset(_biomes.WeightsAt(x, z));
+    /// <summary>Ground height the water follows. Version 2 water descends
+    /// with the environment-shaped landscape exactly as the visible terrain
+    /// does, so a stream through hills or a wetland sits at the right level.</summary>
+    public double BaseHeightAt(double x, double z)
+    {
+        if (_environments is { } environments)
+        {
+            var weights = environments.WeightsAt(x, z);
+            return _sampler.HeightAt(x, z) * EnvironmentMap.Amplitude(weights) +
+                   EnvironmentMap.HeightOffset(weights) +
+                   environments.CliffFacesAt(x, z, weights.Cliff);
+        }
+        return _sampler.HeightAt(x, z) + BiomeMap.HeightOffset(_biomes.WeightsAt(x, z));
+    }
 
-    /// <summary>Nearest river band to a world point.</summary>
+    /// <summary>Nearest river band to a world point, with its water level.
+    /// Level-free geometry comes from <see cref="SampleShape"/>; callers that
+    /// run while terrain is still being computed (the environment field)
+    /// must use the shape to avoid circular height evaluation.</summary>
     public RiverSample Sample(double x, double z)
+    {
+        var shape = SampleShape(x, z);
+        if (!shape.HasRiver) return shape;
+        if (_version < 2)
+            return shape with { WaterLevel = BaseHeightAt(x, z) - WaterDrop };
+
+        // Version 2: the local level, clamped below the lower bank so hills
+        // can never flood a shoreline, and never above the carved bed.
+        var probeZ = shape.HalfWidth + BankTaper + 1.5;
+        var lowestBank = Math.Min(
+            BaseHeightAt(x, shape.CenterZ - probeZ),
+            BaseHeightAt(x, shape.CenterZ + probeZ));
+        var level = Math.Min(BaseHeightAt(x, z) - WaterDrop, lowestBank - 0.55);
+        level = Math.Max(level, BaseHeightAt(x, shape.CenterZ) - 1.25);
+        return shape with { WaterLevel = level };
+    }
+
+    /// <summary>River band geometry only: no terrain evaluation, so it is
+    /// safe to call from inside the height functions themselves.</summary>
+    public RiverSample SampleShape(double x, double z)
     {
         var approximate = (int)Math.Round((z - Offset) / Spacing);
         RiverSample best = RiverSample.None;
@@ -133,10 +172,7 @@ public sealed class RiverMap
             if (distance >= bestDistance) continue;
             bestDistance = distance;
             var halfWidth = HalfWidthAt(index, x);
-            // Water follows the local ground, so the stream descends with the
-            // landscape instead of flooding a lower bank.
-            var level = BaseHeightAt(x, z) - WaterDrop;
-            best = new RiverSample(true, index, center, halfWidth, level, distance);
+            best = new RiverSample(true, index, center, halfWidth, 0, distance);
         }
         return best;
     }
@@ -203,9 +239,24 @@ public sealed class RiverMap
         Math.Max((bridge.NorthGroundY + bridge.SouthGroundY) * 0.5 - 0.12,
             bridge.WaterLevel + 0.37) + 0.08;
 
-    /// <summary>Water level at an X position for one river band.</summary>
-    public double WaterLevelAt(int index, double x) =>
-        BaseHeightAt(x, CenterAt(index, x)) - WaterDrop;
+    /// <summary>Water level at an X position for one river band. Version 2
+    /// clamps the surface below the lower bank so hills can never flood a
+    /// shoreline, while keeping it above the carved bed so the channel never
+    /// runs dry.</summary>
+    public double WaterLevelAt(int index, double x)
+    {
+        var centerZ = CenterAt(index, x);
+        var baseLevel = BaseHeightAt(x, centerZ) - WaterDrop;
+        if (_version < 2) return baseLevel;
+        var halfWidth = HalfWidthAt(index, x);
+        var probeZ = halfWidth + BankTaper + 1.5;
+        var lowestBank = Math.Min(
+            BaseHeightAt(x, centerZ - probeZ),
+            BaseHeightAt(x, centerZ + probeZ));
+        var level = Math.Min(baseLevel, lowestBank - 0.55);
+        // Never above the bed by less than the carved depth allows.
+        return Math.Max(level, BaseHeightAt(x, centerZ) - 1.25);
+    }
 
     /// <summary>
     /// Build the water quads owned by one chunk. Ownership is exact: a quad is

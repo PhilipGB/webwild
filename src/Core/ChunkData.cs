@@ -15,6 +15,10 @@ public sealed class ChunkData
     /// <summary>Biome mix at each terrain grid point, used for colour and props.</summary>
     public BiomeWeights[,] Biomes { get; init; } = new BiomeWeights[0, 0];
 
+    /// <summary>Generator-version-2 environment mix per grid point; null on
+    /// version-1 chunks, whose terrain keeps the meadow/moss/bloom field.</summary>
+    public EnvironmentWeights[,]? Environments { get; init; }
+
     /// <summary>Deterministic props for this chunk, sorted stably.</summary>
     public IReadOnlyList<PropPlacement> Props { get; init; } = Array.Empty<PropPlacement>();
 
@@ -46,6 +50,18 @@ public sealed class ChunkData
                 : BiomeWeights.PureMeadow;
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(biome.Moss));
             h = DeterministicHash.Combine(h, DeterministicHash.Hash(biome.Bloom));
+            if (Environments is { } environments &&
+                environments.GetLength(0) > x && environments.GetLength(1) > z)
+            {
+                var environment = environments[x, z];
+                h = DeterministicHash.Combine(h, DeterministicHash.Hash(environment.Forest));
+                h = DeterministicHash.Combine(h, DeterministicHash.Hash(environment.Woodland));
+                h = DeterministicHash.Combine(h, DeterministicHash.Hash(environment.Wetland));
+                h = DeterministicHash.Combine(h, DeterministicHash.Hash(environment.Shore));
+                h = DeterministicHash.Combine(h, DeterministicHash.Hash(environment.Hills));
+                h = DeterministicHash.Combine(h, DeterministicHash.Hash(environment.Cliff));
+                h = DeterministicHash.Combine(h, DeterministicHash.Hash(environment.Valley));
+            }
         }
         foreach (var water in WaterQuads)
         {

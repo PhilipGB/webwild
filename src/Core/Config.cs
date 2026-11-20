@@ -131,6 +131,11 @@ public sealed class Tuning
 {
     public int SchemaVersion { get; set; } = 1;
     public int Seed { get; set; } = 27011;
+    /// <summary>World-generation algorithm version. Version 1 regenerates
+    /// the v0.3.0/v0.3.1 terrain byte-identically; version 2 adds the eight
+    /// environments. The live value follows the save manifest, never a file
+    /// default, so old gardens never silently change shape.</summary>
+    public int GeneratorVersion { get; set; } = 1;
     public double FixedSimulationTickSeconds { get; set; } = 0.2;
     public WorldBounds WorldBoundsUnits { get; set; } = new();
     public InitialResources Initial { get; set; } = new();
@@ -198,6 +203,7 @@ public sealed class Tuning
     public void Normalise()
     {
         Seed = Math.Max(0, Seed);
+        GeneratorVersion = Math.Clamp(GeneratorVersion, 1, WorldGenerator.CurrentGeneratorVersion);
         FixedSimulationTickSeconds = Math.Clamp(FixedSimulationTickSeconds, 0.05, 1.0);
         MaxSpidersIncludingPlayer = Math.Clamp(MaxSpidersIncludingPlayer, 1, 5);
         Initial.Food = Math.Max(0, Initial.Food);

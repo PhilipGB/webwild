@@ -17,10 +17,19 @@ namespace Webwild.Core;
 /// </summary>
 public sealed class WorldGenerator
 {
+    /// <summary>Current world-generation algorithm. Version 1 is the
+    /// v0.3.0/v0.3.1 meadow/moss/bloom world; version 2 adds the eight
+    /// environments with cliffs. Saves carry the version their terrain was
+    /// generated with, so loading an old garden regenerates byte-identical
+    /// terrain instead of silently rewriting it.</summary>
+    public const int CurrentGeneratorVersion = 2;
+
     private readonly TerrainSampler _sampler;
     private readonly BiomeMap _biomes;
+    private readonly EnvironmentMap? _environments;
     private readonly RiverMap _rivers;
     private readonly int _seed;
+    private readonly int _version;
 
     /// <summary>Chunks covered by the authored landscape. The authored scenes
     /// supply ground here; the generator skips these chunks so the two
@@ -52,16 +61,25 @@ public sealed class WorldGenerator
     /// <summary>Seed of this world; drives terrain, biomes and props.</summary>
     public int Seed => _seed;
 
-    public WorldGenerator(int seed)
+    /// <summary>Generation algorithm version this generator produces.</summary>
+    public int GeneratorVersion => _version;
+
+    public WorldGenerator(int seed, int generatorVersion = 1)
     {
         _seed = seed;
+        _version = Math.Clamp(generatorVersion, 1, CurrentGeneratorVersion);
         _sampler = new TerrainSampler(seed);
         _biomes = new BiomeMap(seed);
-        _rivers = new RiverMap(seed);
+        _rivers = new RiverMap(seed, _version);
+        _environments = _version >= 2 ? new EnvironmentMap(seed, _rivers) : null;
     }
 
     /// <summary>Deterministic river field for water, carving and crossings.</summary>
     public RiverMap Rivers => _rivers;
+
+    /// <summary>The version-2 environment field, or null on version-1
+    /// worlds (which keep their meadow/moss/bloom terrain).</summary>
+    public EnvironmentMap? Environments => _environments;
 
     private static HashSet<ChunkCoordinate> FootprintOf(params WorldRect[] rects)
     {
@@ -114,31 +132,61 @@ public sealed class WorldGenerator
         return _rivers.Sample(x, z);
     }
 
-    /// <summary>Dominant biome name at a world point (diagnostics and probes).</summary>
-    public string BiomeNameAt(double x, double z) => _biomes.WeightsAt(x, z).Dominant switch
+    /// <summary>Dominant environment or biome name at a world point
+    /// (diagnostics, probes and the zone banner).</summary>
+    public string BiomeNameAt(double x, double z)
     {
-        BiomeKind.Moss => "moss",
-        BiomeKind.Bloom => "bloom",
-        _ => "meadow"
-    };
+        if (_environments is { } environments)
+            return EnvironmentMap.KindName(environments.WeightsAt(x, z).Dominant);
+        return _biomes.WeightsAt(x, z).Dominant switch
+        {
+            BiomeKind.Moss => "moss",
+            BiomeKind.Bloom => "bloom",
+            _ => "meadow"
+        };
+    }
 
-    /// <summary>Weight of one named biome at a world point in [0, 1].</summary>
+    /// <summary>Weight of one named environment (version 2) or biome
+    /// (version 1) at a world point in [0, 1].</summary>
     public double BiomeWeightAt(double x, double z, string biome)
     {
-        var weights = _biomes.WeightsAt(x, z);
+        if (_environments is { } environments)
+        {
+            var weights = environments.WeightsAt(x, z);
+            return biome switch
+            {
+                "forest" => weights.Forest,
+                "woodland" => weights.Woodland,
+                "wetland" => weights.Wetland,
+                "shore" => weights.Shore,
+                "hills" => weights.Hills,
+                "cliff" => weights.Cliff,
+                "valley" => weights.Valley,
+                _ => weights.Meadow
+            };
+        }
+        var legacy = _biomes.WeightsAt(x, z);
         return biome switch
         {
-            "moss" => weights.Moss,
-            "bloom" => weights.Bloom,
-            "meadow" => weights.Meadow,
+            "moss" => legacy.Moss,
+            "bloom" => legacy.Bloom,
+            "meadow" => legacy.Meadow,
             _ => 0
         };
     }
 
-    /// <summary>Noise plus biome height before landmark blending. Exposed for
-    /// tests and for tools that need the generated baseline at a point.</summary>
+    /// <summary>Noise plus environment/biome height before landmark
+    /// blending. Exposed for tests and for tools that need the generated
+    /// baseline at a point.</summary>
     public double BaseHeightAt(double x, double z)
     {
+        if (_environments is { } environments)
+        {
+            var weights = environments.WeightsAt(x, z);
+            return _sampler.HeightAt(x, z) * EnvironmentMap.Amplitude(weights) +
+                   EnvironmentMap.HeightOffset(weights) +
+                   environments.CliffFacesAt(x, z, weights.Cliff);
+        }
         var biome = _biomes.WeightsAt(x, z);
         return _sampler.HeightAt(x, z) + BiomeMap.HeightOffset(biome);
     }
@@ -158,6 +206,8 @@ public sealed class WorldGenerator
         var resolution = WorldChunk.TerrainResolution;
         var heights = new double[resolution, resolution];
         var biomes = new BiomeWeights[resolution, resolution];
+        EnvironmentWeights[,]? environments = _environments is null ? null
+            : new EnvironmentWeights[resolution, resolution];
         var originX = coordinate.X * WorldChunk.Size;
         var originZ = coordinate.Z * WorldChunk.Size;
         for (var ix = 0; ix < resolution; ix++)
@@ -167,6 +217,8 @@ public sealed class WorldGenerator
             var z = originZ + iz * WorldChunk.TerrainSpacing;
             heights[ix, iz] = HeightAt(x, z);
             biomes[ix, iz] = _biomes.WeightsAt(x, z);
+            if (environments is not null)
+                environments[ix, iz] = AuthoredEdgeEnvironment(x, z);
         }
 
         return new ChunkData
@@ -174,11 +226,49 @@ public sealed class WorldGenerator
             Coordinate = coordinate,
             Heights = heights,
             Biomes = biomes,
+            Environments = environments,
             Props = GenerateProps(coordinate, originX, originZ, heights),
             WaterQuads = _rivers.WaterQuadsForChunk(coordinate),
             Bridges = _rivers.BridgesForChunk(coordinate, this),
             FoodSources = GenerateFoodSources(coordinate)
         };
+    }
+
+    /// <summary>Environment weights with a forced meadow margin around the
+    /// authored landmarks, so the hand-made scenes always meet familiar
+    /// grass instead of rock or sand at their blend ring. The strongest
+    /// landmark influence wins, so a point between two landmarks is meadow
+    /// whenever either of them is close.</summary>
+    /// <summary>Environment weights at a world point including the authored
+    /// meadow margin — the same value the chunk grid stores.</summary>
+    public EnvironmentWeights EnvironmentAt(double x, double z) =>
+        _environments is null
+            ? EnvironmentWeights.PureMeadow
+            : AuthoredEdgeEnvironment(x, z);
+
+    private EnvironmentWeights AuthoredEdgeEnvironment(double x, double z)
+    {
+        var closest = double.PositiveInfinity;
+        foreach (var rect in AuthoredRects)
+            closest = Math.Min(closest, rect.DistanceOutside(x, z));
+        var field = _environments!.WeightsAt(x, z);
+        if (closest > AuthoredBlendMetres + 4)
+            return field;
+        if (closest <= AuthoredBlendMetres + 1)
+            return EnvironmentWeights.PureMeadow;
+        var t = Smooth((closest - AuthoredBlendMetres - 1) / 3.0);
+        return BlendTowardsMeadow(field, t);
+    }
+
+    private static EnvironmentWeights BlendTowardsMeadow(EnvironmentWeights weights, double t)
+    {
+        if (t >= 1) return weights;
+        return new EnvironmentWeights(
+            weights.Meadow + (1 - weights.Meadow) * t,
+            weights.Forest * (1 - t), weights.Woodland * (1 - t),
+            weights.Wetland * (1 - t), weights.Shore * (1 - t),
+            weights.Hills * (1 - t), weights.Cliff * (1 - t),
+            weights.Valley * (1 - t));
     }
 
     /// <summary>
@@ -216,19 +306,39 @@ public sealed class WorldGenerator
 
             var biome = _biomes.WeightsAt(worldX, worldZ);
             var roll = stream.NextDouble();
-            var kind = biome.Dominant switch
+            string kind;
+            int amount;
+            if (_environments is { } environments)
             {
-                BiomeKind.Moss => roll < 0.62 ? "mushrooms" : "berries",
-                BiomeKind.Bloom => roll < 0.70 ? "berries" : "seeds",
-                _ => roll < 0.55 ? "seeds" : "berries"
-            };
+                var environment = environments.WeightsAt(worldX, worldZ);
+                kind = environment.Dominant switch
+                {
+                    EnvironmentKind.Forest => roll < 0.66 ? "mushrooms" : "berries",
+                    EnvironmentKind.Woodland => roll < 0.60 ? "berries" : "mushrooms",
+                    EnvironmentKind.Wetland => roll < 0.70 ? "seeds" : "mushrooms",
+                    EnvironmentKind.Shore => roll < 0.62 ? "seeds" : "berries",
+                    EnvironmentKind.Hills => roll < 0.58 ? "berries" : "seeds",
+                    EnvironmentKind.Cliff => roll < 0.66 ? "seeds" : "berries",
+                    EnvironmentKind.Valley => roll < 0.55 ? "berries" : "seeds",
+                    _ => roll < 0.55 ? "seeds" : "berries"
+                };
+            }
+            else
+            {
+                kind = biome.Dominant switch
+                {
+                    BiomeKind.Moss => roll < 0.62 ? "mushrooms" : "berries",
+                    BiomeKind.Bloom => roll < 0.70 ? "berries" : "seeds",
+                    _ => roll < 0.55 ? "seeds" : "berries"
+                };
+            }
             var label = kind switch
             {
                 "mushrooms" => "mushrooms",
                 "seeds" => "sunflower seeds",
                 _ => "berries"
             };
-            var amount = kind == "berries" ? 2 : 1;
+            amount = kind == "berries" ? 2 : 1;
             sources.Add(new FoodSourceDefinition(
                 $"food:{coordinate.Id}:{slot}:{kind}",
                 coordinate, kind, label, amount,
@@ -261,13 +371,23 @@ public sealed class WorldGenerator
 
             // A broad density mask creates open lawns and thicker patches.
             var density = _sampler.Noise(worldX, worldZ, 31, 3);
-            if (density < 0.16) continue;
+            // Dense woodland feels fuller; rocky and wet kinds stay sparse.
+            var densityFloor = _environments is null
+                ? 0.16
+                : DensityFloorOf(_environments.WeightsAt(worldX, worldZ).Dominant);
+            if (density < densityFloor) continue;
 
             // No dressing in the channel: the carved bed is visible through
             // the water and props must not float on it.
             if (_rivers.Sample(worldX, worldZ).IsWater) continue;
-            var kind = PickKind(stream, _biomes.WeightsAt(worldX, worldZ));
+            var kind = _environments is { } environments
+                ? PickEnvironmentKind(stream, environments.WeightsAt(worldX, worldZ))
+                : PickKind(stream, _biomes.WeightsAt(worldX, worldZ));
             if (kind is null) continue;
+            // Cliffs dress only their flat shelves; a prop pinned to a steep
+            // face would hang off the rock.
+            if (_environments is not null && SlopeTooSteepForProps(worldX, worldZ))
+                continue;
             var position = new Vec3(
                 worldX,
                 HeightAt(worldX, worldZ) + PropSink(kind),
@@ -287,6 +407,112 @@ public sealed class WorldGenerator
                     : a.Position.Z.CompareTo(b.Position.Z);
         });
         return props;
+    }
+
+    private bool SlopeTooSteepForProps(double x, double z)
+    {
+        const double step = 0.5;
+        var h = HeightAt(x, z);
+        var dx = HeightAt(x + step, z) - HeightAt(x - step, z);
+        var dz = HeightAt(x, z + step) - HeightAt(x, z - step);
+        return Math.Sqrt(dx * dx + dz * dz) / (2 * step) > 0.8;
+    }
+
+    private static double DensityFloorOf(EnvironmentKind kind) => kind switch
+    {
+        EnvironmentKind.Forest => 0.04,
+        EnvironmentKind.Woodland => 0.10,
+        EnvironmentKind.Wetland => 0.12,
+        EnvironmentKind.Shore => 0.14,
+        EnvironmentKind.Hills => 0.22,
+        EnvironmentKind.Cliff => 0.34,
+        EnvironmentKind.Valley => 0.10,
+        _ => 0.16
+    };
+
+    /// <summary>Version-2 dressing: each environment picks from its own
+    /// prop vocabulary, using only the supplied in-repo asset packs.</summary>
+    private static string? PickEnvironmentKind(Random stream, EnvironmentWeights weights)
+    {
+        var roll = stream.NextDouble();
+        switch (weights.Dominant)
+        {
+            case EnvironmentKind.Forest:
+                if (roll < 0.16) return "fern";
+                if (roll < 0.30) return "leaf_pile";
+                if (roll < 0.42) return "fallen_leaf";
+                if (roll < 0.54) return "mushroom";
+                if (roll < 0.64) return "mushroom_blue";
+                if (roll < 0.76) return "broad_leaf";
+                if (roll < 0.88) return "sapling";
+                return "bush";
+            case EnvironmentKind.Woodland:
+                if (roll < 0.22) return "bush";
+                if (roll < 0.36) return "grass";
+                if (roll < 0.50) return "fern";
+                if (roll < 0.62) return "clover";
+                if (roll < 0.74) return "clover_tall";
+                if (roll < 0.86) return "sapling";
+                return "tallgrass";
+            case EnvironmentKind.Wetland:
+                if (roll < 0.40) return "reed";
+                if (roll < 0.72) return "marsh_grass";
+                if (roll < 0.90) return "cattail";
+                return "mushroom_blue";
+            case EnvironmentKind.Shore:
+                if (roll < 0.28) return "pebble";
+                if (roll < 0.48) return "pebble_cluster";
+                if (roll < 0.66) return "flat_stone";
+                if (roll < 0.80) return "soil_mound";
+                return "small_log";
+            case EnvironmentKind.Hills:
+                if (roll < 0.34) return "boulder";
+                if (roll < 0.58) return "moss_rock";
+                if (roll < 0.76) return "pebble_cluster";
+                if (roll < 0.90) return "grass";
+                return "soil_mound";
+            case EnvironmentKind.Cliff:
+                if (roll < 0.44) return "moss_rock";
+                if (roll < 0.80) return "boulder";
+                return "pebble_cluster";
+            case EnvironmentKind.Valley:
+                if (roll < 0.26) return "clover";
+                if (roll < 0.42) return "daisy";
+                if (roll < 0.58) return "grass";
+                if (roll < 0.72)
+                {
+                    var flower = stream.Next(3);
+                    return flower switch
+                    {
+                        0 => "flower_yellow",
+                        1 => "flower_pink",
+                        _ => "flower_purple"
+                    };
+                }
+                if (roll < 0.86) return "clover_tall";
+                return "fern";
+            default:
+                // Open meadow keeps the authored garden's balanced dressing.
+                if (roll < 0.40) return "grass";
+                if (roll < 0.58) return "clover";
+                if (roll < 0.68) return "tallgrass";
+                if (roll < 0.78)
+                {
+                    var flower = stream.Next(3);
+                    return flower switch
+                    {
+                        0 => "flower_yellow",
+                        1 => "flower_pink",
+                        _ => "flower_purple"
+                    };
+                }
+                if (roll < 0.84) return "fern";
+                if (roll < 0.90) return "pebble";
+                if (roll < 0.94) return "flat_stone";
+                if (roll < 0.97) return "mushroom";
+                if (roll < 0.99) return "moss_patch";
+                return "small_log";
+        }
     }
 
     private static string? PickKind(Random stream, BiomeWeights biome)
@@ -345,7 +571,8 @@ public sealed class WorldGenerator
     /// <summary>Sink props slightly so bases meet the ground without floating.</summary>
     private static double PropSink(string kind) => kind switch
     {
-        "pebble" or "flat_stone" or "small_log" or "moss_patch" => -0.05,
+        "pebble" or "flat_stone" or "small_log" or "moss_patch" or "boulder" or
+        "moss_rock" or "pebble_cluster" or "soil_mound" or "cattail" => -0.05,
         _ => -0.03
     };
 
@@ -356,12 +583,27 @@ public sealed class WorldGenerator
             "grass" => 0.9,
             "tallgrass" => 1.0,
             "clover" => 0.85,
+            "clover_tall" => 1.05,
             "fern" => 0.8,
             "pebble" => 0.9,
+            "pebble_cluster" => 1.1,
             "flat_stone" => 1.1,
             "mushroom" => 0.85,
+            "mushroom_blue" => 0.9,
             "moss_patch" => 1.2,
             "small_log" => 0.8,
+            "boulder" => 1.15,
+            "moss_rock" => 1.05,
+            "soil_mound" => 1.0,
+            "bush" => 1.1,
+            "broad_leaf" => 0.95,
+            "leaf_pile" => 1.0,
+            "fallen_leaf" => 0.85,
+            "daisy" => 0.9,
+            "reed" => 1.1,
+            "marsh_grass" => 1.0,
+            "cattail" => 1.2,
+            "sapling" => 1.25,
             _ => 0.9
         };
         return baseScale * (0.8 + stream.NextDouble() * 0.5);

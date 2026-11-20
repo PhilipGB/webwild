@@ -208,6 +208,9 @@ public sealed class SaveGameData
     public long Tick { get; set; }
     public double ElapsedSeconds { get; set; }
     public string ActiveRegionId { get; set; } = RegionIds.GardenClearing;
+    /// <summary>World-generation algorithm this garden was generated with;
+    /// 1 for all pre-H4 saves. The manifest mirrors it for load-time checks.</summary>
+    public int GeneratorVersion { get; set; } = 1;
     public PlayerSave Player { get; set; } = new();
     public List<RegionPlayerSave> RegionPlayers { get; set; } = new();
 

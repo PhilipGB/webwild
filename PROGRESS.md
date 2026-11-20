@@ -58,21 +58,22 @@ and [#20](https://github.com/PhilipGB/webwild/pull/20) (v0.2.2 hardening).
 | v0.3.1 H1 | Worker autonomy: players and story regions no longer redirect helpers; named individual summon, physical follow, release home, durable home region and colony panel | DONE, merged PR [#38](https://github.com/PhilipGB/webwild/pull/38) (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `WorkerNavigationTests`; 242 unit tests; 462 headless / 463 rendered runtime checks; screenshots 43–45a |
 | v0.3.1 H2 | Food markers and physical worker collection: map-marked sources, named assignment, travel/collect/carry/deliver, exactly-once credit, bridge return routes, regrowth waiting | DONE, merged PR [#39](https://github.com/PhilipGB/webwild/pull/39) (Windows runtime NOT VERIFIED) | `docs/prs/v0.3.1.md`; `WorkerForagingTests`; 249 unit tests; 482 headless / 483 rendered runtime checks; screenshots 48–50 |
 | v0.3.1 H3 | Procedural bridges: player-built silk crossings over generated rivers with a configurable spacing policy, nearby-bridge guidance, shared worker traversal model, explicit route invalidation, persistent decks | DONE, merged PR [#40](https://github.com/PhilipGB/webwild/pull/40) (Windows runtime NOT VERIFIED; screenshots captured, not visually inspected) | `docs/prs/v0.3.1.md`; `PlayerRiverBridgeTests`; 270 unit tests; 512 headless / 513 rendered runtime checks; Linux export 57/512/513; screenshots 51–54 |
+| v0.3.1 H4 | World traversal: surface-aware climbing on generated cliffs and climbable authored surfaces, a held-jump leap, and eight distinct environments with an explicit generator version that keeps old saves byte-identical | IN PROGRESS on `feat/v0.3.1-h4-world-traversal` (Windows runtime NOT VERIFIED; screenshots captured, not visually inspected) | `docs/prs/v0.3.1.md`; `EnvironmentTests`; 287 unit tests; 529 headless / 530 rendered runtime checks; Linux export 57/529/530; screenshots 33–34, 55 |
 
 ## Verification summary
 
-Current v0.3.1 H3 state; the per-phase history is in `docs/prs/v0.3.1.md`.
+Current v0.3.1 H4 state; the per-phase history is in `docs/prs/v0.3.1.md`.
 
-- `dotnet test`: **270 passed, 0 failed** (249 at H2 + 21 river-bridge cases).
+- `dotnet test`: **287 passed, 0 failed** (270 at H3 + 17 environment cases).
 - Scene contract validation: **57 passed, 0 failed** across both regions.
-- Headless runtime probe: **512 passed, 0 failed**.
-- Rendered runtime probe (Xvfb, 1280×720): **513 passed, 0 failed**.
-- Exported Linux build: 57 scene / 512 headless / 513 rendered, 0 failed.
+- Headless runtime probe: **529 passed, 0 failed**.
+- Rendered runtime probe (Xvfb, 1280×720): **530 passed, 0 failed**.
+- Exported Linux build: 57 scene / 529 headless / 530 rendered, 0 failed.
 - Linux x64 export: built successfully and launched.
 - Windows x64 export: built previously; runtime **NOT VERIFIED** (no Windows host).
 - Legacy saves v0.1.0/v0.1.1/v0.1.2 and v0.2.x/v0.3.0: migration tests pass with real fixtures.
 - Child playtest: **NOT VERIFIED** — see `docs/PLAYTEST_NOTES.md`.
-- H3 screenshots: captured (51–54); **not visually inspected on this host**.
+- H3/H4 screenshots: captured (33–34, 51–55); **not visually inspected on this host**.
 
 ## Known limitations
 

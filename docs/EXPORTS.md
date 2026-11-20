@@ -1,3 +1,32 @@
+## Published v0.3.1 release archives
+
+GitHub release: https://github.com/PhilipGB/webwild/releases/tag/v0.3.1
+
+```text
+9e7755799012a412a2e7393be4cb3f71fbf0fcc5a4942b0172ef6cecdc5600b2  Webwild-v0.3.1-linux-x64.zip
+a1790429bfd3b1c75d678311993d0d52fb0e4b40a0118b811499064619134fdf  Webwild-v0.3.1-windows-x64.zip
+```
+
+The Linux archive was re-downloaded from the published release, SHA-256
+verified, extracted, and rerun headless and rendered under Xvfb: **581
+headless / 582 rendered**, 0 failed. The Windows archive was published but
+not launched (no Windows host).
+
+## Linux x64 — v0.3.1 release build
+
+- Binary: `exports/linux/Webwild.x86_64`, SHA-256
+  `d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc`
+- Pack: `exports/linux/Webwild.pck`, SHA-256
+  `9f04550d1ef2057b4080b5697c505111e1a6e3718c6cdf4fc4990a7bfe9e36`
+- Scene validation 57/57; headless probe 581/581; rendered Xvfb probe
+  582/582; all zero failures.
+
+## Windows x64 — v0.3.1 release build (runtime NOT VERIFIED)
+
+- Binary: `exports/windows/Webwild.exe`, SHA-256
+  `4760d3b83d01498d13ea6ff66b7867e4bf81fc5016f404c7472a5bc4cdc15647`
+- PE32+ x86-64 built from the same source; not launched (no Windows host).
+
 ## Published v0.3.0 release archives
 
 GitHub release: https://github.com/PhilipGB/webwild/releases/tag/v0.3.0

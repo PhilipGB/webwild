@@ -8,13 +8,14 @@ catch flying insects, build silk bridges, hatch helper spiders, weather a gust o
 wind, forage wild food and complete the garden story before following the
 meadows to Reedwater Bank.
 
-This repository is the **v0.3.0 "Never-Ending World"** build. The two authored
-landmarks now sit in one continuous, deterministically generated world: three
-biomes, carved rivers with old plank crossings, a durable exploration map,
-Return Home, wild food that regrows, and helpers that physically walk between
-landmarks, keep simulating off screen and can be summoned. All deterministic
-rules live in `src/Core` with no `Godot.*` dependency; C# adapts those rules to
-3D presentation, physics, input and UI.
+This repository is the **v0.3.1 "Requirements Completion and Hardening"**
+build. It completes the v0.3.0 review findings: one safe New Garden workflow,
+independent named helpers, physical wild-food delivery, player-built silk
+bridges over generated rivers, general cliff climbing with a held-jump leap,
+eight distinct environments with save-compatible world generation, and a
+durable region-bitset exploration map with pan, zoom, a home arrow and note
+markers. All deterministic rules live in `src/Core` with no `Godot.*`
+dependency; C# adapts those rules to 3D presentation, physics, input and UI.
 
 ## Requirements
 
@@ -156,13 +157,13 @@ Final local export paths (not committed as binaries because they are large):
 - Windows x64: `exports/windows/Webwild.exe` plus `Webwild.pck` and
   `data_Webwild_windows_x86_64/`
 
-The v0.3.0 release archives are published on
-[GitHub](https://github.com/PhilipGB/webwild/releases/tag/v0.3.0):
-`Webwild-v0.3.0-linux-x64.zip` and `Webwild-v0.3.0-windows-x64.zip`. The Linux
-archive re-downloads, verifies and passes 432 headless / 433 rendered probes.
-The Windows export builds as a PE32+ x86-64 executable, but **Windows runtime
-verification is NOT VERIFIED** because no Windows host is available. See
-`docs/EXPORTS.md` for checksums and exact commands.
+The v0.3.1 release archives are published on
+[GitHub](https://github.com/PhilipGB/webwild/releases/tag/v0.3.1):
+`Webwild-v0.3.1-linux-x64.zip` and `Webwild-v0.3.1-windows-x64.zip`. The Linux
+archive re-downloads, verifies and passes **581 headless / 582 rendered**
+probes. The Windows export builds as a PE32+ x86-64 executable, but **Windows
+runtime verification is NOT VERIFIED** because no Windows host is available.
+See `docs/EXPORTS.md` for checksums and exact commands.
 
 ## Evidence and limitations
 

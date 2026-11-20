@@ -316,6 +316,7 @@ public partial class GardenClearing : Node3D
         _ui.WorkerSummonRequested += SummonWorker;
         _ui.WorkerReleaseRequested += ReleaseWorker;
         _ui.MapMarkerSelected += OnMapMarkerSelected;
+        _ui.MapNotePlaced += OnMapNotePlaced;
         _ui.RiverBuildToolRequested += ToggleRiverBuild;
         _ui.RiverGuidanceUseRequested += UseNearbyBridge;
         _ui.RiverGuidanceDismissRequested += DismissRiverGuidance;
@@ -430,7 +431,12 @@ public partial class GardenClearing : Node3D
         _player.FallResetPosition = ToWorld(region.Id, region.PlayerSpawn);
         _player.CameraPivot.Rotation = new Vector3(0, (float)savedPlayer.RotationY, 0);
         _player.InputEnabled = true;
-        _explored.Restore(data.ExploredChunks);
+        // Regions are the durable form; the legacy id list is the pre-H5
+        // import path. A manifest carries exactly one of the two.
+        if (data.ExplorationRegions is { Count: > 0 })
+            _explored.RestoreRegions(data.ExplorationRegions);
+        else
+            _explored.Restore(data.ExploredChunks);
         _lastExploredChunk = null;
         TrackExploration();
         _ui.ShowToast($"Welcome back to {region.DisplayName}.", UiKit.Pine, 4.0f);
@@ -724,8 +730,57 @@ public partial class GardenClearing : Node3D
         if (_sim is null || _player is null || _chunks is null) return;
         if (_ui.IsModalOpen) return;
         ClearBuild();
-        _ui.OpenMap(_explored.Snapshot(), PlayerWorld, _chunks.Generator,
-            _sim.VisitedRegions, _sim.MapMarkers);
+        _ui.OpenMap(_explored, PlayerWorld, _chunks.Generator,
+            _sim.VisitedRegions, _sim.MapMarkers, MapWorkersOf(_sim));
+    }
+
+    /// <summary>The helpers as the map shows them: position, plus the
+    /// destination each one is actually walking toward.</summary>
+    private static List<MapWorker> MapWorkersOf(GameSimulation sim) => sim.Workers
+        .Select(worker =>
+        {
+            Vec3? destination = null;
+            if (worker.Travelling)
+                destination = worker.JourneyDestination;
+            else if (worker.FoodPhase is WorkerFoodPhase.ToSource)
+                destination = worker.FoodSourcePosition;
+            else if (worker.FoodPhase is WorkerFoodPhase.ToHome)
+                destination = HomeWorldOf(worker);
+            return new MapWorker(worker.Id, worker.Name, worker.WorldPosition,
+                destination, worker.Travelling || worker.FoodPhase is
+                    WorkerFoodPhase.ToSource or WorkerFoodPhase.ToHome,
+                worker.Summoned);
+        })
+        .ToList();
+
+    private static Vec3 HomeWorldOf(WorkerState worker)
+    {
+        var home = RegionCatalog.Get(worker.HomeRegion) ?? RegionCatalog.Garden;
+        return LandmarkCatalog.ToWorld(home.Id, home.NurseryPosition).Absolute;
+    }
+
+    /// <summary>Refresh the live map's markers and helpers after a note is
+    /// placed or removed, keeping the player's pan and zoom.</summary>
+    private void RefreshOpenMap()
+    {
+        if (_sim is null || _chunks is null || !_ui.IsMapOpen) return;
+        _ui.RefreshMap(_explored, PlayerWorld, _chunks.Generator,
+            _sim.VisitedRegions, _sim.MapMarkers, MapWorkersOf(_sim));
+    }
+
+    private void OnMapNotePlaced(Vec3 worldPosition)
+    {
+        if (_sim is null) return;
+        if (_sim.AddMapMarker(WorldMarkerKind.Note, worldPosition, "Note", out var reason))
+        {
+            _ui.ShowToast("Note marker dropped. Click it on the map to remove it.",
+                UiKit.TealDark, 3.5f);
+        }
+        else
+        {
+            _ui.ShowToast(reason, UiKit.Coral, 3.2f);
+        }
+        RefreshOpenMap();
     }
 
     private void MarkNearestFood()
@@ -754,6 +809,14 @@ public partial class GardenClearing : Node3D
         if (_sim is null || _chunks is null) return;
         var marker = _sim.MapMarkers.FirstOrDefault(item => item.Id == markerId);
         if (marker is null) return;
+        if (marker.Kind == WorldMarkerKind.Note)
+        {
+            // Clicking a note removes it: the map is its own manager, with
+            // no hidden mode or extra confirmation a child must find.
+            if (_sim.RemoveMapMarker(marker.Id))
+                _ui.ShowToast("Note marker removed.", UiKit.TealDark, 3f);
+            return;
+        }
         if (marker.Kind != WorldMarkerKind.Food || string.IsNullOrWhiteSpace(marker.FoodId))
         {
             _ui.ShowToast(string.IsNullOrWhiteSpace(marker.Label) ? "Marker" : marker.Label,
@@ -2342,7 +2405,10 @@ public partial class GardenClearing : Node3D
             return false;
         }
         data = _sim.ExportSave(PlayerLocal, _player.CameraPivot.Rotation.Y, Settings);
-        data.ExploredChunks = _explored.ToIds();
+        // The compact region form carries the history; the legacy id list is
+        // written empty so the manifest never carries both formats.
+        data.ExploredChunks = new List<string>();
+        data.ExplorationRegions = _explored.SnapshotRegions();
         if (!SimulateSaveFailureForProbe && !SaveFoodChunkChanges(out var chunkError))
         {
             error = chunkError;
@@ -3294,12 +3360,46 @@ public partial class GardenClearing : Node3D
     public string ProbeFoodViewPrompt(string id) =>
         _foodViews.TryGetValue(id, out var view) ? view.ProbePrompt : "";
 
-    public int ExploredChunkCount => _explored.Count;
+    public long ExploredChunkCount => _explored.Count;
+
+    // ---- H5 probe instrumentation: durable exploration and the map toolkit ----
+
+    /// <summary>The same area visit <see cref="TrackExploration"/> performs,
+    /// for deterministic exploration scenarios beyond walking speed.</summary>
+    public void ProbeExploreArea(Vec3 world, int radius) =>
+        _explored.VisitArea(ChunkCoordinate.OfWorldPoint(world.X, world.Z), radius);
+
+    public int ExploredRegionCount => _explored.RegionCount;
+    public bool ProbeMapOpen => _ui.IsMapOpen;
+    public void ProbeMapPan(float dx, float dy) => _ui.ProbeMapPan(new Vector2(dx, dy));
+    public void ProbeMapZoom(float factor) => _ui.ProbeMapZoom(factor);
+    public void ProbeMapRecentre() => _ui.ProbeMapRecentre();
+    public bool ProbeMapHomeArrow => _ui.ProbeMapHomeArrow;
+    public double ProbeMapHomeArrowDistance => _ui.ProbeMapHomeArrowDistance;
+    public int ProbeMapWorkerCount => _ui.ProbeMapWorkerCount;
+    public int ProbeMapNoteCount =>
+        _sim?.MapMarkers.Count(marker => marker.Kind == WorldMarkerKind.Note) ?? 0;
+    public string? ProbeFirstNoteId =>
+        _sim?.MapMarkers.FirstOrDefault(marker => marker.Kind == WorldMarkerKind.Note)?.Id;
+
+    /// <summary>Headless fallback for the click-to-place note gesture.</summary>
+    public void ProbePlaceNote(Vec3 world)
+    {
+        if (_sim is not null && _sim.AddMapMarker(WorldMarkerKind.Note, world, "Note", out _))
+            RefreshOpenMap();
+    }
+
+    /// <summary>Headless fallback for the click-a-note-to-remove gesture.</summary>
+    public void ProbeRemoveNote(string id)
+    {
+        if (_sim?.RemoveMapMarker(id) ?? false)
+            RefreshOpenMap();
+    }
     public bool ProbeExploredContains(Vec3 world) =>
         _explored.Contains(ChunkCoordinate.OfWorldPoint(world.X, world.Z));
-    public bool ProbeMapOpen => _ui.IsMapOpen;
     public int ProbeMapCells => _ui.ProbeMapCells;
     public Rect2 ProbeMapButtonRect => _ui.ProbeMapButtonRect;
+    public Rect2 ProbeMapViewRect => _ui.ProbeMapViewRect;
     public Rect2 ProbeMapHomeRect => _ui.ProbeMapHomeRect;
     public void ProbeOpenMap() => OpenMap();
     public void ProbeSelectMapMarker(string id)

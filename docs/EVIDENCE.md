@@ -1132,3 +1132,86 @@ visually inspected on this host** (this environment cannot render images).
 Programmatic pixel checks confirm full 1280×720 frames with scene-matched
 colour distributions; human visual inspection is outstanding and recorded
 as a limitation.
+
+### H5 — durable exploration, map tools and integrated acceptance
+
+Commands run from the repository root on the H5 branch head:
+
+```text
+$ dotnet clean
+$ dotnet build -warnaserror
+0 Warning(s), 0 Error(s)
+
+$ dotnet test
+Passed! - Failed: 0, Passed: 293, Skipped: 0, Total: 293
+
+$ godot --headless --path . --editor --quit
+exit 0
+
+$ godot --headless --path . -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+
+$ godot --headless --path . -- --runtime-probe
+[PROBE] SUMMARY passes=581 failures=0
+
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    godot --path . --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=582 failures=0
+```
+
+The rendered probe runs the complete 43-step acceptance journey in a
+single, uninterrupted game instance (`e2e-01` … `e2e-40`): a new garden,
+M01–M03, three-plus hatched helpers, the garden bridge, a physical walk
+to Reedwater, R01–R03, Return Home, helpers carrying their tasks into the
+wilderness, a forest, a climbed cliff, the held-jump leap, a discovered
+river and built silk bridge crossed both ways, a refused redundant site
+with guidance, a second distant bridge, marked food delivered off-screen
+exactly once, an individually summoned helper following real movement and
+then released, Return Home, save → quit → relaunch → Continue, the bridge
+and regrown food revisited, old map history and markers verified, and an
+in-game New Garden with confirmation followed by a verified restore of
+the previous world. Diagnostics found and fixed during this run: the
+victory/region-complete modals had to be dismissed before walking; region
+insect positions needed a region→world conversion for the collection
+teleport; the Reedwater helper's home region had to be set for R03; and
+resource restores at long milestones mirror the earlier probe sections.
+
+Exported Linux x64 and Windows x64 builds from the same source:
+
+```text
+$ godot --headless --path . --export-release "Linux" exports/linux/Webwild.x86_64
+exit 0
+$ godot --headless --path . --export-release "Windows" exports/windows/Webwild.exe
+exit 0
+$ cd exports/linux
+$ ./Webwild.x86_64 --headless -- --scene-validate
+[SCENE] SUMMARY passes=57 failures=0
+$ ./Webwild.x86_64 --headless -- --runtime-probe
+[PROBE] SUMMARY passes=581 failures=0
+$ xvfb-run -a -s "-screen 0 1280x720x24" \
+    ./Webwild.x86_64 --resolution 1280x720 -- --runtime-probe
+[PROBE] SUMMARY passes=582 failures=0
+```
+
+SHA-256 of the H5 payloads:
+
+```text
+d776f83ae09d82cfa1295fb3d70ad7ab8a77fe66a4cc4f9d42244fae3665d8cc  exports/linux/Webwild.x86_64
+9f04550d1ef2057b4080b5697c505111e1a6e3718c6cdf4fc4990a7bfe9e36  exports/linux/Webwild.pck
+4760d3b83d01498d13ea6ff66b7867e4bf81fc5016f404c7472a5bc4cdc15647  exports/windows/Webwild.exe
+```
+
+The Windows build was produced but not run: no Windows host is available.
+
+New deterministic unit contracts in `ExplorationTests`: a 20,000-chunk
+history keeps its oldest discovery, dense squares remain compact, region
+bitsets round-trip (including invalid payloads), the documented 600-region
+bound holds, manifest round trips keep the compact form with the legacy id
+list empty, growth stays inside the manifest budget, windowed queries
+match the full record, and malformed region records are rejected.
+
+Screenshot `56-end-to-end-restored.png` was captured by the rendered
+probe. **It was not visually inspected on this host** (no image rendering
+available); programmatic pixel checks confirm a full 1280×720 frame with
+scene-matched colour distributions. Human visual inspection of the H3–H5
+screenshots remains outstanding and is recorded as a limitation.

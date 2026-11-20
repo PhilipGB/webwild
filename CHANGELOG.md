@@ -53,6 +53,18 @@ Released phases so far:
 - An explicit `GeneratorVersion` keeps every existing save regenerating
   its original terrain byte-identically; new gardens get the new world.
 
+### H5 — final hardening (this phase)
+
+- Exploration history is durable and region-partitioned: compact 64×64
+  chunk bitsets replace the old 12,000-chunk eviction, with legacy id-list
+  migration and a documented, far-out region bound.
+- The map pans by dragging and zooms by wheel, shows a home direction
+  arrow when the Garden is off-view, lets the player drop and remove note
+  markers by clicking, and draws helpers with their live destinations.
+- A single uninterrupted gameplay session exercises the complete 43-step
+  acceptance sequence, including save/quit/relaunch/continue and a
+  verified New Garden/restore at the end.
+
 ## Webwild v0.3.0 — Never-Ending World
 
 A ten-phase expansion that turns the two authored regions into one continuous,

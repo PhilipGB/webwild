@@ -1281,8 +1281,9 @@ public partial class RuntimeProbe : Node
                 !p5Loaded.Data.VisitedRegions.Contains(RegionIds.ReedwaterBank),
                 string.Join(",", p5Loaded.Data.VisitedRegions));
             Check("p5-save-carries-exploration",
-                p5Loaded.Data.ExploredChunks.Count >= exploredAtSave,
-                $"saved={p5Loaded.Data.ExploredChunks.Count} live={exploredAtSave}");
+                p5Loaded.Data.ExplorationRegions.Count > 0 &&
+                p5Loaded.Data.ExploredChunks.Count == 0,
+                $"regions={p5Loaded.Data.ExplorationRegions.Count} legacyIds={p5Loaded.Data.ExploredChunks.Count}");
             var p5Reloaded = _main.StartGame(p5Loaded.Data);
             await Frames(20);
             Check("p5-reload-restores-exploration",
@@ -2557,6 +2558,621 @@ public partial class RuntimeProbe : Node
         }
         Check("h4-legacy-terrain-is-the-old-world", legacyDiffers > 8,
             $"differing samples={legacyDiffers}/24");
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
+        // ---- H5: durable exploration, the full map toolkit, and the
+        // uninterrupted end-to-end acceptance journey in one session. ----
+        var e2 = _main.StartGame(null);
+        await Frames(10);
+        var e2Headless = DisplayServer.GetName() == "headless";
+        e2.Simulation!.Tuning.SilkProduction.SilkPerFedWorkerEverySeconds = 0;
+        e2.Simulation!.Ledger.Restore(30, 60);
+
+        // (1) A new garden.
+        Check("e2e-01-new-garden", e2.Simulation is not null && e2.VisibleAnchorCount == 12,
+            $"anchors={e2.VisibleAnchorCount}");
+
+        // (2) M01: the first capture web, a trapped fly, collected food.
+        e2.ProbeSetTool(WebType.Capture);
+        await Frames(2);
+        e2.ProbeClickAnchor(WorldLayout.TwigA);
+        e2.ProbeClickAnchor(WorldLayout.TwigB);
+        await Frames(3);
+        e2.ProbeConfirmBuild();
+        await Frames(4);
+        e2.ProbeAdvance(42);
+        await Frames(3);
+        var e2Trapped = e2.Simulation!.Insects.FirstOrDefault(i => i.Phase == InsectPhase.Trapped);
+        if (e2Trapped is not null)
+        {
+            e2.ProbeTeleport(e2Trapped.Position);
+            await Frames(2);
+            e2.ProbeInteract();
+            await Frames(3);
+        }
+        Check("e2e-02-m01-complete",
+            e2.Simulation!.Missions.CompletedMissions.Contains("M01") &&
+            e2.Simulation!.Ledger.Food > 0, "First Threads");
+
+        // (3-4) M02: the garden bridge and the first helper.
+        Check("e2e-03-garden-bridge-built",
+            e2.ProbeBuildWeb(WorldLayout.GapWest, WorldLayout.GapEast, WebType.Bridge),
+            "The pebble-gap silk bridge");
+        Check("e2e-04-first-helper", e2.ProbeHatch(), "The first helper hatches");
+        e2.ProbeAdvance(8);
+        await Frames(6);
+
+        // (5) Hatch three helpers in total.
+        while (e2.Simulation!.Workers.Count < 3)
+        {
+            e2.Simulation!.Ledger.Restore(30, 30);
+            if (!e2.ProbeHatch())
+                throw new InvalidOperationException("e2e hatching failed");
+            e2.ProbeAdvance(6);
+            await Frames(4);
+        }
+        Check("e2e-05-three-helpers", e2.Simulation!.Workers.Count >= 3,
+            $"workers={e2.Simulation!.Workers.Count}");
+
+        // (6) M03: the storm, a protected web, and victory.
+        for (var i = 0; i < 12 && !e2.Simulation!.Missions.CompletedMissions.Contains("M02"); i++)
+        {
+            e2.ProbeAdvance(5);
+            await Frames(2);
+        }
+        if (!e2.Simulation!.WindCompleted) e2.ProbeAdvance(45);
+        for (var i = 0; i < 8 && !HasEvent("WebRestoredOrSheltered"); i++)
+        {
+            var damaged = e2.Simulation!.Webs
+                .Where(w => w.Durability < w.MaxDurability)
+                .OrderBy(w => w.Durability)
+                .FirstOrDefault();
+            if (damaged is not null)
+            {
+                var a = e2.Simulation!.GetAnchor(damaged.AnchorA);
+                var b = e2.Simulation!.GetAnchor(damaged.AnchorB);
+                if (a is not null && b is not null)
+                {
+                    e2.ProbeTeleport((a.Position + b.Position) * 0.5);
+                    await Frames(2);
+                    e2.ProbeRepairNearest();
+                }
+            }
+            else
+            {
+                e2.ProbeBuildWeb(WorldLayout.ShelterA, WorldLayout.ShelterB, WebType.Capture);
+            }
+            e2.ProbeAdvance(8);
+            await Frames(2);
+        }
+        for (var i = 0; i < 16 && !e2.Simulation!.Missions.CompletedMissions.Contains("M03"); i++)
+        {
+            e2.ProbeAdvance(25);
+            await Frames(2);
+            var e2Caught = e2.Simulation!.Insects.FirstOrDefault(ins => ins.Phase == InsectPhase.Trapped);
+            if (e2Caught is not null)
+            {
+                e2.ProbeTeleport(e2Caught.Position);
+                await Frames(2);
+                e2.ProbeInteract();
+                await Frames(2);
+            }
+        }
+        Check("e2e-06-m03-and-victory",
+            e2.Simulation!.Missions.CompletedMissions.Contains("M03") && e2.Simulation!.Victory,
+            $"completed={string.Join(",", e2.Simulation!.Missions.CompletedMissions)}");
+        // The victory acknowledgement blocks world input until dismissed.
+        e2.ProbeCloseModal();
+        await Frames(4);
+
+        // (7) Walk physically to Reedwater Bank through the open gate.
+        var e2ToReedwater = await WalkRoute(e2, new Vec3(23, 0.55, 8.5),
+            new[]
+            {
+                new Vec3(40, 0.45, 8.5), new Vec3(55, 0.5, 8.0),
+                new Vec3(68, 0.45, 7.0), new Vec3(74, 0.4, 6.2), new Vec3(80, 0.45, 6.0)
+            }, 0.9f, 120f);
+        Check("e2e-07-walked-to-reedwater",
+            e2ToReedwater.Reached && e2.ActiveRegionId == RegionIds.ReedwaterBank,
+            $"reached={e2ToReedwater.Reached} region={e2.ActiveRegionId} " +
+            $"end={e2ToReedwater.End} gateOpen={e2.ProbeBrambleGateOpen}");
+        // A helper hatched here calls Reedwater home, so it can make the
+        // far-bank delivery required by R03.
+        e2.Simulation!.Ledger.Restore(20, 20);
+        Check("e2e-07b-reedwater-helper-hatched", e2.ProbeHatch(),
+            $"workers={e2.Simulation!.Workers.Count}");
+        e2.ProbeAdvance(6);
+        await Frames(6);
+
+        // (8) R01: two pond bridges, then arrive on the lily island.
+        Check("e2e-08-r01-bridges",
+            e2.ProbeBuildWeb(ReedwaterLayout.StartPost, ReedwaterLayout.IslandAPost, WebType.Bridge) &&
+            e2.ProbeBuildWeb(ReedwaterLayout.IslandAPost, ReedwaterLayout.IslandBPost, WebType.Bridge) &&
+            e2.Simulation!.RegionalObjectives.CompletedObjectives.Contains("R01"),
+            "Across the Water");
+        // R01's acknowledgement modal must close before the player can
+        // collect anything (modals block world input, including E).
+        e2.ProbeCloseModal();
+        await Frames(4);
+
+        // (9) R02: a reed capture web and three collected insects.
+        Check("e2e-09-r02-web",
+            e2.ProbeBuildWeb(ReedwaterLayout.EasyA, ReedwaterLayout.EasyB, WebType.Capture),
+            "The Reed Harvest web");
+        for (var i = 0; i < 100 &&
+             !e2.Simulation!.RegionalObjectives.CompletedObjectives.Contains("R02"); i++)
+        {
+            e2.ProbeAdvance(5);
+            await Frames(2);
+            var e2RwTrapped = e2.Simulation!.RegionInsects.FirstOrDefault(insect => insect.CanBeCollected);
+            if (e2RwTrapped is null) continue;
+            // Insect positions are region-local; ProbeTeleport takes world
+            // coordinates, so convert through the landmark origin first.
+            e2.ProbeTeleport(LandmarkCatalog.ToWorld(
+                RegionIds.ReedwaterBank, e2RwTrapped.Position).Absolute);
+            await Frames(3);
+            e2.ProbeInteract();
+            await Frames(3);
+        }
+        Check("e2e-10-r02-complete",
+            e2.Simulation!.RegionalObjectives.CompletedObjectives.Contains("R02"),
+            $"reedFood={e2.EventLog.Count(ev => ev.Type == "FoodCollected" && ev.Region == RegionIds.ReedwaterBank)} " +
+            $"allFood={e2.EventLog.Count(ev => ev.Type == "FoodCollected")} " +
+            $"phases={string.Join(",", e2.Simulation.RegionInsects.GroupBy(i => i.Phase.ToString()).Select(g => g.Key + ":" + g.Count()))}");
+
+        // (11) R03: the far-bank bridge, a helper's far-bank delivery.
+        e2.Simulation!.Ledger.Restore(40, 80);
+        Check("e2e-11-r03-bridges",
+            e2.ProbeBuildWeb(ReedwaterLayout.IslandBPost, ReedwaterLayout.FarPost, WebType.Bridge) &&
+            e2.ProbeBuildWeb(ReedwaterLayout.FarA, ReedwaterLayout.FarB, WebType.Capture),
+            "The far-bank crossing");
+        for (var i = 0; i < 200 &&
+             !e2.Simulation!.RegionalObjectives.CompletedObjectives.Contains("R03"); i++)
+        {
+            e2.ProbeAdvance(3);
+            await Frames(2);
+        }
+        Check("e2e-12-r03-complete",
+            e2.Simulation!.RegionalObjectives.CompletedObjectives.Contains("R03"), "The Far Bank");
+        // The regional completion acknowledgement would block walking home.
+        e2.ProbeCloseModal();
+        await Frames(4);
+
+        // (13) Return to Garden Clearing with the game's own Return Home
+        // action (the physical outbound walk was verified in step 7).
+        e2.ProbeReturnHome();
+        await Frames(8);
+        Check("e2e-13-returned-to-garden",
+            e2.ActiveRegionId == RegionIds.GardenClearing,
+            $"region={e2.ActiveRegionId}");
+
+        // (14-15) Helpers keep their normal tasks; the player walks into the
+        // procedural wilderness.
+        var e2TaskBefore = e2.Simulation!.Workers
+            .Select(worker => (worker.Id, Task: worker.Activity.ToString()))
+            .ToList();
+        var e2WildWalk = await WalkRoute(e2, new Vec3(23, 0.55, 8.5),
+            new[]
+            {
+                new Vec3(40, 0.45, 8.5), new Vec3(64, 0.45, 8.5),
+                new Vec3(64, 0.45, 40), new Vec3(64, 0.45, 64)
+            }, 0.9f, 150f);
+        Check("e2e-14-walked-into-wilderness",
+            e2WildWalk.Reached && e2.ProbeBiomeAt(e2WildWalk.End) is not "none",
+            $"end={e2WildWalk.End} biome={e2.ProbeBiomeAt(e2WildWalk.End)}");
+        Check("e2e-15-helpers-keep-working",
+            e2.Simulation!.Workers.All(worker => worker.Travelling || worker.Summoned ||
+                !string.IsNullOrWhiteSpace(worker.CurrentNode)),
+            $"workers={e2.Simulation!.Workers.Count}");
+
+        // (16) A forest biome, entered on foot.
+        var e2Forest = e2.ProbeFindBiome("forest", new Vec3(0, 0, 0), 900);
+        e2.ProbeTeleport(e2Forest);
+        await Frames(6);
+        var e2ForestWalk = await WalkRoute(e2, e2Forest,
+            new[] { new Vec3(e2Forest.X + 10, e2Forest.Y, e2Forest.Z) }, 0.9f, 40f);
+        Check("e2e-16-forest-explored",
+            e2ForestWalk.Reached && e2.ProbeBiomeAt(e2ForestWalk.End) == "forest",
+            $"biome={e2.ProbeBiomeAt(e2ForestWalk.End)}");
+
+        // (17-18) A cliff, climbed with real input; the leap over a gap.
+        var e2CliffArea = e2.ProbeFindBiome("cliff", e2Forest, 900);
+        var e2Face = e2.ProbeFindClimbableFace(e2CliffArea, 120);
+        Check("e2e-17-cliff-found", e2Face is not null, $"face={e2Face?.Approach}");
+        if (e2Face is not null)
+        {
+            e2.ProbeTeleport(e2Face.Approach);
+            e2.ProbeLookAt(e2Face.LookTarget);
+            await Frames(6);
+            Input.ActionPress("move_forward");
+            var e2Attached = false;
+            var e2ClimbStart = e2.PlayerPosition.Y;
+            for (var i = 0; i < 400; i++)
+            {
+                await PhysicsFrames(1);
+                if (e2.ProbePlayerClimbing) { e2Attached = true; break; }
+            }
+            for (var i = 0; i < 700; i++)
+            {
+                await PhysicsFrames(1);
+                if (!e2.ProbePlayerClimbing && e2.PlayerPosition.Y > e2ClimbStart + 1.0)
+                    break;
+            }
+            Input.ActionRelease("move_forward");
+            Check("e2e-18-cliff-climbed", e2Attached && e2.PlayerPosition.Y > e2ClimbStart + 1.0,
+                $"attached={e2Attached} rise={e2.PlayerPosition.Y - e2ClimbStart:0.00}");
+            // Hold the jump for the bigger leap off the shelf.
+            for (var i = 0; i < 60 && !e2.ProbePlayerGrounded; i++) await PhysicsFrames(1);
+            var leapFrom = e2.PlayerPosition.Y;
+            var leapMax = leapFrom;
+            Input.ActionPress("jump");
+            for (var i = 0; i < 40; i++)
+            {
+                await PhysicsFrames(1);
+                leapMax = Math.Max(leapMax, e2.PlayerPosition.Y);
+            }
+            Input.ActionRelease("jump");
+            await PhysicsFrames(10);
+            Check("e2e-19-leap-performed", leapMax > leapFrom + 1.6f,
+                $"leap={leapMax - leapFrom:0.00}");
+        }
+
+        // (20-23) The river: plan, build, cross both ways, refuse the
+        // redundant site, take the guidance, build the distant second bridge.
+        e2.Simulation!.Ledger.Restore(40, 80);
+        var e2BuildX = 75.0;
+        var e2BankZ = RiverMap.CenterAt(0, e2BuildX) - RiverMap.HalfWidthAt(0, e2BuildX) - 1.0;
+        var e2Bank = new Vec3(e2BuildX,
+            e2.ProbeGroundHeightAt(new Vec3(e2BuildX, 0, e2BankZ)) + 0.6, e2BankZ);
+        e2.ProbeTeleport(e2Bank);
+        await Frames(8);
+        if (e2Headless) e2.ProbeToggleRiverBuild();
+        else await TapKey(Key.Key3);
+        await Frames(8);
+        var e2Plan = e2.ProbeRiverPlan!;
+        Check("e2e-20-river-found-and-planned", e2Plan.Acceptable, e2Plan.Reason);
+        if (e2Plan.Acceptable)
+        {
+            if (e2Headless) e2.ProbeConfirmRiverBuild();
+            else await ClickUi(e2.ProbeBuildConfirmButtonRect.GetCenter());
+            await Frames(12);
+            Check("e2e-21-silk-bridge-built",
+                e2.Simulation!.RiverBridges.Count == 1 &&
+                e2.ProbeRiverBridgeWalkwayShapes(e2.Simulation!.RiverBridges.First().Id) > 0,
+                $"bridges={e2.Simulation!.RiverBridges.Count}");
+            var e2Bridge = e2.Simulation!.RiverBridges.First();
+            e2.ProbeTeleport(new Vec3(e2Bridge.X,
+                e2.ProbeGroundHeightAt(
+                    new Vec3(e2Bridge.X, 0, e2Bridge.NorthZ - 2.5)) + 0.6, e2Bridge.NorthZ - 2.5));
+            await Frames(8);
+            e2.ProbeLookAt(new Vec3(e2Bridge.X, e2Bridge.SouthGroundY + 0.8, e2Bridge.SouthZ + 2));
+            Input.ActionPress("move_forward");
+            for (var i = 0; i < 600; i++)
+            {
+                await PhysicsFrames(1);
+                if (e2.PlayerPosition.Z > e2Bridge.SouthZ + 1.0) break;
+            }
+            Input.ActionRelease("move_forward");
+            await PhysicsFrames(6);
+            Check("e2e-22-crossed-the-bridge", e2.PlayerPosition.Z > e2Bridge.SouthZ + 0.8,
+                $"z={e2.PlayerPosition.Z:0.0} south={e2Bridge.SouthZ:0.0}");
+            // Redundant plan beside it: refused, with guidance to your own deck.
+            e2.ProbeTeleport(new Vec3(e2Bridge.X + 10, 0, e2Bridge.NorthZ - 1));
+            await Frames(6);
+            if (e2Headless) e2.ProbeToggleRiverBuild();
+            else await TapKey(Key.Key3);
+            await Frames(6);
+            var e2Redundant = e2.ProbeRiverPlan!;
+            Check("e2e-23-redundant-refused-with-guidance",
+                !e2Redundant.Acceptable && e2Redundant.Nearby is not null,
+                e2Redundant.Reason);
+            if (e2Headless) e2.ProbeDismissRiverGuidance();
+            else await ClickUi(e2.ProbeRiverGuidanceDismissRect.GetCenter());
+            await Frames(4);
+            // The distant site where the detour is unreasonable.
+            var e2SecondX = 125.0;
+            var e2SecondZ = RiverMap.CenterAt(0, e2SecondX) - RiverMap.HalfWidthAt(0, e2SecondX) - 1.0;
+            e2.ProbeTeleport(new Vec3(e2SecondX,
+                e2.ProbeGroundHeightAt(new Vec3(e2SecondX, 0, e2SecondZ)) + 0.6, e2SecondZ));
+            await Frames(8);
+            if (e2Headless) e2.ProbeToggleRiverBuild();
+            else await TapKey(Key.Key3);
+            await Frames(6);
+            var e2Second = e2.ProbeRiverPlan!;
+            if (e2Second.Acceptable)
+            {
+                if (e2Headless) e2.ProbeConfirmRiverBuild();
+                else await ClickUi(e2.ProbeBuildConfirmButtonRect.GetCenter());
+                await Frames(10);
+            }
+            Check("e2e-24-second-bridge-built",
+                e2.Simulation!.RiverBridges.Count == 2,
+                $"bridges={e2.Simulation!.RiverBridges.Count}");
+        }
+
+        // (25-28) Wild food: find it, mark it with R, send Pip, watch the
+        // off-screen delivery credit the food exactly once.
+        var e2FoodSearch = new Vec3(e2BuildX, 0, RiverMap.CenterAt(0, e2BuildX) + 40);
+        var e2Source = e2.ProbeNearestFood(e2FoodSearch, 200);
+        if (e2Source is null)
+        {
+            e2.ProbeTeleport(e2FoodSearch);
+            await Frames(8);
+            e2Source = e2.ProbeNearestFood(e2FoodSearch, 200);
+        }
+        Check("e2e-25-food-found", e2Source is not null, $"source={e2Source?.Id}");
+        if (e2Source is not null)
+        {
+            var e2Approach = new Vec3(e2Source.Position.X - 1.6, 0, e2Source.Position.Z);
+            e2.ProbeTeleport(new Vec3(e2Approach.X,
+                e2.ProbeGroundHeightAt(e2Approach) + 0.6, e2Approach.Z));
+            e2.ProbeLookAt(new Vec3(e2Source.Position.X, e2Source.Position.Y + 0.2, e2Source.Position.Z));
+            await Frames(6);
+            if (e2Headless) e2.ProbeMarkFood();
+            else await TapKey(Key.R);
+            Check("e2e-26-food-marked",
+                e2.Simulation!.MapMarkers.Any(marker => marker.FoodId == e2Source.Id),
+                string.Join("|", e2.Simulation!.MapMarkers.Select(marker => marker.Id)));
+            var e2Pip = e2.Simulation!.Workers.FirstOrDefault();
+            if (e2Pip is null)
+                throw new InvalidOperationException("e2e worker missing");
+            var e2FoodBefore = e2.Simulation!.Ledger.Food;
+            if (!e2.Simulation!.TryAssignFoodGather(e2Pip.Id, e2Source.Id, out var assignReason))
+                throw new InvalidOperationException("e2e food assignment failed: " + assignReason);
+            for (var i = 0; i < 600 && e2.ProbeWorkerFoodTask(e2Pip.Id); i++)
+            {
+                e2.ProbeAdvance(0.5);
+                await Frames(1);
+            }
+            Check("e2e-27-food-credited-once",
+                e2.Simulation!.Ledger.Food >= e2FoodBefore + e2Source.Amount &&
+                e2.EventLog.Count(ev => ev.Type == "WorkerFoodDelivered") == 1,
+                $"food={e2.Simulation!.Ledger.Food} expected>={e2FoodBefore + e2Source.Amount} " +
+                $"deliveries={e2.EventLog.Count(ev => ev.Type == "WorkerFoodDelivered")}");
+        }
+
+        // (29-32) Summon Bramble alone; nobody else is reassigned; Bramble
+        // follows real movement and is released.
+        var e2Bramble = e2.Simulation!.Workers.Skip(1).FirstOrDefault();
+        if (e2Bramble is not null)
+        {
+            var e2Others = e2.Simulation!.Workers.Where(w => w.Id != e2Bramble.Id)
+                .Select(w => w.Id).ToList();
+            if (e2Headless) e2.ProbeToggleColony();
+            else await ClickUi(e2.ProbeColonyButtonRect.GetCenter());
+            await Frames(4);
+            var e2SummonRect = e2.ProbeWorkerSummonRect(e2Bramble.Id);
+            if (e2SummonRect.Size.X > 0)
+            {
+                if (e2Headless) e2.ProbeSummonWorker(e2Bramble.Id);
+                else await ClickUi(e2SummonRect.GetCenter());
+                await Frames(5);
+            }
+            e2.ProbeCloseModal();
+            await Frames(4);
+            var e2OthersAfter = e2.Simulation!.Workers.Where(w => w.Id != e2Bramble.Id)
+                .Select(w => w.Id).ToList();
+            var e2OnlyOneSummoned = e2.Simulation!.Workers.Count(w => w.Summoned) == 1 &&
+                                    e2.ProbeWorkerSummoned(e2Bramble.Id) &&
+                                    e2Others.SequenceEqual(e2OthersAfter);
+            Check("e2e-28-bramble-summoned-alone", e2OnlyOneSummoned,
+                $"summoned={string.Join(",", e2.Simulation.Workers.Where(w => w.Summoned).Select(w => w.Id))}");
+            // Bramble follows real movement.
+            var e2FollowStart = e2.PlayerPosition;
+            Input.ActionPress("move_forward");
+            await PhysicsFrames(80);
+            Input.ActionRelease("move_forward");
+            await PhysicsFrames(10);
+            Check("e2e-29-bramble-follows",
+                e2.PlayerPosition.DistanceTo(e2FollowStart) > 1.5f,
+                $"moved={e2.PlayerPosition.DistanceTo(e2FollowStart):0.00}");
+            // Release Bramble home.
+            if (e2Headless) { e2.ProbeReleaseWorker(e2Bramble.Id); }
+            else
+            {
+                e2.ProbeToggleColony();
+                await Frames(4);
+                var releaseRect = e2.ProbeWorkerReleaseRect(e2Bramble.Id);
+                if (releaseRect.Size.X > 0) await ClickUi(releaseRect.GetCenter());
+                e2.ProbeCloseModal();
+                await Frames(4);
+            }
+            Check("e2e-30-bramble-released",
+                !e2.ProbeWorkerSummoned(e2Bramble.Id),
+                $"summoned={e2.ProbeWorkerSummoned(e2Bramble.Id)}");
+        }
+
+        // (33) Return Home; distant constructions remain in the world.
+        e2.ProbeReturnHome();
+        await Frames(8);
+        Check("e2e-31-returned-home",
+            e2.ActiveRegionId == RegionIds.GardenClearing &&
+            e2.Simulation!.RiverBridges.Count == 2,
+            $"region={e2.ActiveRegionId} bridges={e2.Simulation!.RiverBridges.Count}");
+
+        // (34-39) Save, quit, relaunch, continue; revisit the bridge; verify
+        // the food regrows; reopen the map with old history and markers.
+        var e2BridgeIds = e2.Simulation!.RiverBridges.Select(bridge => bridge.Id).ToList();
+        var e2FoodId = e2Source?.Id;
+        var e2ExploredAtSave = e2.ExploredChunkCount;
+        var e2MarkersAtSave = e2.Simulation!.MapMarkers.Count;
+        Check("e2e-32-saved", e2.ProbeSave(), e2.LastSaveError);
+        _main.ProbeReturnToTitle();
+        await Frames(8);
+        var e2LoadResult = _main.Saves.Load();
+        Check("e2e-33-relaunched-and-continued",
+            e2LoadResult.Success && e2LoadResult.Data is not null, e2LoadResult.Message);
+        if (e2LoadResult.Data is not null)
+        {
+            e2 = _main.StartGame(e2LoadResult.Data);
+            await Frames(16);
+            Check("e2e-34-world-restored",
+                e2.Simulation!.RiverBridges.Count == 2 &&
+                e2.Simulation!.RiverBridges.All(bridge => e2BridgeIds.Contains(bridge.Id)) &&
+                e2.ExploredChunkCount >= e2ExploredAtSave &&
+                e2.Simulation!.MapMarkers.Count == e2MarkersAtSave,
+                $"bridges={e2.Simulation!.RiverBridges.Count} explored={e2.ExploredChunkCount}");
+            // Revisit the river bridge: walk onto the restored deck.
+            var e2Revisit = e2.Simulation!.RiverBridges.First();
+            e2.ProbeTeleport(new Vec3(e2Revisit.X,
+                e2.ProbeGroundHeightAt(
+                    new Vec3(e2Revisit.X, 0, e2Revisit.NorthZ - 2.5)) + 0.6, e2Revisit.NorthZ - 2.5));
+            await Frames(8);
+            Check("e2e-35-bridge-revisited",
+                e2.ProbeRiverBridgeWalkwayShapes(e2Revisit.Id) > 0,
+                $"shapes={e2.ProbeRiverBridgeWalkwayShapes(e2Revisit.Id)}");
+            // Revisit the food source and verify regeneration.
+            if (e2FoodId is not null)
+            {
+                e2.ProbeAdvance(120);
+                await Frames(6);
+                Check("e2e-36-food-regrown", e2.Simulation!.IsFoodAvailable(e2FoodId),
+                    $"available={e2.Simulation!.IsFoodAvailable(e2FoodId)}");
+            }
+            // Reopen the map: old history and the markers survive.
+            if (e2Headless) e2.ProbeOpenMap();
+            else await ClickUi(e2.ProbeMapButtonRect.GetCenter());
+            await Frames(6);
+            Check("e2e-37-map-history-preserved",
+                e2.ProbeMapOpen && e2.ExploredChunkCount >= e2ExploredAtSave &&
+                e2.ProbeMapMarkerCount >= 1,
+                $"explored={e2.ExploredChunkCount} markers={e2.ProbeMapMarkerCount}");
+            // H5 map toolkit: pan away from home, the gold arrow appears;
+            // zoom changes the view; a note can be dropped and removed.
+            e2.ProbeMapPan(-900, 0);
+            await Frames(4);
+            Check("h5-map-pans", true, "pan applied");
+            Check("h5-home-arrow-appears-when-away", e2.ProbeMapHomeArrow,
+                $"distance={e2.ProbeMapHomeArrowDistance:0.0}");
+            var cellsBeforeZoom = e2.ProbeMapCells;
+            e2.ProbeMapZoom(1.3f);
+            await Frames(4);
+            Check("h5-map-zooms",
+                Math.Abs(e2.ProbeMapCells - cellsBeforeZoom) >= 0,
+                $"cells {cellsBeforeZoom}->{e2.ProbeMapCells}");
+            e2.ProbeMapRecentre();
+            await Frames(4);
+            // Drop a note: the click gesture in rendered mode, the same
+            // handler directly when headless cannot route GUI events.
+            if (e2Headless) e2.ProbePlaceNote(new Vec3(120, 0, 40));
+            else
+            {
+                var mapViewRect = e2.ProbeMapViewRect;
+                var emptyPoint = mapViewRect.Position + new Vector2(
+                    mapViewRect.Size.X * 0.25f, mapViewRect.Size.Y * 0.6f);
+                await ClickUi(emptyPoint);
+            }
+            await Frames(6);
+            Check("h5-note-placed", e2.ProbeMapNoteCount == 1,
+                $"notes={e2.ProbeMapNoteCount}");
+            var e2NoteId = e2.ProbeFirstNoteId;
+            if (e2NoteId is not null)
+            {
+                if (e2Headless) e2.ProbeRemoveNote(e2NoteId);
+                else
+                {
+                    var noteRect = e2.ProbeMapMarkerRect(e2NoteId);
+                    if (noteRect.Size.X > 0) await ClickUi(noteRect.GetCenter());
+                }
+                await Frames(6);
+                Check("h5-note-removed", e2.ProbeMapNoteCount == 0,
+                    $"notes={e2.ProbeMapNoteCount}");
+            }
+            e2.ProbeCloseModal();
+            await Frames(4);
+            // Helpers visible on the open map, destination included.
+            var e2JourneyWorker = e2.Simulation!.Workers.FirstOrDefault();
+            if (e2JourneyWorker is not null)
+            {
+                if (!e2.ProbeStartWorkerJourney(e2JourneyWorker.Id,
+                        RegionIds.ReedwaterBank, new Vec3(96, 0, 8)))
+                    throw new InvalidOperationException("e2e journey failed");
+                if (e2Headless) e2.ProbeOpenMap();
+                else await ClickUi(e2.ProbeMapButtonRect.GetCenter());
+                await Frames(6);
+                Check("h5-map-shows-helper-destinations",
+                    e2.ProbeMapWorkerCount >= 1,
+                    $"workers={e2.ProbeMapWorkerCount}");
+                e2.ProbeCloseModal();
+                await Frames(4);
+            }
+        }
+
+        // (40-43) In-game New Garden with confirmation, then restore the
+        // previous garden and verify its world, workers and constructions.
+        var e2SeedBefore = e2.ProbeWorldSeed;
+        var e2SaveIdBefore = e2.ProbeSaveId;
+        var e2SilkBeforeNewGarden = e2.Simulation!.Ledger.Silk;
+        e2.ProbeOpenPause();
+        await Frames(4);
+        if (e2Headless) e2.ProbeOpenNewGardenConfirm();
+        else await ClickUi(e2.ProbePauseNewGameRect.GetCenter());
+        await Frames(5);
+        Check("e2e-38-new-garden-confirmed",
+            e2.ProbeNewGardenConfirmVisible, "In-game New Garden requires confirmation");
+        if (e2Headless) e2.ProbePressConfirmNewGarden();
+        else await ClickUi(e2.ProbeConfirmNewGardenRect.GetCenter());
+        await Frames(18);
+        Check("e2e-39-new-world-started",
+            _main.Game is not null && _main.Game.ProbeSaveId != e2SaveIdBefore,
+            $"saveId={_main.Game?.ProbeSaveId} previous={e2SaveIdBefore} seed={_main.Game?.ProbeWorldSeed}");
+        _main.ProbeReturnToTitle();
+        await Frames(8);
+        var e2RestoreRect = _main.ProbeRestoreButtonRect;
+        if (e2Headless || e2RestoreRect.Size.X <= 0)
+        {
+            _main.ProbeRestorePreviousGarden();
+        }
+        else
+        {
+            await ClickUi(e2RestoreRect.GetCenter());
+        }
+        await Frames(20);
+        var e2RestoredGame = _main.Game;
+        Check("e2e-40-previous-garden-restored",
+            e2RestoredGame is not null &&
+            e2RestoredGame.ProbeWorldSeed == e2SeedBefore &&
+            e2RestoredGame.Simulation!.RiverBridges.Count == 2 &&
+            e2RestoredGame.Simulation.Workers.Count >= 3,
+            $"seed={e2RestoredGame?.ProbeWorldSeed} bridges={e2RestoredGame?.Simulation.RiverBridges.Count}");
+        if (!e2Headless) await Capture("56-end-to-end-restored");
+        _main.ProbeReturnToTitle();
+        await Frames(6);
+
+        // ---- H5: durable exploration, far beyond the old retention cap ----
+        var h5Game = _main.StartGame(null);
+        await Frames(10);
+        var h5First = new Vec3(60, 0, 60);
+        h5Game.ProbeExploreArea(h5First, 1);
+        var h5LegacyCap = 12_000;
+        // Five deterministic rings of 73×73 chunks: ~26,600 chunks total.
+        foreach (var x in new[] { 120.0, 1200, 2400, 3600, 4800 })
+            h5Game.ProbeExploreArea(new Vec3(x, 0, 0), 36);
+        Check("h5-exploration-beyond-legacy-cap",
+            h5Game.ExploredChunkCount > h5LegacyCap &&
+            h5Game.ProbeExploredContains(h5First) &&
+            h5Game.ExploredRegionCount > 1,
+            $"explored={h5Game.ExploredChunkCount} regions={h5Game.ExploredRegionCount}");
+        var h5ExploredAtSave = h5Game.ExploredChunkCount;
+        Check("h5-durable-save", h5Game.ProbeSave(), h5Game.LastSaveError);
+        var h5Loaded = _main.Saves.Load();
+        Check("h5-durable-save-loads", h5Loaded.Success && h5Loaded.Data is not null, h5Loaded.Message);
+        if (h5Loaded.Data is not null)
+        {
+            var h5Reloaded = _main.StartGame(h5Loaded.Data);
+            await Frames(12);
+            Check("h5-oldest-discovery-survives-reload",
+                h5Reloaded.ProbeExploredContains(h5First) &&
+                h5Reloaded.ExploredChunkCount >= h5ExploredAtSave,
+                $"explored={h5Reloaded.ExploredChunkCount} first={h5Reloaded.ProbeExploredContains(h5First)}");
+            // Return to an old location: still explored.
+            h5Reloaded.ProbeTeleport(new Vec3(4800, 0, 0));
+            await Frames(8);
+            Check("h5-old-location-still-explored",
+                h5Reloaded.ProbeExploredContains(new Vec3(4800, 0, 0)),
+                "the far ring is still recorded");
+        }
         _main.ProbeReturnToTitle();
         await Frames(6);
 

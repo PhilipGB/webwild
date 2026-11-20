@@ -34,6 +34,7 @@ public static class WorldSaveMigrator
             ElapsedSeconds = legacy.ElapsedSeconds,
             ActiveLandmarkId = legacy.ActiveRegionId,
             ExploredChunks = legacy.ExploredChunks?.ToList() ?? new List<string>(),
+            ExplorationRegions = legacy.ExplorationRegions?.ToList() ?? new List<ExplorationRegionSave>(),
             Game = legacy
         };
 
@@ -100,6 +101,8 @@ public static class WorldSaveMigrator
             : LandmarkCatalog.Garden;
 
         game.ExploredChunks = manifest.ExploredChunks?.ToList() ?? new List<string>();
+        game.ExplorationRegions = manifest.ExplorationRegions?.ToList()
+            ?? new List<ExplorationRegionSave>();
         var local = LandmarkCatalog.ToLocal(game.ActiveRegionId, manifest.Player.Absolute);
         game.Player = new PlayerSave
         {
@@ -251,6 +254,49 @@ public static class WorldSaveMigrator
         {
             error = "The exploration record is invalid.";
             return false;
+        }
+        var hasRegions = manifest.ExplorationRegions is { Count: > 0 };
+        if (hasRegions && manifest.ExploredChunks.Count > 0)
+        {
+            error = "The exploration record uses two formats at once.";
+            return false;
+        }
+        if (manifest.ExplorationRegions is { } regions)
+        {
+            if (regions.Count > ExplorationRecord.MaxRegions)
+            {
+                error = "The exploration record has too many regions.";
+                return false;
+            }
+            var seenRegions = new HashSet<(long, long)>();
+            foreach (var region in regions)
+            {
+                if (region is null ||
+                    !seenRegions.Add((region.RegionX, region.RegionZ)))
+                {
+                    error = "The exploration record has an invalid region.";
+                    return false;
+                }
+                var limit = ChunkCoordinate.MaxCoordinate >> 6;
+                if (Math.Abs(region.RegionX) > limit || Math.Abs(region.RegionZ) > limit)
+                {
+                    error = "The exploration record has a region outside the world.";
+                    return false;
+                }
+                byte[] bits;
+                try { bits = Convert.FromBase64String(region.Bits ?? ""); }
+                catch (FormatException)
+                {
+                    error = "The exploration record has an unreadable region.";
+                    return false;
+                }
+                if (bits.Length != ExplorationRecord.RegionChunks *
+                        ExplorationRecord.RegionChunks / 8)
+                {
+                    error = "The exploration record has a region of the wrong size.";
+                    return false;
+                }
+            }
         }
         if (!SaveValidator.Validate(manifest.Game, out var gameError))
         {

@@ -133,8 +133,14 @@ public sealed class WorldManifestSave
     /// from the legacy per-region save model.</summary>
     public List<LandmarkVisitSave> LandmarkVisits { get; set; } = new();
 
-    /// <summary>Exploration record: chunk ids whose terrain has been seen.</summary>
+    /// <summary>Exploration record: chunk ids whose terrain has been seen.
+    /// The pre-H5 form; new saves write <see cref="ExplorationRegions"/>
+    /// instead and keep this list empty.</summary>
     public List<string> ExploredChunks { get; set; } = new();
+
+    /// <summary>Exploration record since H5: compact region bitsets. A
+    /// manifest carries either this or the legacy id list, never both.</summary>
+    public List<ExplorationRegionSave> ExplorationRegions { get; set; } = new();
 
     /// <summary>Colony and story payload, still stored in the established
     /// SaveGameData shape (webs, workers, missions, counters, weather, settings).</summary>
